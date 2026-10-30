@@ -1,4 +1,4 @@
-using Daignostic.ViewModels;
+﻿using Daignostic.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -21,6 +21,14 @@ public sealed partial class SettingsPage : Page
     }
 
     public SettingsViewModel ViewModel { get; }
+
+    private void ModelPick_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ModelPick.SelectedItem is string name)
+        {
+            ViewModel.AiModel = name;
+        }
+    }
 
     private void KeyBox_PasswordChanged(object sender, RoutedEventArgs e) => ViewModel.NewApiKey = KeyBox.Password;
 }

@@ -17,7 +17,7 @@ public sealed partial class CompareViewModel : ObservableObject
     {
         Error = "";
         Summary = "Pick a baseline (A) and a later run (B). Load captures on the Analyze page or with the buttons here.";
-        Ai = new AiPanelViewModel(RunAiAsync, BuildPreview);
+        Ai = new AiPanelViewModel(RunAiAsync, BuildPreview, BuildPack, "daignostic-comparison-ai-pack");
         if (AppState.Loaded.Count >= 2)
         {
             B = AppState.Loaded[0];
@@ -135,6 +135,9 @@ public sealed partial class CompareViewModel : ObservableObject
         Ai.Reset();
         ComparisonChanged?.Invoke(cmp);
     }
+
+    private string? BuildPack(string? note) =>
+        Comparison is null ? null : AiExportPack.BuildComparison(Comparison, A!.Result, B!.Result, note, DateTime.UtcNow);
 
     private string? BuildPreview(string? note) =>
         Comparison is null ? null : AiPrompts.BuildComparison(Comparison, A!.Result, B!.Result, note);

@@ -5,111 +5,180 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:vm="using:Daignostic.ViewModels">
 
-    <StackPanel Spacing="12">
-        <TextBlock Text="Ask an AI to explain these results" Style="{StaticResource SubtitleTextBlockStyle}" />
+    <Border
+        Padding="24,20"
+        CornerRadius="12"
+        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+        BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+        BorderThickness="2">
+        <StackPanel Spacing="14">
 
-        <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
-            <Run Text="Only the measured facts previewed below are sent to" />
-            <Run Text="{x:Bind ViewModel.Destination, Mode=OneWay}" FontWeight="SemiBold" />
-            <Run Text=". File paths and device names are never included, and nothing is sent until you press Ask AI. The AI has no tools: it cannot read or change anything on this PC." />
-        </TextBlock>
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Image
+                    Source="ms-appx:///Assets/Logo.png"
+                    Width="52"
+                    Height="52"
+                    VerticalAlignment="Top"
+                    AutomationProperties.AccessibilityView="Raw" />
+                <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock
+                        Text="Ask an AI what is wrong and what to do about it"
+                        Style="{StaticResource TitleTextBlockStyle}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        TextWrapping="Wrap"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="daignostic measured everything shown on this page. An AI can explain it for your PC, rank the likely causes and put the fixes in order. It only sees the measurements, never your files or your computer's name." />
+                </StackPanel>
+            </Grid>
 
-        <Expander Header="Preview exactly what will be sent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-            <TextBox
-                x:Name="PreviewBox"
-                Text="{x:Bind ViewModel.Preview, Mode=OneWay}"
-                IsReadOnly="True"
-                AcceptsReturn="True"
-                TextWrapping="NoWrap"
-                FontFamily="Consolas"
-                FontSize="12"
-                MaxHeight="280"
-                ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                ScrollViewer.VerticalScrollBarVisibility="Auto"
-                AutomationProperties.Name="Data that will be sent to the AI" />
-        </Expander>
+            <!-- AI configured: ask. Not configured: explain the two options. -->
+            <StackPanel Spacing="10" Visibility="{x:Bind ViewModel.NeedsSetup, Mode=OneWay}">
+                <InfoBar
+                    IsOpen="True"
+                    IsClosable="False"
+                    Severity="Informational"
+                    Title="AI is optional."
+                    Message="Connect one to ask from inside daignostic, or save everything to a file and ask your own AI (a chat website, an app, a local model)." />
+            </StackPanel>
 
-        <TextBox
-            AutomationProperties.AutomationId="AiNoteBox"
-            Header="Note for the AI (optional)"
-            PlaceholderText="For example: I turned ray tracing off between these runs"
-            Text="{x:Bind ViewModel.Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-            MaxLength="600" />
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button
+                    AutomationProperties.AutomationId="AskAiButton"
+                    Content="Ask AI"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Padding="24,8"
+                    Visibility="{x:Bind ViewModel.IsConfigured, Mode=OneWay}"
+                    Command="{x:Bind ViewModel.AskCommand, Mode=OneTime}" />
+                <Button
+                    AutomationProperties.AutomationId="SetupAiButton"
+                    Content="Set up AI in daignostic"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Padding="24,8"
+                    Visibility="{x:Bind ViewModel.NeedsSetup, Mode=OneWay}"
+                    Command="{x:Bind ViewModel.SetupAiCommand, Mode=OneTime}" />
+                <Button
+                    AutomationProperties.AutomationId="ExportPackButton"
+                    Content="Export for my own AI..."
+                    Padding="16,8"
+                    Command="{x:Bind ViewModel.ExportPackCommand, Mode=OneTime}" />
+                <ProgressRing
+                    Width="22"
+                    Height="22"
+                    IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
+            </StackPanel>
 
-        <StackPanel Orientation="Horizontal" Spacing="12">
-            <Button
-                AutomationProperties.AutomationId="AskAiButton"
-                Content="Ask AI"
-                Style="{StaticResource AccentButtonStyle}"
-                Command="{x:Bind ViewModel.AskCommand, Mode=OneTime}" />
-            <ProgressRing
-                Width="20"
-                Height="20"
-                IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
-                Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
-        </StackPanel>
-
-        <InfoBar
-            Severity="Warning"
-            Title="The AI request failed"
-            Message="{x:Bind ViewModel.Error, Mode=OneWay}"
-            IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
-            IsClosable="False" />
-
-        <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasResult, Mode=OneWay}">
             <TextBlock
-                Text="{x:Bind ViewModel.Summary, Mode=OneWay}"
-                Visibility="{x:Bind ViewModel.HasSummary, Mode=OneWay}"
+                Text="{x:Bind ViewModel.ExportStatus, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.HasExportStatus, Mode=OneWay}"
                 TextWrapping="Wrap"
-                Style="{StaticResource BodyStrongTextBlockStyle}" />
+                Style="{StaticResource CaptionTextBlockStyle}"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+            <Expander Header="Preview exactly what will be sent or exported" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                <StackPanel Spacing="8">
+                    <TextBlock
+                        TextWrapping="Wrap"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                        <Run Text="Destination:" />
+                        <Run Text="{x:Bind ViewModel.Destination, Mode=OneWay}" FontWeight="SemiBold" />
+                        <Run Text=". Nothing is sent until you press Ask AI. The AI has no tools: it cannot read or change anything on this PC." />
+                    </TextBlock>
+                    <TextBox
+                        x:Name="PreviewBox"
+                        Text="{x:Bind ViewModel.Preview, Mode=OneWay}"
+                        IsReadOnly="True"
+                        AcceptsReturn="True"
+                        TextWrapping="NoWrap"
+                        FontFamily="Consolas"
+                        FontSize="12"
+                        MaxHeight="280"
+                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
+                        AutomationProperties.Name="Data that will be sent to the AI" />
+                </StackPanel>
+            </Expander>
+
+            <TextBox
+                AutomationProperties.AutomationId="AiNoteBox"
+                Header="Anything the AI should know? (optional)"
+                PlaceholderText="For example: I turned ray tracing off between these runs"
+                Text="{x:Bind ViewModel.Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                MaxLength="600" />
 
             <InfoBar
-                Severity="Informational"
-                Title="The AI could not reach a firm conclusion from this data."
-                IsOpen="{x:Bind ViewModel.IsInconclusive, Mode=OneWay}"
+                Severity="Warning"
+                Title="The AI request failed"
+                Message="{x:Bind ViewModel.Error, Mode=OneWay}"
+                IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
                 IsClosable="False" />
 
-            <InfoBar
-                Severity="Informational"
-                Message="{x:Bind ViewModel.DroppedNotice, Mode=OneWay}"
-                IsOpen="{x:Bind ViewModel.HasDropped, Mode=OneWay}"
-                IsClosable="False" />
+            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasResult, Mode=OneWay}">
+                <TextBlock
+                    Text="{x:Bind ViewModel.Summary, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.HasSummary, Mode=OneWay}"
+                    TextWrapping="Wrap"
+                    Style="{StaticResource BodyStrongTextBlockStyle}" />
 
-            <ItemsControl ItemsSource="{x:Bind ViewModel.Items, Mode=OneTime}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:AiItemView">
-                        <Border
-                            Margin="0,0,0,8"
-                            Padding="16,12"
-                            CornerRadius="8"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1">
-                            <StackPanel Spacing="6">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="{x:Bind Title, Mode=OneTime}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                <InfoBar
+                    Severity="Informational"
+                    Title="The AI could not reach a firm conclusion from this data."
+                    IsOpen="{x:Bind ViewModel.IsInconclusive, Mode=OneWay}"
+                    IsClosable="False" />
+
+                <InfoBar
+                    Severity="Informational"
+                    Message="{x:Bind ViewModel.DroppedNotice, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.HasDropped, Mode=OneWay}"
+                    IsClosable="False" />
+
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Items, Mode=OneTime}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AiItemView">
+                            <Border
+                                Margin="0,0,0,8"
+                                Padding="16,12"
+                                CornerRadius="8"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1">
+                                <StackPanel Spacing="6">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{x:Bind Title, Mode=OneTime}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                        <TextBlock
+                                            Text="{x:Bind Confidence, Mode=OneTime}"
+                                            Style="{StaticResource CaptionTextBlockStyle}"
+                                            VerticalAlignment="Center"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                    <TextBlock Text="{x:Bind Explanation, Mode=OneTime}" TextWrapping="Wrap" />
                                     <TextBlock
-                                        Text="{x:Bind Confidence, Mode=OneTime}"
+                                        Text="{x:Bind Actions, Mode=OneTime}"
+                                        Visibility="{x:Bind HasActions, Mode=OneTime}"
+                                        TextWrapping="Wrap"
+                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                    <TextBlock
+                                        Text="{x:Bind Evidence, Mode=OneTime}"
+                                        TextWrapping="Wrap"
                                         Style="{StaticResource CaptionTextBlockStyle}"
-                                        VerticalAlignment="Center"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
-                                <TextBlock Text="{x:Bind Explanation, Mode=OneTime}" TextWrapping="Wrap" />
-                                <TextBlock
-                                    Text="{x:Bind Actions, Mode=OneTime}"
-                                    Visibility="{x:Bind HasActions, Mode=OneTime}"
-                                    TextWrapping="Wrap"
-                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-                                <TextBlock
-                                    Text="{x:Bind Evidence, Mode=OneTime}"
-                                    TextWrapping="Wrap"
-                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.HasUnknowns, Mode=OneWay}">
+                    <TextBlock Text="What the AI could not tell from this data" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <TextBlock Text="{x:Bind ViewModel.UnknownsText, Mode=OneWay}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </StackPanel>
         </StackPanel>
-    </StackPanel>
+    </Border>
 </UserControl>

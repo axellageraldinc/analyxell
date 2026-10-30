@@ -1,7 +1,5 @@
-using Daignostic.Controls;
 using Daignostic.Core.Analysis;
 using Daignostic.ViewModels;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
@@ -35,11 +33,19 @@ public sealed partial class ComparePage : Page
 
         var a = ViewModel.A.Result.Run;
         var b = ViewModel.B.Result.Run;
-        Chart.SetData(
+        var spec = new ChartSpec(
+            ChartView.FrameTime,
+            "Frame time",
+            "ms",
+            "A in grey, B in blue. Lower is smoother.",
             [
-                new ChartSeries("A", a.TimeSec, a.FrameMs, "TextFillColorTertiaryBrush"),
-                new ChartSeries("B", b.TimeSec, b.FrameMs, "AccentFillColorDefaultBrush"),
+                new ChartLine("A", a.TimeSec, a.FrameMs, 3),
+                new ChartLine("B", b.TimeSec, b.FrameMs, 0),
             ],
-            ViewModel.B.Result.Freezes.Select(f => f.TimeSec).ToList());
+            [new ChartReference(1000.0 / 60, "60 fps"), new ChartReference(1000.0 / 30, "30 fps")],
+            null,
+            ZeroBased: true,
+            ClipSpikes: true);
+        Chart.SetSpec(spec, ViewModel.B.Result.Freezes.Select(f => f.TimeSec).ToList());
     }
 }

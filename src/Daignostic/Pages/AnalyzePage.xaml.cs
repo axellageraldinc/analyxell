@@ -1,6 +1,6 @@
-﻿using Daignostic.Controls;
-using Daignostic.Core.Analysis;
+﻿using Daignostic.Core.Analysis;
 using Daignostic.Core.Mcp;
+using Daignostic.Dialogs;
 using Daignostic.Services;
 using Daignostic.ViewModels;
 using Microsoft.UI.Xaml;
@@ -16,15 +16,20 @@ public sealed partial class AnalyzePage : Page
     {
         ViewModel = new AnalyzeViewModel();
         InitializeComponent();
-        ViewModel.CaptureChanged += OnCaptureChanged;
+        ViewModel.ChartChanged += OnChartChanged;
         Loaded += async (_, _) =>
         {
-            OnCaptureChanged(ViewModel.Current);
+            ViewModel.RaiseChart();
             var pending = AppState.PendingOpenPaths;
             AppState.PendingOpenPaths = [];
             foreach (var path in pending)
             {
                 await ViewModel.LoadPathAsync(path);
+            }
+
+            if (ViewModel.Current is not null && pending.Count == 0)
+            {
+                ViewModel.Ai.RefreshPreview();
             }
         };
     }
@@ -35,27 +40,11 @@ public sealed partial class AnalyzePage : Page
     {
         base.OnNavigatedTo(e);
 
-        // The AI endpoint may have changed in Settings since this cached page was last shown.
+        // The AI settings may have changed since this cached page was last shown.
         ViewModel.Ai.RefreshPreview();
     }
 
-    private void OnCaptureChanged(LoadedCapture? capture)
-    {
-        if (capture is null)
-        {
-            Chart.Clear();
-            return;
-        }
-
-        var run = capture.Result.Run;
-        var (avgTimes, avgValues) = Smoothing.BinAverage(run.TimeSec, run.FrameMs, 1.0);
-        Chart.SetData(
-            [
-                new ChartSeries("Frame time", run.TimeSec, run.FrameMs, "AccentFillColorDefaultBrush", 1.2, 0.6),
-                new ChartSeries("1 s average", avgTimes, avgValues, "TextFillColorPrimaryBrush", 2.0),
-            ],
-            capture.Result.Freezes.Select(f => f.TimeSec).ToList());
-    }
+    private void OnChartChanged(ChartSpec? spec, IReadOnlyList<double> freezes) => Chart.SetSpec(spec, freezes);
 
     private async void RecentButton_Click(object sender, RoutedEventArgs e) =>
         await ViewModel.RefreshCatalogCommand.ExecuteAsync(null);
@@ -66,6 +55,22 @@ public sealed partial class AnalyzePage : Page
         if (e.ClickedItem is CaptureListing item)
         {
             await ViewModel.LoadPathAsync(item.Id);
+        }
+    }
+
+    private async void GameSettings_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.Current is { } capture && await GameSettingsDialog.ShowAsync(XamlRoot, capture))
+        {
+            await ViewModel.ReanalyzeAsync();
+        }
+    }
+
+    private async void Setup_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.Current is { } capture && await SetupDialog.ShowAsync(XamlRoot, capture))
+        {
+            await ViewModel.ReanalyzeAsync();
         }
     }
 
@@ -89,4 +94,3 @@ public sealed partial class AnalyzePage : Page
         }
     }
 }
-
