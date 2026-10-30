@@ -337,7 +337,7 @@ public sealed partial class FrameTimeChart : UserControl
                 Foreground = Brush("TextFillColorSecondaryBrush"),
                 TextDecorations = on ? Windows.UI.Text.TextDecorations.None : Windows.UI.Text.TextDecorations.Strikethrough,
             };
-            var entry = new StackPanel
+            var entry = new HandPanel
             {
                 Orientation = Orientation.Horizontal,
                 Spacing = 4,
@@ -489,4 +489,10 @@ internal static class ShapeExtensions
         Canvas.SetTop(element, top);
         return element;
     }
+}
+
+/// <summary>A panel that shows the hand cursor, so people can tell it is something to press.</summary>
+internal sealed class HandPanel : StackPanel
+{
+    public HandPanel() => ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand);
 }

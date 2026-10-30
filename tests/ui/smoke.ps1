@@ -113,6 +113,14 @@ try {
     Check 'context rows are not counted as better or worse' (HasText 'Context')
     Shot '3-compare'
 
+    Write-Host 'Game library'
+    Ui @('invoke', 'NavLibrary') | Out-Null; Start-Sleep 2
+    Check 'the library lists the game that was opened' (WaitFor 'Sample Game' 10)
+    Check 'a game can be added from the library' ((Ui @('search', 'AddGameButton')) -match 'Found [1-9]')
+    Check 'each game says what is known about it' ((HasText 'Diagnosable from captures') -or (HasText 'Settings entered by you'))
+    Shot '3a-library'
+    Ui @('invoke', 'NavAnalyze') | Out-Null; Start-Sleep 1
+
     Write-Host 'Settings page'
     Ui @('invoke', 'SettingsItem') | Out-Null; Start-Sleep 2
     Check 'AI is off by default and the user is told it is optional' (HasText 'Everything else works without AI')

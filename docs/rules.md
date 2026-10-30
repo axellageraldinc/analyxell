@@ -76,6 +76,9 @@ Tearing: a capture cannot show tearing itself, only the conditions for it, and t
 | `RESIZABLE_BAR_OFF` | Resizable BAR is off and the game is CPU-bound or hitching | Low |
 | `BACKGROUND_CAPTURE_ON` | Windows background recording is on and the game hitches | Low |
 | `MEMORY_INTEGRITY_ON` | Memory integrity is on and the game is CPU-bound or hitching. Information only; no advice to turn it off | Info |
+| `UPSCALING_OFF_GPU_BOUND` | the game's settings show DLSS off, the GPU is the limit and the average is under 60 fps | Medium |
+| `FRAME_GENERATION_ON` | frame generation is on and the game hitches, pacing is uneven (99th percentile animation error 8 ms+) or latency averages 50 ms+. A hypothesis to test | Low |
+| `REFLEX_OFF` | low latency mode is off, the GPU is the limit and latency averages 40 ms+ | Low |
 | `RAY_TRACING_WITH_HITCHES` | the game's settings show ray tracing on and the capture hitches | Medium (a hypothesis to test) |
 
 ## Programs competing with the game

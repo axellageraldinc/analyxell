@@ -6,6 +6,10 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ### Changed
 
+- New Game library page: every game daignostic knows (built in, seen in a capture, or added by you), what is known about its settings, and a way to add a game by choosing its file and entering its settings. Settings you enter for a game are used for captures recorded after you saved them.
+- The game's own settings now matter: upscaling off while the GPU is the limit, frame generation on while motion or latency is off, low latency mode off while the GPU is the limit, and the game's VSync setting feed the findings, not only the AI.
+- The chart legend shows a hand cursor so it is clear you can press a name to hide or show a line.
+
 - Game settings now belong to one capture. A game's config file only holds its latest settings, so an older capture was being judged by newer settings (and so was the AI). A config saved after the capture was recorded is no longer used; you can say "these are the settings I played with" or enter them yourself, and they are kept for that capture only.
 - Charts with several lines: press a name in the legend to hide or show that line (at least one stays visible); the scale follows what is shown.
 - The AI can ask for what it is missing without asking you a question: it names checks from a short list daignostic offers (background programs, PC setup, game settings), they appear as buttons you press, daignostic runs them read-only, and the answer is marked out of date until you ask again. Anything the AI names that was not offered is dropped.

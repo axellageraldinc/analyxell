@@ -50,6 +50,45 @@ public sealed class GameProfileStore(string directory)
         File.WriteAllText(PathFor(profile.ProcessName), JsonSerializer.Serialize(profile, CoreJsonContext.Default.GameProfile));
     }
 
+    /// <summary>Every game profile on this PC: games that were opened in a capture or added by the user.</summary>
+    public IReadOnlyList<GameProfile> List()
+    {
+        var result = new List<GameProfile>();
+        if (!Directory.Exists(directory))
+        {
+            return result;
+        }
+
+        foreach (var file in Directory.EnumerateFiles(directory, "*.json"))
+        {
+            try
+            {
+                if (JsonSerializer.Deserialize(File.ReadAllText(file), CoreJsonContext.Default.GameProfile) is { ProcessName.Length: > 0 } profile)
+                {
+                    result.Add(profile);
+                }
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+            {
+                // A damaged file is skipped; the rest of the Library still shows.
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>Remembers that a game was seen in a capture, without changing anything the user entered.</summary>
+    public void EnsureSeen(string processName, string game)
+    {
+        if (processName.Length == 0 || Load(processName) is not null)
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(PathFor(processName), JsonSerializer.Serialize(new GameProfile { ProcessName = processName, Game = game }, CoreJsonContext.Default.GameProfile));
+    }
+
     public void Delete(string processName)
     {
         var path = PathFor(processName);

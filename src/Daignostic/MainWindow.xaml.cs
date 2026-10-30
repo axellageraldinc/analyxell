@@ -37,6 +37,7 @@ public sealed partial class MainWindow : Window
             : (args.SelectedItemContainer?.Tag as string) switch
             {
                 "compare" => typeof(ComparePage),
+                "library" => typeof(LibraryPage),
                 _ => typeof(AnalyzePage),
             };
 

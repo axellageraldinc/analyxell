@@ -257,7 +257,7 @@ internal static class Rules
         }
 
         // 4. Display sync, tearing, latency and pacing.
-        EvaluateDisplay(Add, metrics, extra, system, vrr);
+        EvaluateDisplay(Add, metrics, extra, system, vrr, settings);
 
         if (extra.LatencyAvgMs is { } la && (la >= 60 || extra.LatencyP95Ms >= 100))
         {
@@ -303,7 +303,7 @@ internal static class Rules
         }
 
         // 5b. Causes that need several signals: CPU limits, change over time, memory setup, Windows options.
-        DeepRules.Evaluate(Add, metrics, freezes, stutters, bottleneck, trends, info, system);
+        DeepRules.Evaluate(Add, metrics, freezes, stutters, bottleneck, trends, info, system, settings, extra);
 
         // 6. Programs competing with the game.
         if (background is not null)
@@ -323,7 +323,7 @@ internal static class Rules
 
     internal delegate void AddFinding(string id, Severity severity, string title, string detail, string[] keys, string[] suggestions, bool localOnly = false);
 
-    private static void EvaluateDisplay(AddFinding add, FrameMetrics metrics, ExtraSignals x, SystemContext system, bool vrr)
+    private static void EvaluateDisplay(AddFinding add, FrameMetrics metrics, ExtraSignals x, SystemContext system, bool vrr, GameSettings? settings)
     {
         var tearing = x.TearingAllowedPct >= 90 && x.SyncZeroPct >= 90;
         if (!tearing)
@@ -333,7 +333,7 @@ internal static class Rules
 
         // What the user entered about VSync wins over what a capture can see: the capture records what the game asked for,
         // and a VSync override in the GPU driver happens after that, so it is invisible in the capture.
-        var vsync = system.Get("setup.vsync") ?? "";
+        var vsync = system.Get("setup.vsync") ?? (settings?.IsOn("vsync") == true ? "On (in-game)" : "");
         if (vsync.Contains("driver", StringComparison.OrdinalIgnoreCase) ||
             vsync.StartsWith("Fast", StringComparison.OrdinalIgnoreCase))
         {

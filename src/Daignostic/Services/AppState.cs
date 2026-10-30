@@ -87,7 +87,11 @@ internal static class AppState
     private static Analyzed Analyze(CaptureFile file, BackgroundScanResult? background)
     {
         var info = file.Info;
-        var live = GameConfigReaders.Find(info, AppServices.ConfigReaders)?.TryRead();
+        AppServices.Profiles.EnsureSeen(info.ProcessName, info.Game);
+        var profile = info.ProcessName.Length > 0 ? AppServices.Profiles.Load(info.ProcessName) : null;
+
+        // The game's own config file if daignostic can read it, otherwise what the user entered for the game.
+        var live = GameConfigReaders.Find(info, AppServices.ConfigReaders)?.TryRead() ?? GameLibrary.ProfileAsSettings(profile);
         var key = CaptureSettingsResolver.KeyFor(info);
         var resolved = CaptureSettingsResolver.Resolve(info, live, AppServices.CaptureSettings.Load(key));
         if (resolved is { SaveSnapshot: true, Settings: { } toKeep })
@@ -95,7 +99,6 @@ internal static class AppState
             AppServices.CaptureSettings.Save(key, CaptureSettingsSnapshot.From(toKeep));
         }
 
-        var profile = info.ProcessName.Length > 0 ? AppServices.Profiles.Load(info.ProcessName) : null;
         var installPath = !string.IsNullOrWhiteSpace(profile?.InstallPath)
             ? profile.InstallPath
             : GameLocator.FindSteamInstall(AppServices.Probe, info.Game);

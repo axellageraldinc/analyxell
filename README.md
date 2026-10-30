@@ -21,6 +21,7 @@ You played a game and it stuttered. A capture tells you *that* it did; daignosti
 - **Open or get CapFrameX.** It detects whether CapFrameX is installed, opens it for you, or sends you to the official download page.
 - **Compare two runs.** Changed a setting? See, measure by measure, whether it helped.
 - **Ask an AI, safely, or not at all.** Optionally have an AI explain it and rank the fixes for your data, or export one file and give it to any AI yourself. You see the exact message first, the AI has no tools and never asks questions back, and any claim that cites no evidence is thrown away.
+- **Game library.** See which games daignostic knows, what it knows about their settings, and add your own.
 - **Know your game's settings.** Built in for Black Myth: Wukong. For any other game, type or paste them, or let your own AI pull them out of the config file, with every value checked against the file.
 
 | Analyze | Compare |

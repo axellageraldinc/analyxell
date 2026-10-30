@@ -29,7 +29,7 @@ public class CaptureSettingsTests
 
         Assert.Null(r.Settings);
         Assert.False(r.SaveSnapshot);
-        Assert.Contains("may describe different settings", r.Note);
+        Assert.Contains("may differ from what you played with", r.Note);
         Assert.Same(live, r.LiveConfig);
     }
 

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Daignostic.Core.Capture;
+using Daignostic.Core.Config;
 using Daignostic.Core.SystemInfo;
 
 namespace Daignostic.Core.Analysis;
@@ -19,7 +20,9 @@ internal static class DeepRules
         BottleneckResult bottleneck,
         RunTrends trends,
         CaptureInfo info,
-        SystemContext system)
+        SystemContext system,
+        GameSettings? settings,
+        ExtraSignals extra)
     {
         var hitches = freezes.Count > 0 || stutters.Count > 20 || metrics.Low1AverageFps < metrics.AverageFps * 0.6;
         var cpuBound = bottleneck.Verdict == BottleneckVerdict.CpuBound;
@@ -28,6 +31,7 @@ internal static class DeepRules
         OverTime(add, trends, hitches);
         Memory(add, info, cpuBound, hitches);
         WindowsAndDriver(add, info, system, hitches, cpuBound);
+        GameOptions(add, settings, metrics, bottleneck, extra, hitches);
     }
 
     private static void CpuLimits(Rules.AddFinding add, BottleneckResult b, RunTrends t, FrameMetrics m, bool cpuBound)
@@ -190,6 +194,51 @@ internal static class DeepRules
                 "Memory integrity (virtualization-based security) protects Windows from some attacks and can cost a few percent in CPU-limited games. Many people keep it on for the protection; this is only mentioned because your game is CPU-limited or hitching.",
                 ["system.memory_integrity"],
                 []);
+        }
+    }
+
+    /// <summary>What the game's own settings add to the picture. Only settings that were read for this capture get here.</summary>
+    private static void GameOptions(Rules.AddFinding add, GameSettings? settings, FrameMetrics m, BottleneckResult b, ExtraSignals x, bool hitches)
+    {
+        if (settings is null)
+        {
+            return;
+        }
+
+        var gpuBound = b.Verdict == BottleneckVerdict.GpuBound;
+
+        if (settings.Get("dlss") == "Off" && gpuBound && m.AverageFps < 60)
+        {
+            add("UPSCALING_OFF_GPU_BOUND", Severity.Medium,
+                "Upscaling is off while the GPU is the limit",
+                $"DLSS is off in the game's settings and the GPU is the limit at {F(m.AverageFps)} fps. Upscaling renders fewer pixels and is usually the biggest single gain for a GPU-limited game, at a small cost in sharpness.",
+                ["settings.dlss", "bottleneck.verdict", "fps.average"],
+                [
+                    "Turn DLSS on (Quality first, then Balanced if you need more), then record the same route again and compare.",
+                    "If the game offers FSR or XeSS and your card does not support DLSS, use one of those.",
+                ]);
+        }
+
+        if (settings.Get("frame_generation") is { } fg && fg.StartsWith("On", StringComparison.OrdinalIgnoreCase) &&
+            (hitches || (x.AnimErrorP99Ms ?? 0) >= 8 || (x.LatencyAvgMs ?? 0) >= 50))
+        {
+            add("FRAME_GENERATION_ON", Severity.Low,
+                "Frame generation is on while motion or latency is not right",
+                "Frame generation inserts extra frames to raise the displayed frame rate. It can add latency and uneven pacing, and the frame rate in a capture may count generated frames. It also needs a healthy base frame rate to look good. This is a hypothesis to test, not a proven cause.",
+                ["settings.frame_generation", "pacing.anim_error_p99_ms", "latency.avg_ms", "stutter.count"],
+                [
+                    "Turn frame generation off, record the same route again and compare smoothness and latency.",
+                    "If you keep it, make sure the frame rate without it is already comfortable (about 60 fps or more).",
+                ]);
+        }
+
+        if (settings.Get("low_latency") == "Off" && gpuBound && (x.LatencyAvgMs ?? 0) >= 40)
+        {
+            add("REFLEX_OFF", Severity.Low,
+                "Low latency mode is off while the GPU is the limit",
+                $"Input latency averages {F(x.LatencyAvgMs ?? 0)} ms and the GPU is the limit. A GPU-limited game queues frames, which adds delay; NVIDIA Reflex (or the equivalent low latency mode) keeps that queue short.",
+                ["settings.low_latency", "latency.avg_ms", "bottleneck.verdict"],
+                ["Turn Reflex (low latency mode) on in the game's settings, then record again and compare latency."]);
         }
     }
 

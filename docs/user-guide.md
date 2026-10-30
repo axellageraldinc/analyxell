@@ -51,6 +51,14 @@ The page leads with a one-line **verdict** (healthy, worth fixing, serious probl
 
 **Header buttons.** **Open capture...**, **Recent captures**, **PC setup...**, **Open CapFrameX** (or **Get CapFrameX** if it is not installed) and **Export report...**.
 
+## The game library
+
+**Game library** lists every game daignostic knows: the ones it can read by itself (Black Myth: Wukong today), every game you have opened a capture of, and games you add. Each shows whether its settings are read automatically, entered by you, or unknown ("diagnosable from captures, no settings yet"). Any game can be diagnosed from a capture; settings only make the findings and the AI more accurate.
+
+- **Add a game...** choose the game's `.exe` (daignostic only reads its name and folder), then type or paste its settings, or let your own AI pull them out of its config file.
+- **Edit settings...** and **Set install folder...** change what is known; **Remove from library** forgets a game you added.
+- Settings saved here apply to captures recorded after you saved them. For an older capture, enter its settings on the Analyze page (PC and setup tab), where they are kept for that capture only.
+
 ## Asking an AI (optional)
 
 AI is optional. Without it, everything above still works.

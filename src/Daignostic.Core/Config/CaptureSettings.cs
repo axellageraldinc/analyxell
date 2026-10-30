@@ -107,8 +107,8 @@ public static class CaptureSettingsResolver
             return new ResolvedSettings(live, null, live, true);
         }
 
-        var note = $"The game's config file was last saved on {live.LastModifiedUtc.ToLocalTime():yyyy-MM-dd HH:mm}, after this capture was recorded ({recorded.ToLocalTime():yyyy-MM-dd HH:mm}). "
-            + "It may describe different settings than you played with, so daignostic is not using it for this capture.";
+        var note = $"The game's settings were last saved on {live.LastModifiedUtc.ToLocalTime():yyyy-MM-dd HH:mm}, after this capture was recorded ({recorded.ToLocalTime():yyyy-MM-dd HH:mm}). "
+            + "They may differ from what you played with, so daignostic is not using them for this capture.";
         return new ResolvedSettings(null, note, live, false);
     }
 }
