@@ -1,6 +1,6 @@
 # Gaming problems, their causes and fixes
 
-This is the knowledge behind daignostic's findings: what players usually complain about, what usually causes it, what usually fixes it, and **whether daignostic can see it**. It is the plan the rules in [rules.md](rules.md) follow. Where a cause can only be guessed from a capture, the finding says it is a likely explanation, not a proven one.
+This is the knowledge behind analyxell's findings: what players usually complain about, what usually causes it, what usually fixes it, and **whether analyxell can see it**. It is the plan the rules in [rules.md](rules.md) follow. Where a cause can only be guessed from a capture, the finding says it is a likely explanation, not a proven one.
 
 Thresholds are rules of thumb. Several of the sources below are vendor blogs and forum threads, so no number here is a guarantee; the advice that several independent sources agree on is the advice used.
 
@@ -21,11 +21,11 @@ Sources: [PC stutter guides](https://techfuelhq.com/articles/pc-stuttering-in-ga
 | "It was fine, then a patch / driver broke it" | Needs two runs: use Compare |
 | "It crashes" or "online lag" | Not visible in a frame-time capture (see section 7) |
 
-## 2. Causes, how daignostic recognises them, and the fixes
+## 2. Causes, how analyxell recognises them, and the fixes
 
 ### Hardware limits
 
-| Cause | Evidence in a capture | daignostic finding | Fixes it suggests |
+| Cause | Evidence in a capture | analyxell finding | Fixes it suggests |
 |---|---|---|---|
 | **GPU is the limit** | GPU busy 90%+ of frame time, GPU load ~95%+ | `GPU_BOUND` | Lower resolution or GPU-heavy settings, upscaling, a frame cap just under what the GPU can do |
 | **CPU is the limit** | One thread near 90%+ while the GPU is below 85%; frame rate barely moves with resolution | `CPU_BOUND` ("The CPU is holding the GPU back") | Lower CPU-heavy settings, memory at its rated speed, close background programs; test by lowering resolution |

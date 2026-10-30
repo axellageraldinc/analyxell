@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Analyxell (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Analyxell (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

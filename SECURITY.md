@@ -8,7 +8,7 @@ You can expect an acknowledgement within a few days and a fix or mitigation plan
 
 ## Scope
 
-In scope: the daignostic application and its build and release scripts, for example:
+In scope: the analyxell application and its build and release scripts, for example:
 
 - anything that lets the app or the AI change files, settings or processes it should not (the app is read-only by design, see [ADR 0006](docs/adr/0006-read-only-by-design.md));
 - leaking the API key, device identifiers or file paths to an AI endpoint, to logs or to reports;

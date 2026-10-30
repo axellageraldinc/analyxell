@@ -27,12 +27,12 @@ param(
 $ErrorActionPreference = 'Stop'
 $env:WINAPP_CLI_TELEMETRY_OPTOUT = '1'
 $root = Split-Path $PSScriptRoot -Parent
-$project = Join-Path $root 'src\Daignostic\Daignostic.csproj'
+$project = Join-Path $root 'src\Analyxell\Analyxell.csproj'
 $out = Join-Path $root 'artifacts'
 $rid = "win-$Arch"
 
 # Start from clean Release outputs so nothing built earlier with debug symbols (and their paths) is reused.
-foreach ($dir in @('src\Daignostic.Core\obj', 'src\Daignostic.Corein', 'src\Daignostic\obj', 'src\Daignosticin')) {
+foreach ($dir in @('src\Analyxell.Core\obj', 'src\Analyxell.Corein', 'src\Analyxell\obj', 'src\Analyxellin')) {
     Get-ChildItem (Join-Path $root $dir) -Directory -Filter 'Release*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
     Get-ChildItem (Join-Path $root $dir) -Directory -ErrorAction SilentlyContinue | ForEach-Object { Get-ChildItem $_.FullName -Directory -Filter 'Release*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }
 }
@@ -45,7 +45,7 @@ Remove-Item $portableDir -Recurse -Force -ErrorAction SilentlyContinue
 # No debug symbols in releases: they (and the paths they embed in the DLLs) would carry the build machine's folder names.
 dotnet publish $project -c Release -r $rid "-p:Platform=$Arch" -p:Portable=true -p:DebugType=none -p:DebugSymbols=false -o $portableDir -nologo -v q
 if ($LASTEXITCODE -ne 0) { throw 'Portable publish failed.' }
-$zip = Join-Path $out "daignostic-$Version-portable-$rid.zip"
+$zip = Join-Path $out "analyxell-$Version-portable-$rid.zip"
 Remove-Item $zip -ErrorAction SilentlyContinue
 Compress-Archive -Path (Join-Path $portableDir '*') -DestinationPath $zip -CompressionLevel Optimal
 Write-Host "Portable: $zip"
@@ -58,13 +58,13 @@ if (-not $CertPath) {
     if (-not (Test-Path $CertPath)) {
         Push-Location $certDir
         try {
-            winapp cert generate --manifest (Join-Path $root 'src\Daignostic\Package.appxmanifest') --if-exists skip
+            winapp cert generate --manifest (Join-Path $root 'src\Analyxell\Package.appxmanifest') --if-exists skip
         }
         finally { Pop-Location }
     }
 }
 
-$msix = Join-Path $out "daignostic-$Version-$rid.msix"
+$msix = Join-Path $out "analyxell-$Version-$rid.msix"
 Remove-Item $msix -ErrorAction SilentlyContinue
 
 # Self-contained so the installer works on a PC without the .NET or Windows App SDK runtimes installed.

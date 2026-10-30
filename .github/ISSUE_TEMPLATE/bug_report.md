@@ -18,6 +18,6 @@ labels: bug
 **Capture details** (do not attach real captures; they contain device details)
 - Game and CapFrameX version:
 - Were sensors logged?
-- The numbers daignostic showed versus what CapFrameX showed:
+- The numbers analyxell showed versus what CapFrameX showed:
 
 **Screenshots** (check they show no personal data)

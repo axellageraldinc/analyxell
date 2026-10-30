@@ -6,7 +6,7 @@ Give the prompt below to an image or logo generation AI. Ask for several concept
 
 ## Prompt
 
-> Design an app logo (icon) for **daignostic**, a Windows desktop app that diagnoses PC game performance problems, such as stutter and low frame rates, and explains them with the help of AI. The name is "diagnostic" with "ai" swapped in: dAIgnostic.
+> Design an app logo (icon) for **analyxell**, a Windows desktop app that diagnoses PC game performance problems, such as stutter and low frame rates, and explains them with the help of AI. The name is "analyze" plus "xell" (the author's name), in the family of aixell and xellter.
 >
 > **Concept:** a frame-time graph, the kind a game-performance tool draws, as a calm wavy line that runs left to right, with one sharp spike (a stutter). At the top of the spike sits a four-point sparkle, the common symbol for AI, as if the AI is spotting the problem. Optionally a tiny second sparkle nearby. The idea in one sentence: *"an AI that notices the one frame that went wrong."*
 >
@@ -32,7 +32,7 @@ Put them in the repository's `assets/` folder.
 | `logo.png` | A render of the same icon. | 1024 x 1024 px, PNG with a transparent background (real alpha, not white). Used if the SVG cannot be used. |
 | `logo-mark.svg` | **Only the mark** (wave, spike, sparkle), with no tile. | Same viewBox. Flat shapes in one colour is ideal. Used for tiny sizes and single-colour places. |
 | `logo-mark-light.svg` (optional) | The mark in dark navy, for light backgrounds. | Same as above. |
-| `logo-wordmark.svg` (optional) | A horizontal lockup: icon on the left, the word `daignostic` in lowercase on the right. For the README header. | Text converted to outlines (paths), so it needs no font. Dark and light variants if possible. |
+| `logo-wordmark.svg` (optional) | A horizontal lockup: icon on the left, the word `analyxell` in lowercase on the right. For the README header. | Text converted to outlines (paths), so it needs no font. Dark and light variants if possible. |
 
 If the AI can only produce raster images, a **1024 x 1024 (or larger) transparent PNG** is enough: I will generate the icon sizes and Windows tile assets from it. An SVG is still preferred because it stays sharp at every size.
 

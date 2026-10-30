@@ -2,7 +2,7 @@
 
 ## Our pledge
 
-We want participation in daignostic to be a friendly, respectful and harassment-free experience for everyone, regardless of age, background, identity, experience level or opinions about games and hardware.
+We want participation in analyxell to be a friendly, respectful and harassment-free experience for everyone, regardless of age, background, identity, experience level or opinions about games and hardware.
 
 ## Expected behaviour
 

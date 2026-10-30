@@ -8,7 +8,7 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 - **Look a game up (PCGamingWiki).** On the Analyze page (PC and setup tab) and in the Game library, "Look this game up online" asks PCGamingWiki, only when you press it and sending only the game's name, where the game keeps its settings file and which upscalers, frame generation, VSync and ray tracing options it offers. You read the result before saving. The settings file is then offered to the import with your AI, and the options reach the AI as facts that say what the game offers, not what is switched on.
 
-- **Try it, then check it.** Each step under "What you can do" has "I'll try this and check if it helped". daignostic remembers the current run as the "before"; when you open a later capture of the same game it compares the two and says whether the change helped, made no clear difference, or made things worse.
+- **Try it, then check it.** Each step under "What you can do" has "I'll try this and check if it helped". analyxell remembers the current run as the "before"; when you open a later capture of the same game it compares the two and says whether the change helped, made no clear difference, or made things worse.
 - **Capture quality check.** A warning appears when a capture may not show the whole picture: too short, pinned at a frame cap, apparently recorded in a menu, windowed, or without sensor data. The AI is told too.
 - **Less friction.** "Open my newest capture" and a quiet "A newer capture was recorded" banner while the page is open (when CapFrameX or a captures folder is set up), and "Try a sample" so a new user can see the app before recording anything.
 - **Copy summary to share.** A short, anonymised summary on the clipboard to paste into a forum or chat. It has no file paths, computer name, motherboard or keys.
@@ -30,13 +30,13 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 - Compare now lists the game settings that differ between the two runs (DLSS, frame generation, ray tracing, resolution...), warns when they change the frame rate itself, and tells the AI.
 - Importing game settings with your AI shows the same progress (time, what it is doing, Cancel) and the same failure messages as Ask AI.
 - The Game library finds installed games by asking Steam (every library folder, on any drive), Epic and GOG, and lists the ones you have not opened a capture of yet, with a button to add them. It reads only the launchers' small manifest files; it does not crawl your drives.
-- New Game library page: every game daignostic knows (built in, seen in a capture, or added by you), what is known about its settings, and a way to add a game by choosing its file and entering its settings. Settings you enter for a game are used for captures recorded after you saved them.
+- New Game library page: every game analyxell knows (built in, seen in a capture, or added by you), what is known about its settings, and a way to add a game by choosing its file and entering its settings. Settings you enter for a game are used for captures recorded after you saved them.
 - The game's own settings now matter: upscaling off while the GPU is the limit, frame generation on while motion or latency is off, low latency mode off while the GPU is the limit, and the game's VSync setting feed the findings, not only the AI.
 - The chart legend shows a hand cursor so it is clear you can press a name to hide or show a line.
 
 - Game settings now belong to one capture. A game's config file only holds its latest settings, so an older capture was being judged by newer settings (and so was the AI). A config saved after the capture was recorded is no longer used; you can say "these are the settings I played with" or enter them yourself, and they are kept for that capture only.
 - Charts with several lines: press a name in the legend to hide or show that line (at least one stays visible); the scale follows what is shown.
-- The AI can ask for what it is missing without asking you a question: it names checks from a short list daignostic offers (background programs, PC setup, game settings), they appear as buttons you press, daignostic runs them read-only, and the answer is marked out of date until you ask again. Anything the AI names that was not offered is dropped.
+- The AI can ask for what it is missing without asking you a question: it names checks from a short list analyxell offers (background programs, PC setup, game settings), they appear as buttons you press, analyxell runs them read-only, and the answer is marked out of date until you ask again. Anything the AI names that was not offered is dropped.
 - The AI is told what a capture cannot show (driver VSync, actual tearing, why a spike happened) so it reads the findings the way the rules do.
 - CPU bottlenecks are now spelled out: "The CPU is holding the GPU back", whether one thread is the limit, and stretches where the CPU limited an otherwise GPU-bound run.
 - New diagnoses: performance that declines over a run (with the memory or heat growth that fits), hitches that fade (shader and loading), single-channel or slow memory, Resizable BAR, Game Mode, background recording, desktop-compositor presentation and Memory integrity. See docs/problems-and-causes.md.
@@ -84,4 +84,4 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 - Unit tests, a UI smoke test with a mock AI endpoint, secret scanning, and CI.
 - Documentation: user guide, architecture, privacy, 11 ADRs, 8 BDRs, contributing, security policy, code of conduct.
 
-[Unreleased]: https://github.com/axellageraldinc/daignostic/commits/main
+[Unreleased]: https://github.com/axellageraldinc/analyxell/commits/main

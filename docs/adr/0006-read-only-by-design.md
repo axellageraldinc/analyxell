@@ -9,7 +9,7 @@ The tool inspects another program's data and a game's configuration, and talks t
 
 ## Decision
 
-daignostic never modifies game settings, CapFrameX settings or any file it did not create, never starts captures, and never executes commands. The only writes are:
+analyxell never modifies game settings, CapFrameX settings or any file it did not create, never starts captures, and never executes commands. The only writes are:
 
 | Write | Trigger | Where |
 |---|---|---|
@@ -18,7 +18,7 @@ daignostic never modifies game settings, CapFrameX settings or any file it did n
 | Setup and game settings the user enters | The user presses Save in the setup or game-settings dialog | The app's own data folder |
 | A Markdown report or an AI analysis pack | The user presses **Export** and picks a location in a save dialog | Where the user chooses |
 
-The one program daignostic can start is CapFrameX, and only when the user presses **Open CapFrameX**; it does not record, configure or control it. The "Get CapFrameX" button opens the official GitHub releases page in the browser.
+The one program analyxell can start is CapFrameX, and only when the user presses **Open CapFrameX**; it does not record, configure or control it. The "Get CapFrameX" button opens the official GitHub releases page in the browser.
 
 The AI is given no tools ([ADR 0005](0005-openai-compatible-ai-without-tools.md)), and its advice is text that a person applies by hand. Any future feature that writes (for example applying a graphics preset) must ask the user explicitly each time and be added through a new ADR.
 

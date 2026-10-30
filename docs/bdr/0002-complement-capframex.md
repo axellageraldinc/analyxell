@@ -9,7 +9,7 @@ CapFrameX is a respected, actively developed open-source capture and analysis to
 
 ## Decision
 
-daignostic does not record gameplay. It consumes CapFrameX captures and adds interpretation: rule-based findings, run-to-run comparison and optional AI explanation. Where CapFrameX offers a read-only integration (listing captures over MCP) we use it; we never drive its capture or settings.
+analyxell does not record gameplay. It consumes CapFrameX captures and adds interpretation: rule-based findings, run-to-run comparison and optional AI explanation. Where CapFrameX offers a read-only integration (listing captures over MCP) we use it; we never drive its capture or settings.
 
 ## Consequences
 
@@ -20,4 +20,4 @@ daignostic does not record gameplay. It consumes CapFrameX captures and adds int
 
 ## Success looks like
 
-CapFrameX users see daignostic as a natural next step after recording, not a competitor.
+CapFrameX users see analyxell as a natural next step after recording, not a competitor.

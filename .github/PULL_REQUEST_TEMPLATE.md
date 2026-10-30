@@ -5,7 +5,7 @@
 ## Checklist
 
 - [ ] Tests added or updated (including a case where a rule should *not* fire)
-- [ ] `dotnet test tests\Daignostic.Core.Tests` passes
+- [ ] `dotnet test tests\Analyxell.Core.Tests` passes
 - [ ] `scripts\check-secrets.ps1` passes
 - [ ] `tests\ui\smoke.ps1` passes (if the app UI changed)
 - [ ] Docs and `CHANGELOG.md` updated

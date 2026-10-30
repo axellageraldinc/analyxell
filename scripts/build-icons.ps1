@@ -21,7 +21,7 @@ Add-Type -AssemblyName System.Drawing
 
 $root = Split-Path $PSScriptRoot -Parent
 $assets = Join-Path $root 'assets'
-$tmp = Join-Path ([IO.Path]::GetTempPath()) ("daignostic-icons-" + [guid]::NewGuid().ToString('N'))
+$tmp = Join-Path ([IO.Path]::GetTempPath()) ("analyxell-icons-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force $tmp | Out-Null
 
 function Read-Pixels([string]$path) {

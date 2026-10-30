@@ -31,14 +31,14 @@ function Check([string]$name, [bool]$ok, [string]$detail = '') {
 
 function Ui {
     param([string[]]$UiArgs)
-    $out = & winapp ui @UiArgs -a Daignostic 2>&1 | Out-String
+    $out = & winapp ui @UiArgs -a Analyxell 2>&1 | Out-String
     return $out
 }
 
 function HasText([string]$text) { return (Ui @('search', $text)) -match 'Found [1-9]' }
 
 function Shot([string]$name) {
-    $h = (& winapp ui list-windows -a Daignostic 2>&1 | Out-String) -replace "$([char]27)\[[0-9;]*m", ''
+    $h = (& winapp ui list-windows -a Analyxell 2>&1 | Out-String) -replace "$([char]27)\[[0-9;]*m", ''
     if ("$h" -match 'HWND (\d+): "[^"]*" \(window,') { & winapp ui screenshot -w $Matches[1] -o (Join-Path $work "$name.png") 2>&1 | Out-Null }
 }
 
@@ -56,17 +56,17 @@ $mock = Start-Job -ScriptBlock { param($s, $p, $l) & $s -Port $p -LogPath $l } -
 Start-Sleep 2
 
 # The app keeps its settings (and the encrypted AI key) in two places: the package's own folder, and the plain
-# %LOCALAPPDATA%\Daignostic folder that the portable build uses (a packaged app reads through to it when its own
+# %LOCALAPPDATA%\Analyxell folder that the portable build uses (a packaged app reads through to it when its own
 # folder is empty). Set both aside so this run starts clean and can never overwrite or delete the real ones;
 # they are put back at the end.
 $dataDirs = @(
-    (Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Packages') -Filter 'axellageraldinc.Daignostic_*' -Directory -ErrorAction SilentlyContinue |
-        ForEach-Object { Join-Path $_.FullName 'LocalCache\Local\Daignostic' } | Select-Object -First 1),
-    (Join-Path $env:LOCALAPPDATA 'Daignostic')
+    (Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Packages') -Filter 'axellageraldinc.Analyxell_*' -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object { Join-Path $_.FullName 'LocalCache\Local\Analyxell' } | Select-Object -First 1),
+    (Join-Path $env:LOCALAPPDATA 'Analyxell')
 ) | Where-Object { $_ }
-$backupRoot = Join-Path $env:TEMP 'daignostic-appdata-backup'
+$backupRoot = Join-Path $env:TEMP 'analyxell-appdata-backup'
 Remove-Item $backupRoot -Recurse -Force -ErrorAction SilentlyContinue
-Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process Analyxell -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep 1
 for ($i = 0; $i -lt $dataDirs.Count; $i++) {
     if (Test-Path $dataDirs[$i]) {
@@ -75,9 +75,9 @@ for ($i = 0; $i -lt $dataDirs.Count; $i++) {
     }
 }
 
-Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process Analyxell -ErrorAction SilentlyContinue | Stop-Process -Force
 Write-Host 'Building and launching the app'
-Push-Location (Join-Path $root 'src\Daignostic')
+Push-Location (Join-Path $root 'src\Analyxell')
 $run = & winapp run . --arch $Arch --clean --detach --json --args "`"$a`" `"$b`"" 2>&1 | Out-String
 Pop-Location
 if ($run -notmatch 'ProcessId') { Write-Host $run; Stop-Job $mock; exit 2 }
@@ -138,7 +138,7 @@ try {
     Check 'AI is off by default and the user is told it is optional' (HasText 'Everything else works without AI')
     Check 'the MCP tutorial is there' (HasText 'How to turn on CapFrameX')
     Shot '3b-capframex-card'
-    Check 'CapFrameX status is shown (installed or not found, with a way forward)' ((HasText 'CapFrameX is installed') -or (HasText 'CapFrameX was not found') -or (HasText 'daignostic could not find where it is installed'))
+    Check 'CapFrameX status is shown (installed or not found, with a way forward)' ((HasText 'CapFrameX is installed') -or (HasText 'CapFrameX was not found') -or (HasText 'analyxell could not find where it is installed'))
     Ui @('invoke', 'AiEnabledSwitch') | Out-Null; Start-Sleep 1
     Check 'the API key assurance is shown' (HasText 'Your key stays on this PC')
     Check 'the field is called Model name, not Preset' ((HasText 'Model name') -and -not (HasText 'Preset'))
@@ -169,12 +169,12 @@ try {
     Check 'cited AI claim is shown' (WaitFor 'Freezes look GPU-side' 15)
     Check 'uncited AI claim is discarded and flagged' ((-not (HasText 'Made-up claim')) -and (HasText 'discarded because they cited no measured evidence'))
     Check 'what the AI could not tell is shown instead of a question' (HasText 'Whether VSync was on')
-    # The AI may only name checks daignostic offered: the background check was already done, the made-up one is dropped.
+    # The AI may only name checks analyxell offered: the background check was already done, the made-up one is dropped.
     Check 'the AI is offered buttons for checks it asked for' ((Ui @('search', 'pc_setup')) -match 'Found [1-9]')
     Check 'a check that was already done is not offered again' ((Ui @('search', 'background_check')) -notmatch 'Found [1-9]')
     Check 'a check the AI made up is dropped' ((Ui @('search', 'delete_everything')) -notmatch 'Found [1-9]')
     Ui @('invoke', 'pc_setup') | Out-Null
-    Check 'pressing a check opens the form in daignostic, not the AI' (WaitFor 'Your PC setup' 10)
+    Check 'pressing a check opens the form in analyxell, not the AI' (WaitFor 'Your PC setup' 10)
     Ui @('invoke', 'Cancel') | Out-Null; Start-Sleep 1
     Shot '5-ai'
 
@@ -206,7 +206,7 @@ try {
 
     UseModel 'garbage-model'
     Ui @('invoke', 'AskAiButton') | Out-Null
-    Check 'an unreadable reply is explained and shown' ((WaitFor 'not in a form daignostic can read' 15) -and ((Ui @('search', 'AiTryAgainButton')) -match 'Found [1-9]'))
+    Check 'an unreadable reply is explained and shown' ((WaitFor 'not in a form analyxell can read' 15) -and ((Ui @('search', 'AiTryAgainButton')) -match 'Found [1-9]'))
     Shot '5c-ai-error'
 
     UseModel 'badkey-model'
@@ -215,7 +215,7 @@ try {
 }
 finally {
     # Remove what the test saved, then put the user's own settings back.
-    Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force
+    Get-Process Analyxell -ErrorAction SilentlyContinue | Stop-Process -Force
     for ($i = 0; $i -lt $dataDirs.Count; $i++) {
         Remove-Item $dataDirs[$i] -Recurse -Force -ErrorAction SilentlyContinue
         $saved = Join-Path $backupRoot $i

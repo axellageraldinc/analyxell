@@ -1,10 +1,10 @@
 ﻿# Architecture
 
-daignostic is a WinUI 3 desktop app on top of a UI-free analysis library.
+analyxell is a WinUI 3 desktop app on top of a UI-free analysis library.
 
 ```
  CapFrameX capture (.json) --+
- Game config (.ini) ---------+--> Daignostic.Core --> facts + findings --> Daignostic (WinUI app)
+ Game config (.ini) ---------+--> Analyxell.Core --> facts + findings --> Analyxell (WinUI app)
  CapFrameX MCP (list only) --+         |                                        |
                                        +-- AI prompt (facts only) --> AI endpoint (optional)
 ```
@@ -13,9 +13,9 @@ daignostic is a WinUI 3 desktop app on top of a UI-free analysis library.
 
 | Project | Role |
 |---|---|
-| `src/Daignostic.Core` | All logic. Plain .NET 10, no UI types, fully unit tested. |
-| `src/Daignostic` | WinUI 3 app: windows, pages, view models, chart control. No analysis logic. |
-| `tests/Daignostic.Core.Tests` | xUnit tests with synthetic captures. |
+| `src/Analyxell.Core` | All logic. Plain .NET 10, no UI types, fully unit tested. |
+| `src/Analyxell` | WinUI 3 app: windows, pages, view models, chart control. No analysis logic. |
+| `tests/Analyxell.Core.Tests` | xUnit tests with synthetic captures. |
 | `tests/ui` | PowerShell UI smoke test driven by UI Automation, with a mock AI endpoint. |
 | `scripts` | Icon generation, packaging, secret scanning. |
 

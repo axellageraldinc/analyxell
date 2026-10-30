@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Analyxell.Core/Analyxell.Core.csproj" />
+    <Project Path="src/Analyxell/Analyxell.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Analyxell.Core.Tests/Analyxell.Core.Tests.csproj" />
+  </Folder>
+</Solution>

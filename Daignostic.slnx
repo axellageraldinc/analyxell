@@ -1,9 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Daignostic.Core/Daignostic.Core.csproj" />
-    <Project Path="src/Daignostic/Daignostic.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Daignostic.Core.Tests/Daignostic.Core.Tests.csproj" />
-  </Folder>
-</Solution>

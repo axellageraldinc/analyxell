@@ -9,7 +9,7 @@ Correctness of the numbers and of the diagnosis is the product. UI code is slow 
 
 ## Decision
 
-All parsing, statistics, detection, rules, AI message building and settings live in `Daignostic.Core` (plain `net10.0`, no UI references). The WinUI project only presents results.
+All parsing, statistics, detection, rules, AI message building and settings live in `Analyxell.Core` (plain `net10.0`, no UI references). The WinUI project only presents results.
 
 ## Consequences
 

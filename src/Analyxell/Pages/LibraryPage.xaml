@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="Analyxell.Pages.LibraryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:Analyxell.ViewModels"
+    NavigationCacheMode="Disabled">
+
+    <ScrollViewer>
+        <StackPanel Padding="32,8,32,32" Spacing="16" MaxWidth="1240" HorizontalAlignment="Stretch">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Game library" Style="{StaticResource TitleTextBlockStyle}" />
+                    <TextBlock
+                        TextWrapping="Wrap"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Every game analyxell knows about. Any game can be diagnosed from a CapFrameX capture; this page shows what else is known about it, so you can be sure it is covered." />
+                </StackPanel>
+                <Button
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="AddGameButton"
+                    Content="Add a game..."
+                    Style="{StaticResource AccentButtonStyle}"
+                    Click="AddGame_Click" />
+            </Grid>
+
+            <InfoBar
+                Severity="Informational"
+                IsOpen="True"
+                IsClosable="False"
+                Title="Games appear here when a launcher says they are installed, or when you open a capture of them."
+                Message="You can also add one yourself. Settings you add are used for captures recorded after you saved them; for an older capture, enter its settings on the Analyze page." />
+
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.IsScanning, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsScanning, Mode=OneWay}" />
+                <TextBlock AutomationProperties.AutomationId="LibraryScanStatus" Text="{x:Bind ViewModel.ScanStatus, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                <Button Content="Look again" Click="Rescan_Click" />
+            </StackPanel>
+
+            <TextBlock
+                Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
+                Text="No games yet. Open a capture on the Analyze page, or add a game."
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+            <ItemsControl ItemsSource="{x:Bind ViewModel.Games, Mode=OneTime}" AutomationProperties.AutomationId="LibraryGames">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:LibraryRow">
+                        <Expander Margin="0,0,0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <Expander.Header>
+                                <StackPanel Spacing="2" Padding="0,6">
+                                    <TextBlock Text="{x:Bind Game, Mode=OneTime}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                    <TextBlock Text="{x:Bind StatusText, Mode=OneTime}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+                            </Expander.Header>
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{x:Bind Detail, Mode=OneTime}" TextWrapping="Wrap" />
+                                <TextBlock Text="{x:Bind InstallText, Mode=OneTime}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind LookedUp, Mode=OneTime}" Visibility="{x:Bind HasLookedUp, Mode=OneTime}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" />
+                                <ItemsControl ItemsSource="{x:Bind Settings, Mode=OneTime}" Visibility="{x:Bind HasSettings, Mode=OneTime}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SettingRow">
+                                            <Grid ColumnSpacing="16" Padding="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="260" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{x:Bind Label, Mode=OneTime}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                <TextBlock Grid.Column="1" Text="{x:Bind Value, Mode=OneTime}" TextWrapping="Wrap" />
+                                                <TextBlock Grid.Column="2" Text="{x:Bind Source, Mode=OneTime}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button Content="Add to library..." Click="AddDetected_Click" Visibility="{x:Bind IsDetectedOnly, Mode=OneTime}" />
+                                <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind CanEdit, Mode=OneTime}">
+                                    <Button Content="Edit settings..." Tag="{x:Bind ProcessName, Mode=OneTime}" Click="Edit_Click" />
+                                    <Button Content="Set install folder..." Tag="{x:Bind ProcessName, Mode=OneTime}" Click="InstallFolder_Click" />
+                                    <Button AutomationProperties.AutomationId="LookUpOnlineButton" Content="Look up online..." Tag="{x:Bind ProcessName, Mode=OneTime}" Click="LookUp_Click" />
+                                    <Button Content="Remove from library" Tag="{x:Bind ProcessName, Mode=OneTime}" Click="Remove_Click" Visibility="{x:Bind IsUserAdded, Mode=OneTime}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

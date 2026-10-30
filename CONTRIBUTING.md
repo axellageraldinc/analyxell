@@ -1,4 +1,4 @@
-# Contributing to daignostic
+# Contributing to analyxell
 
 Thanks for helping. This project values accuracy and trust above feature count, so contributions are reviewed for correctness, tests and honesty of wording.
 
@@ -19,17 +19,17 @@ For anything larger than a small fix, open an issue first so we agree on the app
 2. **Every claim is traceable.** A finding must cite facts that exist ([ADR 0004](docs/adr/0004-deterministic-analysis-ai-explains.md)).
 3. **No guessing labels.** If you are not sure what a game value means, keep it as a raw id ([ADR 0010](docs/adr/0010-game-config-readers.md)).
 4. **No secrets, no personal data, no real captures** in code, tests, issues or screenshots. Use synthetic data.
-5. **Logic goes in `Daignostic.Core`**, with tests. Keep the WinUI project thin.
+5. **Logic goes in `Analyxell.Core`**, with tests. Keep the WinUI project thin.
 
 ## Setup
 
 See [docs/development.md](docs/development.md). In short:
 
 ```powershell
-git clone https://github.com/axellageraldinc/daignostic
-cd daignostic
+git clone https://github.com/axellageraldinc/analyxell
+cd analyxell
 git config core.hooksPath .githooks
-dotnet test tests\Daignostic.Core.Tests
+dotnet test tests\Analyxell.Core.Tests
 ```
 
 ## Making a change
@@ -38,7 +38,7 @@ dotnet test tests\Daignostic.Core.Tests
 2. Make the change with tests. A bug fix starts with a failing test.
 3. Run, and make sure these pass:
    ```powershell
-   dotnet test tests\Daignostic.Core.Tests
+   dotnet test tests\Analyxell.Core.Tests
    powershell -File scripts\check-secrets.ps1
    powershell -File tests\ui\smoke.ps1      # if you touched the app
    ```

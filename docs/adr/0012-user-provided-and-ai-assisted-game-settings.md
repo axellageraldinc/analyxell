@@ -9,10 +9,10 @@
 
 ## Decision
 
-For games without a reader, the user can supply settings in two ways, both stored locally per game (`%LOCALAPPDATA%\Daignostic\games\<process>.json`):
+For games without a reader, the user can supply settings in two ways, both stored locally per game (`%LOCALAPPDATA%\Analyxell\games\<process>.json`):
 
 1. **Type or paste** them: JSON, `key=value`, `key: value` or INI lines. No AI is involved.
-2. **Import with the user's AI.** The user picks the game's config file. daignostic first removes lines that look like secrets (token, password, key, session, e-mail and similar words, long opaque strings) and anonymises user profile paths, shows the exact text, and only sends it when the user presses the button. The AI is asked to return only graphics and performance related keys exactly as written.
+2. **Import with the user's AI.** The user picks the game's config file. analyxell first removes lines that look like secrets (token, password, key, session, e-mail and similar words, long opaque strings) and anonymises user profile paths, shows the exact text, and only sends it when the user presses the button. The AI is asked to return only graphics and performance related keys exactly as written.
 
 The AI's answer is not trusted. A setting is kept only if its key **and** value literally appear in the file text that was sent; everything else is discarded and counted. Imported and typed settings are always shown as **raw** values with their source ("entered by you", "AI import from file.ini, checked against the file"), never reinterpreted as friendly labels. The user reviews the list and presses Save.
 
