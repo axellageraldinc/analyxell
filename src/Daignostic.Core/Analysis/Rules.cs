@@ -103,7 +103,7 @@ internal static class Rules
             {
                 Add("DISK_ACTIVITY_AT_FREEZES", Severity.Medium,
                     "Disk activity spiked around the freezes",
-                    $"{busy.Label} reached {F(busy.AtFreezeMax)}% near a freeze. Asset streaming from a slow or busy drive can cause this.",
+                    $"{FriendlyDrive(busy.Label)} reached {F(busy.AtFreezeMax)}% near a freeze. Asset streaming from a slow or busy drive can cause this. {GameDriveNote(system, busy.Label)}",
                     ["freeze_ctx." + CaptureAnalyzer.Slug(busy.Label) + ".at_freeze_max"],
                     [
                         "Install the game on an SSD, an NVMe drive if you can.",
@@ -533,6 +533,41 @@ internal static class Rules
         }
 
         return steps;
+    }
+
+    /// <summary>"Drive activity (nvme/1)" becomes "NVMe drive 1 (nvme/1)" so nobody has to know the monitoring software's naming.</summary>
+    private static string FriendlyDrive(string label)
+    {
+        var open = label.IndexOf('(', StringComparison.Ordinal);
+        var close = label.IndexOf(')', StringComparison.Ordinal);
+        if (open < 0 || close < open)
+        {
+            return label;
+        }
+
+        var id = label[(open + 1)..close];
+        var parts = id.Split('/');
+        var kind = parts[0].Equals("nvme", StringComparison.OrdinalIgnoreCase) ? "NVMe" : "SATA or other";
+        return parts.Length > 1 ? $"{kind} drive {parts[1]} ({id})" : label;
+    }
+
+    /// <summary>Says what is known about which drive the game is on, since the monitoring software cannot tell us.</summary>
+    private static string GameDriveNote(SystemContext system, string busyLabel)
+    {
+        var media = system.Get("game_drive.media");
+        if (media is null)
+        {
+            return "Which drive holds the game is not known: set the install folder in PC setup to find out.";
+        }
+
+        var bus = system.Get("game_drive.bus");
+        var busyIsNvme = busyLabel.Contains("nvme", StringComparison.OrdinalIgnoreCase);
+        var gameIsNvme = bus?.Contains("NVMe", StringComparison.OrdinalIgnoreCase) == true;
+        var what = bus is null ? media : $"{media} ({bus})";
+        var same = busyIsNvme == gameIsNvme
+            ? "That is the same kind of drive, so it may be the game's drive, but the numbers are the monitoring software's order and do not say for sure."
+            : "That is a different kind of drive from the game's, so the spike was probably another drive.";
+        return $"The game is installed on a {what}. {same}";
     }
 
     private static string F(double v) => v.ToString("0.#", CultureInfo.InvariantCulture);

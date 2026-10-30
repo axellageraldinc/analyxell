@@ -11,6 +11,7 @@ public enum ChartView
     Clocks,
     Memory,
     Power,
+    Disk,
     Latency,
 }
 
@@ -36,7 +37,7 @@ public static class ChartDataBuilder
     public static IReadOnlyList<ChartView> Available(CaptureRun run)
     {
         var views = new List<ChartView> { ChartView.FrameTime, ChartView.Fps };
-        foreach (var view in new[] { ChartView.Load, ChartView.Temperatures, ChartView.Clocks, ChartView.Memory, ChartView.Power, ChartView.Latency })
+        foreach (var view in new[] { ChartView.Load, ChartView.Temperatures, ChartView.Clocks, ChartView.Memory, ChartView.Power, ChartView.Disk, ChartView.Latency })
         {
             if (Build(run, view).Lines.Count > 0)
             {
@@ -94,6 +95,24 @@ public static class ChartDataBuilder
                 return Spec(view, "Power draw", "W", "Power drawn by the GPU and CPU package.",
                     Sensors(run, ("GPU Power", "Power", "GPU", 0), ("CPU Package", "Power", "CPU", 2)),
                     [], null, zeroBased: true, clip: false);
+
+            case ChartView.Disk:
+            {
+                // One line per drive the monitoring software saw. Freezes that line up with a spike here point at storage.
+                var lines = new List<ChartLine>();
+                var palette = 0;
+                foreach (var drive in run.FindSensors("Drive Total Activity", "Load"))
+                {
+                    if (drive.Values.Length == run.SensorTimeSec.Length && drive.Values.Any(double.IsFinite))
+                    {
+                        lines.Add(new ChartLine(DriveLabel(drive.Id), run.SensorTimeSec, drive.Values, palette++ % 5));
+                    }
+                }
+
+                return Spec(view, "Drive activity", "%",
+                    "How busy each drive was. A drive near 100% when the game freezes points at storage. 'NVMe' is an NVMe SSD; 'SATA or other' is a hard disk or SATA SSD. The numbers are the monitoring software's order, not Windows disk numbers.",
+                    lines, [], 100, zeroBased: true, clip: false);
+            }
 
             case ChartView.Latency:
             {
@@ -197,6 +216,14 @@ public static class ChartDataBuilder
                 return Spec(view, label, unit, $"{label} for both runs.", lines.Count == 2 ? lines : [], [], fixedMax, zero, false);
             }
         }
+    }
+
+    /// <summary>"/nvme/1/load/33" becomes "NVMe drive 1"; "/hdd/0/load/33" becomes "SATA or other drive 0".</summary>
+    internal static string DriveLabel(string sensorId)
+    {
+        var parts = sensorId.Trim('/').Split('/');
+        var kind = parts.Length > 0 && parts[0].Equals("nvme", StringComparison.OrdinalIgnoreCase) ? "NVMe" : "SATA or other";
+        return parts.Length > 1 ? $"{kind} drive {parts[1]}" : $"{kind} drive";
     }
 
     private static ChartSpec Spec(ChartView view, string label, string unit, string caption, IReadOnlyList<ChartLine> lines,

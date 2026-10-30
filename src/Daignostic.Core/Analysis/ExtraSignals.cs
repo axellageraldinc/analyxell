@@ -46,7 +46,7 @@ public sealed record ExtraSignals(
         {
             var n = 0;
             var over = 0;
-            foreach (var ms in run.FrameMs)
+            foreach (var ms in FrameGenerationSignal.SeriesFor(run).Ms)
             {
                 if (ms > 0 && double.IsFinite(ms))
                 {

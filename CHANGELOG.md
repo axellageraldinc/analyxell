@@ -6,6 +6,9 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ### Changed
 
+- You can answer what the AI says it could not tell: each item has a box, and "Ask again with my answers" sends them with the next question (the AI is told to use them as given and not ask again).
+- New Drive activity chart (one line per drive, named NVMe or SATA/other), and the disk finding says which kind of drive spiked and what is known about the game's drive.
+- Fixed: with frame generation, generated frames were counted as frames above the display's refresh rate (49% on a 180 Hz panel).
 - With frame generation, FPS and lows are now measured on the frames the screen displays, not on the generated frames presented under a millisecond after each real one (which read as 1,600 fps frames). A "Rendered" card shows what your PC really draws, and the finding warns when that base rate is low.
 - Frame generation no longer reads as stutter: the capture is checked for generated frames (labelled frames, a steady long-short frame-time pattern, or a display changing twice as often as the game presents) and stutter is judged on groups of frames when they are present. Chart markers use the same judgement.
 - Compare now lists the game settings that differ between the two runs (DLSS, frame generation, ray tracing, resolution...), warns when they change the frame rate itself, and tells the AI.

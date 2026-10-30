@@ -7,6 +7,17 @@ using Daignostic.Services;
 
 namespace Daignostic.ViewModels;
 
+/// <summary>One thing the AI could not tell, with a box for the user's own answer.</summary>
+public sealed partial class AiUnknownView(string text, Action<string, string> changed) : ObservableObject
+{
+    public string Text { get; } = text;
+
+    [ObservableProperty]
+    public partial string Answer { get; set; } = "";
+
+    partial void OnAnswerChanged(string value) => changed(Text, value);
+}
+
 public sealed record AiCheckView(string Id, string Title, string Why);
 
 public sealed record AiItemView(string Title, string Confidence, string Explanation, string Actions, string Evidence, bool HasActions, bool IsFirst);
@@ -58,6 +69,31 @@ public sealed partial class AiPanelViewModel : ObservableObject
 
     /// <summary>Checks the AI said would help. Pressing one runs it here, in daignostic; the AI never runs anything.</summary>
     public ObservableCollection<AiCheckView> Checks { get; } = [];
+
+    /// <summary>What the AI could not tell, each with room for the user to answer. Answers go into the next question.</summary>
+    public ObservableCollection<AiUnknownView> UnknownItems { get; } = [];
+
+    private readonly Dictionary<string, string> _answers = [];
+
+    /// <summary>The user's note, followed by their answers to the AI's open questions. Null when both are empty.</summary>
+    private string? EffectiveNote()
+    {
+        var answered = _answers.Where(a => !string.IsNullOrWhiteSpace(a.Value)).ToList();
+        var note = Note.Trim();
+        if (answered.Count == 0)
+        {
+            return note.Length == 0 ? null : note;
+        }
+
+        var lines = answered.Select(a => $"- {a.Key}: {a.Value.Trim()}");
+        return (note.Length > 0 ? note + "\n\n" : "") + "Answers to your open questions:\n" + string.Join("\n", lines);
+    }
+
+    private void OnUnknownAnswered(string question, string answer)
+    {
+        _answers[question] = answer;
+        RefreshPreview();
+    }
 
     /// <summary>Raised when the user presses one of <see cref="Checks"/>. The page runs it (a form or a read-only check).</summary>
     public event Action<string>? CheckRequested;
@@ -193,12 +229,13 @@ public sealed partial class AiPanelViewModel : ObservableObject
     public void RefreshPreview()
     {
         IsConfigured = AppServices.Settings.AiConfigured;
-        Preview = _buildPreview(string.IsNullOrWhiteSpace(Note) ? null : Note) ?? "";
+        Preview = _buildPreview(EffectiveNote()) ?? "";
         OnPropertyChanged(nameof(Destination));
     }
 
     public void Reset()
     {
+        _answers.Clear();
         ClearAnswer();
         ClearError();
         ExportStatus = "";
@@ -209,6 +246,7 @@ public sealed partial class AiPanelViewModel : ObservableObject
     private void ClearAnswer()
     {
         Items.Clear();
+        UnknownItems.Clear();
         Checks.Clear();
         OnPropertyChanged(nameof(HasChecks));
         IsStale = false;
@@ -246,7 +284,7 @@ public sealed partial class AiPanelViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanExport))]
     private async Task ExportPackAsync()
     {
-        var pack = _buildPack(string.IsNullOrWhiteSpace(Note) ? null : Note);
+        var pack = _buildPack(EffectiveNote());
         if (pack is null)
         {
             return;
@@ -286,7 +324,7 @@ public sealed partial class AiPanelViewModel : ObservableObject
 
         try
         {
-            var analysis = await _run(string.IsNullOrWhiteSpace(Note) ? null : Note, cts.Token);
+            var analysis = await _run(EffectiveNote(), cts.Token);
             Analysis = analysis;
             Items.Clear();
             var first = true;
@@ -315,6 +353,11 @@ public sealed partial class AiPanelViewModel : ObservableObject
 
             OnPropertyChanged(nameof(HasChecks));
             CheckStatus = "";
+            foreach (var unknown in analysis.Unknowns ?? [])
+            {
+                UnknownItems.Add(new AiUnknownView(unknown, OnUnknownAnswered) { Answer = _answers.GetValueOrDefault(unknown, "") });
+            }
+
             UnknownsText = analysis.Unknowns is { Count: > 0 } u ? string.Join(Environment.NewLine, u.Select(x => "• " + x)) : "";
             Summary = analysis.Summary;
             IsInconclusive = analysis.Inconclusive;

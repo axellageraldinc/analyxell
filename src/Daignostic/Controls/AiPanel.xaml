@@ -257,9 +257,33 @@
                 </StackPanel>
             </Border>
 
-            <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.HasUnknowns, Mode=OneWay}">
+            <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasUnknowns, Mode=OneWay}" AutomationProperties.AutomationId="AiUnknowns">
                 <TextBlock Text="What the AI could not tell from this data" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                <TextBlock Text="{x:Bind ViewModel.UnknownsText, Mode=OneWay}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock
+                    TextWrapping="Wrap"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="If you know the answer to any of these, type it in and ask again. Your answers are used as you give them; the AI cannot check them. Leave a box empty to skip it." />
+                <ItemsControl ItemsSource="{x:Bind ViewModel.UnknownItems, Mode=OneTime}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AiUnknownView">
+                            <StackPanel Spacing="4" Margin="0,0,0,10">
+                                <TextBlock Text="{x:Bind Text, Mode=OneTime}" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                <TextBox
+                                    PlaceholderText="Your answer (optional)"
+                                    Text="{x:Bind Answer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    MaxLength="300"
+                                    AutomationProperties.Name="Your answer" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button
+                    AutomationProperties.AutomationId="AskAgainButton"
+                    Content="Ask again with my answers"
+                    Style="{StaticResource AccentButtonStyle}"
+                    IsEnabled="{x:Bind ViewModel.NotBusy, Mode=OneWay}"
+                    Command="{x:Bind ViewModel.AskCommand, Mode=OneTime}" />
             </StackPanel>
         </StackPanel>
     </StackPanel>
