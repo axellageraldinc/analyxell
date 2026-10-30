@@ -1,0 +1,48 @@
+# Build output
+bin/
+obj/
+publish/
+artifacts/
+*.msix
+*.msixbundle
+*.appx
+*.exe
+*.zip
+
+# IDE / OS
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+Thumbs.db
+desktop.ini
+
+# Secrets and credentials -- never commit these
+*.pfx
+*.snk
+*.key
+*.pem
+*.p12
+*.cer
+.env
+.env.*
+*.secrets.json
+secrets.json
+appsettings.*.local.json
+appsettings.local.json
+FIRST-LOGIN.txt
+*credentials*
+*token*
+
+# Local data and captures (can contain machine and game information)
+data/
+captures/
+*.cfx.json
+CapFrameX-*.json
+sensor-dump*.txt
+tool-results/
+
+# Claude Code local state
+.claude/settings.local.json
+.claude/projects/
