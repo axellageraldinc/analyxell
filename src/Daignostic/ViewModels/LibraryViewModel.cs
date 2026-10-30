@@ -18,7 +18,9 @@ public sealed record LibraryRow(
     bool CanEdit,
     bool IsUserAdded,
     bool IsDetectedOnly = false,
-    string InstallFolder = "");
+    string InstallFolder = "",
+    string LookedUp = "",
+    bool HasLookedUp = false);
 
 /// <summary>
 /// Lists every game daignostic knows, so a user can see that the game they want to diagnose is covered, what is known
@@ -66,6 +68,17 @@ public sealed partial class LibraryViewModel : ObservableObject
         }
     }
 
+    private static string LookedUpText(string processName)
+    {
+        if (processName.Length == 0 || AppServices.Profiles.Load(processName) is not { GameFacts.Count: > 0 } profile)
+        {
+            return "";
+        }
+
+        var offers = string.Join("; ", profile.GameFacts.Where(f => f.Key is "upscaling" or "frame_generation" or "vsync_modes" or "fps_cap").Select(f => $"{f.Key.Replace('_', ' ')}: {f.Value}"));
+        return "Looked up on PCGamingWiki (" + profile.FactsSource + "). The game offers: " + offers + (profile.ConfigPath.Length > 0 ? ". Settings file found: " + profile.ConfigPath : ".");
+    }
+
     public void Refresh()
     {
         var entries = GameLibrary.Build(AppServices.Profiles.List(), AppServices.ConfigReaders, _detected);
@@ -83,7 +96,9 @@ public sealed partial class LibraryViewModel : ObservableObject
                 CanEdit: e.ProcessName.Length > 0,
                 e.IsUserAdded,
                 IsDetectedOnly: e.Status == LibraryStatus.Detected,
-                InstallFolder: e.InstallPath));
+                InstallFolder: e.InstallPath,
+                LookedUp: LookedUpText(e.ProcessName),
+                HasLookedUp: LookedUpText(e.ProcessName).Length > 0));
         }
 
         Count = Games.Count;

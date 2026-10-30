@@ -6,6 +6,8 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ### Added
 
+- **Look a game up (PCGamingWiki).** On the Analyze page (PC and setup tab) and in the Game library, "Look this game up online" asks PCGamingWiki, only when you press it and sending only the game's name, where the game keeps its settings file and which upscalers, frame generation, VSync and ray tracing options it offers. You read the result before saving. The settings file is then offered to the import with your AI, and the options reach the AI as facts that say what the game offers, not what is switched on.
+
 - **Try it, then check it.** Each step under "What you can do" has "I'll try this and check if it helped". daignostic remembers the current run as the "before"; when you open a later capture of the same game it compares the two and says whether the change helped, made no clear difference, or made things worse.
 - **Capture quality check.** A warning appears when a capture may not show the whole picture: too short, pinned at a frame cap, apparently recorded in a menu, windowed, or without sensor data. The AI is told too.
 - **Less friction.** "Open my newest capture" and a quiet "A newer capture was recorded" banner while the page is open (when CapFrameX or a captures folder is set up), and "Try a sample" so a new user can see the app before recording anything.

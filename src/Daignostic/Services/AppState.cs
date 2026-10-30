@@ -119,7 +119,8 @@ internal static class AppState
             : GameLocator.FindSteamInstall(AppServices.Probe, info.Game);
         var system = SystemSettingsReader.Read(AppServices.Probe, AppServices.Setup.Load().Values, installPath, info.Gpu);
 
-        var result = CaptureAnalyzer.Analyze(file, 0, resolved.Settings, system, background, AppServices.Settings.ShareBackgroundAppNames);
+        var gameFacts = profile?.GameFacts is { Count: > 0 } facts ? facts : null;
+        var result = CaptureAnalyzer.Analyze(file, 0, resolved.Settings, system, background, AppServices.Settings.ShareBackgroundAppNames, gameFacts);
         return new Analyzed(result, resolved.Note, resolved.LiveConfig);
     }
 }

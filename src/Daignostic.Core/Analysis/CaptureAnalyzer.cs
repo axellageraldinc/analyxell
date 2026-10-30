@@ -63,7 +63,8 @@ public static class CaptureAnalyzer
         GameSettings? settings = null,
         SystemContext? system = null,
         BackgroundScanResult? background = null,
-        bool shareBackgroundNames = false)
+        bool shareBackgroundNames = false,
+        IReadOnlyList<ProfileItem>? gameFacts = null)
     {
         var run = capture.Runs[Math.Clamp(runIndex, 0, capture.Runs.Count - 1)];
         system ??= SystemContext.Empty;
@@ -81,7 +82,7 @@ public static class CaptureAnalyzer
         var extra = ExtraSignals.Compute(run);
         var trends = RunTrends.Compute(run, stutters, freezes);
 
-        var facts = BuildFacts(capture.Info, metrics, stutters, freezes, bottleneck, context, extra, settings, system, background, shareBackgroundNames, trends, frameGen, CaptureQuality.Assess(capture.Info, run, metrics, bottleneck));
+        var facts = BuildFacts(capture.Info, metrics, stutters, freezes, bottleneck, context, extra, settings, system, background, shareBackgroundNames, trends, frameGen, CaptureQuality.Assess(capture.Info, run, metrics, bottleneck), gameFacts);
         var findings = Rules.Evaluate(metrics, freezes, stutters, bottleneck, context, extra, settings, system, background, facts, capture.Info, trends, frameGen);
         var specs = PcSpecs.Build(capture.Info, run, extra, bottleneck, system);
 
@@ -104,7 +105,8 @@ public static class CaptureAnalyzer
         bool shareBackgroundNames,
         RunTrends trends,
         FrameGenerationSignal frameGen,
-        IReadOnlyList<QualityIssue> quality)
+        IReadOnlyList<QualityIssue> quality,
+        IReadOnlyList<ProfileItem>? gameFacts)
     {
         var f = new Dictionary<string, string>();
         void Put(string key, string? value)
@@ -138,6 +140,17 @@ public static class CaptureAnalyzer
         PutNum("pc.memory_modules", memory.Modules, "0");
         PutNum("pc.memory_mts", memory.SpeedMTs, "0");
         PutNum("cpu.limited_pct", trends.CpuLimitedPct, "0");
+        if (gameFacts is { Count: > 0 })
+        {
+            // What the game can do, from a community wiki the user chose to look up. It says which options exist, not which are on.
+            foreach (var fact in gameFacts)
+            {
+                Put("game." + fact.Key, fact.Value);
+            }
+
+            Put("game.info_source", "PCGamingWiki (community-written; says what the game offers, not what is switched on)");
+        }
+
         if (quality.Count > 0)
         {
             Put("capture.quality_issues", CaptureQuality.ForFacts(quality));

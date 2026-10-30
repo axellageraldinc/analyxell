@@ -38,6 +38,30 @@ internal static class GameSettingsDialog
     public static Task<bool> ShowForGameAsync(XamlRoot root, GameProfile profile) =>
         ShowCoreAsync(root, profile.Game, profile, new List<ProfileItem>(profile.Items), null);
 
+    /// <summary>The file a lookup found: the file itself, or the newest settings-like file in the folder it found.</summary>
+    private static string? KnownConfigFile(string path)
+    {
+        if (path.Length == 0)
+        {
+            return null;
+        }
+
+        if (File.Exists(path))
+        {
+            return path;
+        }
+
+        if (!Directory.Exists(path))
+        {
+            return null;
+        }
+
+        return Directory.EnumerateFiles(path, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(f => f.EndsWith(".ini", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".cfg", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault();
+    }
+
     private static async Task<bool> ShowCoreAsync(XamlRoot root, string gameName, GameProfile profile, List<ProfileItem> items, Action<List<ProfileItem>, string>? afterSave)
     {
         var origin = string.IsNullOrWhiteSpace(profile.Origin) ? "entered by you" : profile.Origin;
@@ -92,6 +116,7 @@ internal static class GameSettingsDialog
         var send = new Button { Content = "Send this to my AI and extract the settings", IsEnabled = false };
         AutomationProperties.SetAutomationId(send, "GameSettingsAiButton");
         var choose = new Button { Content = "Choose the game's config file..." };
+        Button? knownButton = null;
 
         // Progress for the AI request: what it is doing, how long, and a way out.
         var ring = new ProgressRing { Width = 22, Height = 22, IsActive = false };
@@ -112,34 +137,48 @@ internal static class GameSettingsDialog
                 : "This needs an AI. Turn one on in Settings, or use the other tab to type the settings yourself.",
         };
         choose.IsEnabled = aiOk;
+        async Task UseFileAsync(string path)
+        {
+                try
+                {
+                    var info = new FileInfo(path);
+                    if (info.Length > 2 * 1024 * 1024)
+                    {
+                        status.Text = "That file is larger than 2 MB, which is too big to be a settings file.";
+                        return;
+                    }
+
+                    fileName = info.Name;
+                    redacted = AiSettingsImporter.Redact(await File.ReadAllTextAsync(path));
+                    preview.Text = redacted.Text;
+                    status.Text = $"Ready to send {redacted.Text.Length:N0} characters. {redacted.LinesRemoved} line(s) removed as possible secrets, {redacted.PathsAnonymised} user path(s) anonymised." + (redacted.Truncated ? " The file was long and was cut." : "");
+                    send.IsEnabled = true;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    status.Text = "The file could not be read: " + ex.Message;
+                }
+        }
+
         choose.Click += async (_, _) =>
         {
-            var path = await Pickers.PickAnyFileAsync();
-            if (path is null)
+            var picked = await Pickers.PickAnyFileAsync();
+            if (picked is not null)
             {
-                return;
-            }
-
-            try
-            {
-                var info = new FileInfo(path);
-                if (info.Length > 2 * 1024 * 1024)
-                {
-                    status.Text = "That file is larger than 2 MB, which is too big to be a settings file.";
-                    return;
-                }
-
-                fileName = info.Name;
-                redacted = AiSettingsImporter.Redact(await File.ReadAllTextAsync(path));
-                preview.Text = redacted.Text;
-                status.Text = $"Ready to send {redacted.Text.Length:N0} characters. {redacted.LinesRemoved} line(s) removed as possible secrets, {redacted.PathsAnonymised} user path(s) anonymised." + (redacted.Truncated ? " The file was long and was cut." : "");
-                send.IsEnabled = true;
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                status.Text = "The file could not be read: " + ex.Message;
+                await UseFileAsync(picked);
             }
         };
+
+        // A lookup the user ran earlier may have found the game's settings file; offer it so nothing has to be browsed for.
+        var known = KnownConfigFile(profile.ConfigPath);
+        if (known is not null)
+        {
+            var useKnown = new Button { Content = "Use the settings file found by the lookup" };
+            AutomationProperties.SetAutomationId(useKnown, "GameSettingsUseKnownFile");
+            useKnown.Click += async (_, _) => await UseFileAsync(known);
+            knownButton = useKnown;
+        }
+
         send.Click += async (_, _) =>
         {
             if (redacted is null)
@@ -202,7 +241,16 @@ internal static class GameSettingsDialog
                 send.IsEnabled = true;
             }
         };
-        var importTab = new StackPanel { Spacing = 8, Margin = new Thickness(0, 8, 0, 0), Children = { aiNote, choose, preview, send, progress } };
+        var importTab = new StackPanel { Spacing = 8, Margin = new Thickness(0, 8, 0, 0), Children = { aiNote } };
+        if (knownButton is not null)
+        {
+            importTab.Children.Add(knownButton);
+        }
+
+        importTab.Children.Add(choose);
+        importTab.Children.Add(preview);
+        importTab.Children.Add(send);
+        importTab.Children.Add(progress);
 
         var pivot = new Pivot { Height = 330 };
         pivot.Items.Add(new PivotItem { Header = "Type or paste", Content = pasteTab });

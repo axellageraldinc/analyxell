@@ -476,6 +476,7 @@
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <Button AutomationProperties.AutomationId="GameSettingsButton" Content="Add game settings..." Click="GameSettings_Click" />
                                 <Button AutomationProperties.AutomationId="PcSetupButton" Content="Edit PC setup..." Click="Setup_Click" />
+                                <Button AutomationProperties.AutomationId="LookUpGameButton" Content="Look this game up online..." Click="LookUp_Click" />
                             </StackPanel>
                             <Expander
                                 Header="What daignostic knows about your setup"

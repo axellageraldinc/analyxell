@@ -19,6 +19,15 @@ public sealed class GameProfile
 
     public string InstallPath { get; set; } = "";
 
+    /// <summary>The game's settings file (or its folder) as found on this PC, when a lookup located it.</summary>
+    public string ConfigPath { get; set; } = "";
+
+    /// <summary>What the game can do, from a lookup the user asked for (upscalers, frame generation, VSync modes...). Community-written.</summary>
+    public List<ProfileItem> GameFacts { get; set; } = [];
+
+    /// <summary>Where <see cref="GameFacts"/> came from, for example the wiki page address.</summary>
+    public string FactsSource { get; set; } = "";
+
     public List<ProfileItem> Items { get; set; } = [];
 }
 

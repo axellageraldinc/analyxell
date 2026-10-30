@@ -99,6 +99,14 @@ public sealed partial class LibraryPage : Page
         }
     }
 
+    private async void LookUp_Click(object sender, RoutedEventArgs e)
+    {
+        if (ProfileFor(sender) is { } profile && await WikiLookupDialog.ShowAsync(XamlRoot, profile.Game, profile.ProcessName, profile.InstallPath))
+        {
+            ViewModel.Refresh();
+        }
+    }
+
     private async void InstallFolder_Click(object sender, RoutedEventArgs e)
     {
         if (ProfileFor(sender) is { } profile && await Pickers.PickFolderAsync() is { } folder)

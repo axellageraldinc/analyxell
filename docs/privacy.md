@@ -69,3 +69,7 @@ Whatever you send is handled under that provider's terms. Prefer a local or self
 
 - Never commit real captures: they contain machine details. Tests use synthetic data.
 - `scripts/check-secrets.ps1` scans for keys, tokens, personal paths and e-mail addresses. It runs as a pre-commit hook and in CI.
+
+## Looking a game up
+
+The only thing daignostic sends to the internet by itself is a lookup you start: "Look this game up online" sends the game's name to pcgamingwiki.com (a community-written wiki) through its public API, with a User-Agent that names daignostic. Nothing else is sent: no capture, path, device name or key. The answer is shown to you before anything is saved, and what is saved stays on this PC.
