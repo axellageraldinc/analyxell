@@ -7,6 +7,8 @@ using Daignostic.Services;
 
 namespace Daignostic.ViewModels;
 
+public sealed record AiCheckView(string Id, string Title, string Why);
+
 public sealed record AiItemView(string Title, string Confidence, string Explanation, string Actions, string Evidence, bool HasActions, bool IsFirst);
 
 /// <summary>
@@ -22,14 +24,17 @@ public sealed partial class AiPanelViewModel : ObservableObject
     private readonly Func<string?, string?> _buildPreview;
     private readonly Func<string?, string?> _buildPack;
     private readonly string _packName;
+    private readonly Func<IReadOnlyList<AiCheck>>? _availableChecks;
     private CancellationTokenSource? _cts;
 
     public AiPanelViewModel(
         Func<string?, CancellationToken, Task<AiAnalysis>> run,
         Func<string?, string?> buildPreview,
         Func<string?, string?> buildPack,
-        string packName)
+        string packName,
+        Func<IReadOnlyList<AiCheck>>? availableChecks = null)
     {
+        _availableChecks = availableChecks;
         _run = run;
         _buildPreview = buildPreview;
         _buildPack = buildPack;
@@ -50,6 +55,24 @@ public sealed partial class AiPanelViewModel : ObservableObject
     }
 
     public ObservableCollection<AiItemView> Items { get; } = [];
+
+    /// <summary>Checks the AI said would help. Pressing one runs it here, in daignostic; the AI never runs anything.</summary>
+    public ObservableCollection<AiCheckView> Checks { get; } = [];
+
+    /// <summary>Raised when the user presses one of <see cref="Checks"/>. The page runs it (a form or a read-only check).</summary>
+    public event Action<string>? CheckRequested;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCheckStatus))]
+    public partial string CheckStatus { get; set; } = "";
+
+    public bool HasCheckStatus => CheckStatus.Length > 0;
+
+    /// <summary>True when the data changed after the answer was given, so the answer no longer covers everything.</summary>
+    [ObservableProperty]
+    public partial bool IsStale { get; set; }
+
+    public bool HasChecks => Checks.Count > 0;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasPreview), nameof(CanAsk), nameof(CanExport))]
@@ -186,6 +209,10 @@ public sealed partial class AiPanelViewModel : ObservableObject
     private void ClearAnswer()
     {
         Items.Clear();
+        Checks.Clear();
+        OnPropertyChanged(nameof(HasChecks));
+        IsStale = false;
+        CheckStatus = "";
         Analysis = null;
         HasAnalysis = false;
         Summary = "";
@@ -194,6 +221,21 @@ public sealed partial class AiPanelViewModel : ObservableObject
         IsInconclusive = false;
         OnPropertyChanged(nameof(BarStatus));
     }
+
+    /// <summary>Keeps the answer on screen but says it is out of date, after the user added information.</summary>
+    public void MarkStale()
+    {
+        if (HasAnalysis)
+        {
+            IsStale = true;
+            Checks.Clear();
+            OnPropertyChanged(nameof(HasChecks));
+        }
+
+        RefreshPreview();
+    }
+
+    public void RequestCheck(string id) => CheckRequested?.Invoke(id);
 
     [RelayCommand]
     private void SetupAi() => AppNavigation.GoTo("settings");
@@ -261,6 +303,18 @@ public sealed partial class AiPanelViewModel : ObservableObject
                 first = false;
             }
 
+            Checks.Clear();
+            var offered = _availableChecks?.Invoke() ?? [];
+            foreach (var id in analysis.NextChecks ?? [])
+            {
+                if (offered.FirstOrDefault(c => c.Id == id) is { } check)
+                {
+                    Checks.Add(new AiCheckView(check.Id, check.Title, check.Why));
+                }
+            }
+
+            OnPropertyChanged(nameof(HasChecks));
+            CheckStatus = "";
             UnknownsText = analysis.Unknowns is { Count: > 0 } u ? string.Join(Environment.NewLine, u.Select(x => "• " + x)) : "";
             Summary = analysis.Summary;
             IsInconclusive = analysis.Inconclusive;

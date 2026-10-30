@@ -15,6 +15,14 @@ public sealed partial class AiPanel : UserControl
 
     public AiPanel() => InitializeComponent();
 
+    private void Check_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string id })
+        {
+            ViewModel.RequestCheck(id);
+        }
+    }
+
     public AiPanelViewModel ViewModel
     {
         get => (AiPanelViewModel)GetValue(ViewModelProperty);

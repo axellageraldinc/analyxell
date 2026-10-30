@@ -1,3 +1,4 @@
+using Daignostic.Core.Ai;
 using Daignostic.Core.Analysis;
 using Daignostic.Core.Capture;
 using Daignostic.Core.SystemInfo;
@@ -106,6 +107,36 @@ public class DeepRuleTests
     {
         Assert.Equal(new MemoryConfig(2, 3200), MemoryConfig.Parse("32GB (2x16GB) 3200MT/s"));
         Assert.Equal(new MemoryConfig(null, null), MemoryConfig.Parse("32GB"));
+    }
+
+    [Fact]
+    public void The_AI_is_offered_only_checks_that_would_add_something_and_may_only_name_those()
+    {
+        var plain = Analyze(TestData.Run(TestData.Steady(3000, 10)));
+        var offered = AiChecks.Available(plain).Select(c => c.Id).ToList();
+        Assert.Contains(AiChecks.Background, offered);
+        Assert.Contains(AiChecks.PcSetup, offered);
+        Assert.Contains("available_checks", AiPrompts.BuildSingle(plain, null));
+
+        var reply = """{"summary":"x","inconclusive":false,"findings":[{"title":"t","explanation":"e","evidence":["fps.average"],"actions":[],"confidence":"low"}],"unknowns":[],"next_checks":["background_check","delete_everything","background_check"]}""";
+        var parsed = AiResponseParser.Parse(reply, plain.Facts.Keys.ToHashSet(), offered.ToHashSet());
+
+        Assert.Equal([AiChecks.Background], parsed.NextChecks);
+    }
+
+    [Fact]
+    public void A_check_that_was_already_done_is_not_offered_again()
+    {
+        var ctx = new SystemContext(
+        [
+            new SystemSetting("setup.vsync", "VSync", "Off", SettingSource.User),
+            new SystemSetting("setup.display_sync", "Display sync", "G-SYNC", SettingSource.User),
+            new SystemSetting("setup.frame_cap", "Frame cap", "141", SettingSource.User),
+        ]);
+
+        var offered = AiChecks.Available(Analyze(TestData.Run(TestData.Steady(3000, 10)), system: ctx)).Select(c => c.Id);
+
+        Assert.DoesNotContain(AiChecks.PcSetup, offered);
     }
 
     [Fact]

@@ -45,6 +45,13 @@
         </StackPanel>
 
         <TextBlock
+            AutomationProperties.AutomationId="AiCheckStatus"
+            Text="{x:Bind ViewModel.CheckStatus, Mode=OneWay}"
+            Visibility="{x:Bind ViewModel.HasCheckStatus, Mode=OneWay}"
+            TextWrapping="Wrap"
+            Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+        <TextBlock
             Text="{x:Bind ViewModel.ExportStatus, Mode=OneWay}"
             Visibility="{x:Bind ViewModel.HasExportStatus, Mode=OneWay}"
             TextWrapping="Wrap"
@@ -150,6 +157,13 @@
         <!-- The answer -->
         <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasResult, Mode=OneWay}" AutomationProperties.AutomationId="AiResult">
             <TextBlock Text="The AI's answer" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <InfoBar
+                AutomationProperties.AutomationId="AiStale"
+                Severity="Warning"
+                Title="You added information after this answer."
+                Message="Press Ask AI again so the answer includes it."
+                IsOpen="{x:Bind ViewModel.IsStale, Mode=OneWay}"
+                IsClosable="False" />
             <TextBlock
                 Text="{x:Bind ViewModel.Summary, Mode=OneWay}"
                 Visibility="{x:Bind ViewModel.HasSummary, Mode=OneWay}"
@@ -204,6 +218,44 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+
+            <!-- What the AI would like to know, as buttons daignostic runs itself -->
+            <Border
+                AutomationProperties.AutomationId="AiChecks"
+                Visibility="{x:Bind ViewModel.HasChecks, Mode=OneWay}"
+                Padding="16,12"
+                CornerRadius="8"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+                BorderThickness="1">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="This would make the answer better" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <TextBlock
+                        TextWrapping="Wrap"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="The AI cannot look at your PC. daignostic can check these for you, read-only, when you press the button. Then ask again." />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Checks, Mode=OneTime}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:AiCheckView">
+                                <Grid ColumnSpacing="12" Padding="0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button
+                                        AutomationProperties.AutomationId="{x:Bind Id, Mode=OneTime}"
+                                        Content="{x:Bind Title, Mode=OneTime}"
+                                        MinWidth="220"
+                                        Click="Check_Click"
+                                        Tag="{x:Bind Id, Mode=OneTime}" />
+                                    <TextBlock Grid.Column="1" Text="{x:Bind Why, Mode=OneTime}" TextWrapping="Wrap" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
 
             <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.HasUnknowns, Mode=OneWay}">
                 <TextBlock Text="What the AI could not tell from this data" Style="{StaticResource BodyStrongTextBlockStyle}" />

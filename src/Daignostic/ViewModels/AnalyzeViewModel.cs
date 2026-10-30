@@ -64,7 +64,7 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         VerdictHeadline = "";
         VerdictDetail = "";
         CapFrameX = new CapFrameXViewModel();
-        Ai = new AiPanelViewModel(RunAiAsync, BuildPreview, BuildPack, "daignostic-ai-pack");
+        Ai = new AiPanelViewModel(RunAiAsync, BuildPreview, BuildPack, "daignostic-ai-pack", () => Current is null ? [] : AiChecks.Available(Current.Result));
         if (AppState.Selected is { } selected)
         {
             Show(selected);
@@ -490,7 +490,16 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         OnPropertyChanged(nameof(HasAttention));
         OnPropertyChanged(nameof(HasNotes));
         OnPropertyChanged(nameof(HasBackground));
-        Ai.Reset();
+        if (keepView)
+        {
+            // The user added information: keep the answer visible, but say it no longer covers everything.
+            Ai.MarkStale();
+        }
+        else
+        {
+            Ai.Reset();
+        }
+
         RaiseChart();
     }
 

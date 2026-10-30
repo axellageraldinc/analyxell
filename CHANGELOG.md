@@ -6,6 +6,8 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ### Changed
 
+- The AI can ask for what it is missing without asking you a question: it names checks from a short list daignostic offers (background programs, PC setup, game settings), they appear as buttons you press, daignostic runs them read-only, and the answer is marked out of date until you ask again. Anything the AI names that was not offered is dropped.
+- The AI is told what a capture cannot show (driver VSync, actual tearing, why a spike happened) so it reads the findings the way the rules do.
 - CPU bottlenecks are now spelled out: "The CPU is holding the GPU back", whether one thread is the limit, and stretches where the CPU limited an otherwise GPU-bound run.
 - New diagnoses: performance that declines over a run (with the memory or heat growth that fits), hitches that fade (shader and loading), single-channel or slow memory, Resizable BAR, Game Mode, background recording, desktop-compositor presentation and Memory integrity. See docs/problems-and-causes.md.
 - Your VSync setup now counts: VSync set in the GPU driver cannot be seen in a capture, so the tearing findings believe what you entered.

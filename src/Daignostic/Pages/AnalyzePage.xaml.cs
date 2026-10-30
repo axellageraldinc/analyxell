@@ -1,4 +1,5 @@
-﻿using Daignostic.Core.Analysis;
+﻿using Daignostic.Core.Ai;
+using Daignostic.Core.Analysis;
 using Daignostic.Core.Mcp;
 using Daignostic.Dialogs;
 using Daignostic.Services;
@@ -18,6 +19,7 @@ public sealed partial class AnalyzePage : Page
         InitializeComponent();
         ViewModel.ChartChanged += OnChartChanged;
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        ViewModel.Ai.CheckRequested += OnCheckRequested;
         TabFindings.Text = ViewModel.FindingsTabText;
         Loaded += async (_, _) =>
         {
@@ -92,6 +94,25 @@ public sealed partial class AnalyzePage : Page
         if (e.ClickedItem is CaptureListing item)
         {
             await ViewModel.LoadPathAsync(item.Id);
+        }
+    }
+
+    /// <summary>Runs a check the AI asked for. Each one is a read-only check or a form the user fills in; the AI runs nothing.</summary>
+    private async void OnCheckRequested(string id)
+    {
+        switch (id)
+        {
+            case AiChecks.Background:
+                ViewModel.Ai.CheckStatus = "Checking running programs for 10 seconds...";
+                await ViewModel.CheckBackgroundCommand.ExecuteAsync(null);
+                ViewModel.Ai.CheckStatus = "Done. Press Ask AI again to include the result.";
+                break;
+            case AiChecks.PcSetup:
+                Setup_Click(this, new RoutedEventArgs());
+                break;
+            case AiChecks.GameSettings:
+                GameSettings_Click(this, new RoutedEventArgs());
+                break;
         }
     }
 

@@ -17,7 +17,43 @@ public sealed record AiAnalysis(
     IReadOnlyList<AiItem> Items,
     int DroppedUncited,
     string RawText,
-    IReadOnlyList<string>? Unknowns = null);
+    IReadOnlyList<string>? Unknowns = null,
+    IReadOnlyList<string>? NextChecks = null);
+
+/// <summary>A read-only check or form daignostic can offer the user, so the AI never has to ask or reach into the PC.</summary>
+public sealed record AiCheck(string Id, string Title, string Why);
+
+public static class AiChecks
+{
+    public const string Background = "background_check";
+    public const string PcSetup = "pc_setup";
+    public const string GameSettings = "game_settings";
+
+    /// <summary>The checks that would add something new for this capture. Ones already done are not offered again.</summary>
+    public static IReadOnlyList<AiCheck> Available(AnalysisResult r)
+    {
+        var list = new List<AiCheck>();
+        if (r.Background is null)
+        {
+            list.Add(new AiCheck(Background, "Check background programs (10 s)",
+                "Shows which other programs use CPU, disk and GPU, and whether known troublemakers are running."));
+        }
+
+        if (r.System.Items.Count(i => i.Key.StartsWith("setup.", StringComparison.Ordinal)) < 3)
+        {
+            list.Add(new AiCheck(PcSetup, "Add your PC setup",
+                "Tell daignostic what a capture cannot show: G-SYNC or FreeSync, VSync, frame cap, monitor and where the game is installed."));
+        }
+
+        if (r.Settings is null)
+        {
+            list.Add(new AiCheck(GameSettings, "Add the game's settings",
+                "Graphics settings such as ray tracing and upscaling are not in a capture."));
+        }
+
+        return list;
+    }
+}
 
 public static class AiPrompts
 {
@@ -33,8 +69,10 @@ public static class AiPrompts
         7. Be concise. Plain language.
         8. This is a single question and a single answer, not a conversation. NEVER ask the user a question and never end by asking for more information: nobody can answer you. You cannot look anything up and you have no access to the user's PC; you only see this JSON.
         9. When something you need is missing, do not ask for it. Work with what is there: state the assumption you made, give guidance that holds either way ("if X, then Y; otherwise Z"), and list what you could not determine in "unknowns" as plain statements, for example "Which drive the game is installed on" or "Whether VSync was on".
+        10. If the input has "available_checks", you may name up to 3 of its ids in "next_checks": the ones whose result would most improve your answer. The app can run them for the user. You cannot run them, and naming them is not a question to the user. Use only ids from that list, and leave "next_checks" empty when none would help.
+        11. How to read this data. The findings come from fixed rules in the app, so trust them over your own guess about what was measured. A capture cannot show: why a spike happened (the sensors around it only narrow it down), actual tearing (only whether it was allowed), VSync forced in the GPU driver (the capture shows what the game asked for, so a "setup.vsync" fact outranks "present.sync_interval_zero_pct"), network lag, crashes or driver quality. Settings the user typed in ("setup.*" facts) are used as given and never verified. Findings marked as a likely explanation are hypotheses: keep them as hypotheses. A CPU limit means the GPU waits for the processor, so lowering resolution or GPU settings will not raise the frame rate. Hitches that fade as the run goes on point to shader compilation or loading, which a second run will confirm. Never claim a fix is certain: say what to change, then to record again and compare.
         Reply with ONLY a JSON object, no markdown, in exactly this shape:
-        {"summary":"one or two sentences","inconclusive":false,"findings":[{"title":"short","explanation":"what it means","evidence":["fps.p1","finding:FREEZES"],"actions":["one concrete thing to try"],"confidence":"low|medium|high"}],"unknowns":["what could not be determined from this data"]}
+        {"summary":"one or two sentences","inconclusive":false,"findings":[{"title":"short","explanation":"what it means","evidence":["fps.p1","finding:FREEZES"],"actions":["one concrete thing to try"],"confidence":"low|medium|high"}],"unknowns":["what could not be determined from this data"],"next_checks":["background_check"]}
         """;
 
     /// <summary>The exact user message sent to the model for a single capture. The UI shows this before sending.</summary>
@@ -47,6 +85,21 @@ public static class AiPrompts
             w.WriteString("task", "analyze one capture");
             WriteFacts(w, result.Facts);
             WriteFindings(w, result.Findings, prefix: "");
+            var checks = AiChecks.Available(result);
+            if (checks.Count > 0)
+            {
+                w.WriteStartArray("available_checks");
+                foreach (var c in checks)
+                {
+                    w.WriteStartObject();
+                    w.WriteString("id", c.Id);
+                    w.WriteString("what", c.Why);
+                    w.WriteEndObject();
+                }
+
+                w.WriteEndArray();
+            }
+
             WriteNote(w, userNote);
             w.WriteEndObject();
         }
@@ -148,7 +201,7 @@ public static class AiResponseParser
     /// Parses the model reply and drops any item that cites no known evidence key. Items are never trusted
     /// just because they are well formed: a claim with no traceable source is discarded.
     /// </summary>
-    public static AiAnalysis Parse(string text, ISet<string> validKeys)
+    public static AiAnalysis Parse(string text, ISet<string> validKeys, ISet<string>? validChecks = null)
     {
         var json = ExtractJsonObject(text) ?? throw new AiException("The AI reply did not contain the structured answer this app needs.", kind: AiErrorKind.Reply, rawReply: text);
 
@@ -196,7 +249,8 @@ public static class AiResponseParser
             }
 
             var unknowns = Strings(root, "unknowns").Take(6).ToList();
-            return new AiAnalysis(summary, inconclusive || items.Count == 0, items, dropped, text, unknowns);
+            var checks = validChecks is null ? [] : Strings(root, "next_checks").Where(validChecks.Contains).Distinct().Take(3).ToList();
+            return new AiAnalysis(summary, inconclusive || items.Count == 0, items, dropped, text, unknowns, checks);
         }
     }
 
@@ -232,7 +286,7 @@ public sealed class AiAnalyst(IAiClient client)
     public async Task<AiAnalysis> AnalyzeAsync(AnalysisResult result, string? userNote, CancellationToken ct)
     {
         var reply = await client.CompleteAsync(AiPrompts.System, AiPrompts.BuildSingle(result, userNote), ct).ConfigureAwait(false);
-        return AiResponseParser.Parse(reply, AiPrompts.ValidKeys(result));
+        return AiResponseParser.Parse(reply, AiPrompts.ValidKeys(result), AiChecks.Available(result).Select(c => c.Id).ToHashSet());
     }
 
     public async Task<AiAnalysis> CompareAsync(

@@ -149,6 +149,13 @@ try {
     Check 'cited AI claim is shown' (WaitFor 'Freezes look GPU-side' 15)
     Check 'uncited AI claim is discarded and flagged' ((-not (HasText 'Made-up claim')) -and (HasText 'discarded because they cited no measured evidence'))
     Check 'what the AI could not tell is shown instead of a question' (HasText 'Whether VSync was on')
+    # The AI may only name checks daignostic offered: the background check was already done, the made-up one is dropped.
+    Check 'the AI is offered buttons for checks it asked for' ((Ui @('search', 'pc_setup')) -match 'Found [1-9]')
+    Check 'a check that was already done is not offered again' ((Ui @('search', 'background_check')) -notmatch 'Found [1-9]')
+    Check 'a check the AI made up is dropped' ((Ui @('search', 'delete_everything')) -notmatch 'Found [1-9]')
+    Ui @('invoke', 'pc_setup') | Out-Null
+    Check 'pressing a check opens the form in daignostic, not the AI' (WaitFor 'Your PC setup' 10)
+    Ui @('invoke', 'Cancel') | Out-Null; Start-Sleep 1
     Shot '5-ai'
 
     Write-Host 'What the AI endpoint received'

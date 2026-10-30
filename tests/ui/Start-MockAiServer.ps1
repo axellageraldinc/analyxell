@@ -69,6 +69,7 @@ try {
                 @{ title = 'Made-up claim'; explanation = 'No evidence.'; evidence = @('invented.metric'); actions = @(); confidence = 'high' }
             )
             unknowns = @('Whether VSync was on during the capture')
+            next_checks = @('background_check', 'pc_setup', 'delete_everything')
         } | ConvertTo-Json -Depth 6 -Compress
         Send $ctx @{ choices = @(@{ message = @{ role = 'assistant'; content = $content } }) }
     }
