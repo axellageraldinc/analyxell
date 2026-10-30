@@ -91,7 +91,10 @@ public sealed partial class SettingsViewModel : ObservableObject
     public partial string KeyStoredInfo { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NotTesting))]
     public partial bool IsTesting { get; set; }
+
+    public bool NotTesting => !IsTesting;
 
     public bool HasModels => Models.Count > 0;
 
@@ -280,6 +283,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
+    private CancellationTokenSource? _testCts;
+
     [RelayCommand]
     private async Task ListModelsAsync()
     {
@@ -324,18 +329,50 @@ public sealed partial class SettingsViewModel : ObservableObject
         EndpointMsg.Clear();
         ModelMsg.Clear();
         KeyMsg.Clear();
+        _testCts = new CancellationTokenSource();
+        var cts = _testCts;
+        _ = ShowWaitingAsync(cts.Token);
         try
         {
-            var reply = await Client().CompleteAsync("Reply with the single word: ok", "ping", CancellationToken.None);
+            var reply = await Client().CompleteAsync("Reply with the single word: ok", "ping", cts.Token);
+            cts.Cancel();
             AiTestMsg.Success("The AI endpoint answered: " + (reply.Length > 60 ? reply[..60] + "..." : reply));
         }
         catch (AiException ex)
         {
+            cts.Cancel();
             Report(ex, "");
+        }
+        catch (OperationCanceledException)
+        {
+            AiTestMsg.Warning("Cancelled. Nothing was changed.");
         }
         finally
         {
             IsTesting = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CancelTest() => _testCts?.Cancel();
+
+    /// <summary>Keeps the user informed while the AI is slow: how long it has been and when daignostic gives up.</summary>
+    private async Task ShowWaitingAsync(CancellationToken stop)
+    {
+        var started = DateTime.UtcNow;
+        try
+        {
+            while (!stop.IsCancellationRequested)
+            {
+                var elapsed = DateTime.UtcNow - started;
+                var left = Math.Max(0, AppServices.AiTimeoutSeconds - (int)elapsed.TotalSeconds);
+                AiTestMsg.Info($"Waiting for the AI to answer... {(int)elapsed.TotalMinutes}:{elapsed.Seconds:00}. daignostic gives up after {AppServices.AiTimeoutSeconds / 60} minutes ({left} s left). Some models take a while to start; you can cancel.");
+                await Task.Delay(500, stop);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The test finished or was cancelled.
         }
     }
 

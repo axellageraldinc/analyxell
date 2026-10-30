@@ -46,7 +46,7 @@ public sealed partial class AnalyzePage : Page
         ViewModel.Ai.RefreshPreview();
     }
 
-    private void OnChartChanged(ChartSpec? spec, IReadOnlyList<double> freezes) => Chart.SetSpec(spec, freezes);
+    private void OnChartChanged(ChartSpec? spec, IReadOnlyList<EventLayer> layers) => Chart.SetSpec(spec, layers);
 
     private bool _syncingTabs;
 

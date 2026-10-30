@@ -197,8 +197,9 @@
                         IsOn="{x:Bind ViewModel.ShareBackgroundNames, Mode=TwoWay}" />
 
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button AutomationProperties.AutomationId="TestAiButton" Content="Test AI connection" Command="{x:Bind ViewModel.TestAiCommand, Mode=OneTime}" />
+                        <Button AutomationProperties.AutomationId="TestAiButton" Content="Test AI connection" Command="{x:Bind ViewModel.TestAiCommand, Mode=OneTime}" IsEnabled="{x:Bind ViewModel.NotTesting, Mode=OneWay}" />
                         <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.IsTesting, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsTesting, Mode=OneWay}" />
+                        <Button AutomationProperties.AutomationId="CancelTestButton" Content="Cancel" Visibility="{x:Bind ViewModel.IsTesting, Mode=OneWay}" Command="{x:Bind ViewModel.CancelTestCommand, Mode=OneTime}" />
                     </StackPanel>
                     <InfoBar
                         AutomationProperties.AutomationId="AiTestMessage"

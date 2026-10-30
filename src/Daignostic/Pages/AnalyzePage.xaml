@@ -250,10 +250,30 @@
                                     VerticalAlignment="Top" />
                             </Grid>
                             <controls:FrameTimeChart x:Name="Chart" Height="280" />
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="Red markers are freezes of 200 ms or more." />
+                            <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.HasEventToggles, Mode=OneWay}">
+                                <ItemsControl ItemsSource="{x:Bind ViewModel.EventToggles, Mode=OneWay}" AutomationProperties.AutomationId="EventToggles">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="16" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:EventToggle">
+                                            <CheckBox
+                                                Content="{x:Bind Text, Mode=OneTime}"
+                                                IsChecked="{x:Bind IsOn, Mode=TwoWay}"
+                                                AutomationProperties.AutomationId="{x:Bind Text, Mode=OneTime}"
+                                                MinWidth="0" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock
+                                    AutomationProperties.AutomationId="EventExplanation"
+                                    Text="{x:Bind ViewModel.EventExplanation, Mode=OneWay}"
+                                    TextWrapping="Wrap"
+                                    Style="{StaticResource CaptionTextBlockStyle}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 

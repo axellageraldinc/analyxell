@@ -10,7 +10,13 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 - Compare page: pick the metric to overlay (frame time, FPS, latency, GPU load, temperature, clock, memory, power); the two runs are now yellow (A) and blue (B), named in the legend, with bold one-second averages over faint per-frame lines.
 - Asking an AI shows progress (elapsed time, what it is doing, hints when slow) with Cancel, and failures explain what went wrong and what to try (endpoint, key, model, timeout, unreadable answer) with Try again and a shortcut to Settings. Requests give up after 2 minutes.
 
+- The chart can mark more than freezes: stutters, FPS drops (seconds well below the typical frame rate), dropped frames and where tearing was possible. Switch each on or off under the chart; freezes are on by default.
+- Test AI connection shows how long it has been waiting, when it gives up, and has Cancel.
+- The UI tests set your real settings aside and restore them, so running them never touches your AI setup.
+
 ### Fixed
+
+- Chart legend swatches were not centred on their text.
 
 - A blank button in the page header where the CapFrameX button should be.
 

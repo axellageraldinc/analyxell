@@ -55,6 +55,14 @@ $mockLog = Join-Path $work 'mock.log'
 $mock = Start-Job -ScriptBlock { param($s, $p, $l) & $s -Port $p -LogPath $l } -ArgumentList (Join-Path $PSScriptRoot 'Start-MockAiServer.ps1'), $MockPort, $mockLog
 Start-Sleep 2
 
+# The app keeps its settings (and the encrypted AI key) under the package folder. Set the real ones aside so this
+# run starts clean and can never overwrite or delete them; they are put back at the end.
+$appData = Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Packages') -Filter 'axellageraldinc.Daignostic_*' -Directory -ErrorAction SilentlyContinue |
+    ForEach-Object { Join-Path $_.FullName 'LocalCache\Local\Daignostic' } | Select-Object -First 1
+$appDataBackup = Join-Path $env:TEMP 'daignostic-appdata-backup'
+Remove-Item $appDataBackup -Recurse -Force -ErrorAction SilentlyContinue
+if ($appData -and (Test-Path $appData)) { Copy-Item $appData $appDataBackup -Recurse -Force }
+
 Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force
 Write-Host 'Building and launching the app'
 Push-Location (Join-Path $root 'src\Daignostic')
@@ -179,10 +187,12 @@ try {
     Check 'a rejected key points to Settings' ((WaitFor 'did not accept your API key' 15) -and ((Ui @('search', 'AiOpenSettingsButton')) -match 'Found [1-9]'))
 }
 finally {
+    # Remove what the test saved, then put the user's own settings back.
     Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force
-    # The test saved a mock endpoint into the app's settings; remove the app's own settings so nothing leaks into real use.
-    Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Packages') -Filter 'axellageraldinc.Daignostic_*' -Directory -ErrorAction SilentlyContinue |
-        ForEach-Object { Remove-Item (Join-Path $_.FullName 'LocalCache\Local\Daignostic') -Recurse -Force -ErrorAction SilentlyContinue }
+    if ($appData) {
+        Remove-Item $appData -Recurse -Force -ErrorAction SilentlyContinue
+        if (Test-Path $appDataBackup) { New-Item -ItemType Directory -Force (Split-Path $appData) | Out-Null; Copy-Item $appDataBackup $appData -Recurse -Force; Remove-Item $appDataBackup -Recurse -Force }
+    }
     Stop-Job $mock -ErrorAction SilentlyContinue
     Remove-Job $mock -Force -ErrorAction SilentlyContinue
 }

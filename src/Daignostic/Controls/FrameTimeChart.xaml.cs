@@ -32,7 +32,7 @@ public sealed partial class FrameTimeChart : UserControl
     ];
 
     private ChartSpec? _spec;
-    private IReadOnlyList<double> _markers = [];
+    private IReadOnlyList<EventLayer> _layers = [];
     private double _yMin;
     private double _yMax = 40;
     private double _tMax = 1;
@@ -40,14 +40,18 @@ public sealed partial class FrameTimeChart : UserControl
 
     public FrameTimeChart() => InitializeComponent();
 
-    public void SetSpec(ChartSpec? spec, IReadOnlyList<double> markerTimes)
+    public void SetSpec(ChartSpec? spec, IReadOnlyList<EventLayer> layers)
     {
         _spec = spec;
-        _markers = markerTimes;
+        _layers = layers;
         Redraw();
     }
 
-    public void Clear() => SetSpec(null, []);
+    /// <summary>Marks freezes only, for views that have no other kind of moment to show.</summary>
+    public void SetSpec(ChartSpec? spec, IReadOnlyList<double> freezeTimes) =>
+        SetSpec(spec, [ChartEventBuilder.Freezes(freezeTimes)]);
+
+    public void Clear() => SetSpec(null, Array.Empty<EventLayer>());
 
     private void Root_SizeChanged(object sender, SizeChangedEventArgs e) => Redraw();
 
@@ -73,6 +77,7 @@ public sealed partial class FrameTimeChart : UserControl
         ChooseRange();
 
         DrawGrid();
+        DrawBands();
         foreach (var line in _spec.Lines)
         {
             DrawLine(line);
@@ -237,16 +242,55 @@ public sealed partial class FrameTimeChart : UserControl
         });
     }
 
+    // Colours per kind of moment; theme resource keys so they follow light and dark mode.
+    private static string EventBrush(EventKind kind) => kind switch
+    {
+        EventKind.Freezes => "SystemFillColorCriticalBrush",
+        EventKind.Stutters => "SystemFillColorCautionBrush",
+        EventKind.FpsDrops => "SystemFillColorCautionBrush",
+        EventKind.DroppedFrames => "TextFillColorSecondaryBrush",
+        _ => "SystemFillColorAttentionBrush",
+    };
+
+    /// <summary>Stretches of the run (FPS drops, tearing possible) are shaded behind the lines.</summary>
+    private void DrawBands()
+    {
+        foreach (var layer in _layers.Where(l => l.IsSpan))
+        {
+            foreach (var e in layer.Events)
+            {
+                var x1 = X(Math.Min(e.StartSec, _tMax));
+                var x2 = Math.Max(x1 + 2, X(Math.Min(e.EndSec, _tMax)));
+                var band = new Rectangle { Width = x2 - x1, Height = _plot.Height, Fill = Brush(EventBrush(layer.Kind)), Opacity = layer.Kind == EventKind.FpsDrops ? 0.18 : 0.10 };
+                Plot.Children.Add(band.At(x1, _plot.Y));
+            }
+        }
+    }
+
+    /// <summary>Single moments: freezes get a full-height line and a flag; stutters and dropped frames get short ticks at the bottom.</summary>
     private void DrawMarkers()
     {
-        foreach (var t in _markers)
+        foreach (var layer in _layers.Where(l => !l.IsSpan))
         {
-            AddLine(X(t), _plot.Y, X(t), _plot.Y + _plot.Height, "SystemFillColorCriticalBrush", 1, [2, 3]);
-            Plot.Children.Add(new Polygon
+            var key = EventBrush(layer.Kind);
+            foreach (var e in layer.Events)
             {
-                Points = [new Point(X(t) - 4, _plot.Y), new Point(X(t) + 4, _plot.Y), new Point(X(t), _plot.Y + 7)],
-                Fill = Brush("SystemFillColorCriticalBrush"),
-            });
+                var x = X(e.StartSec);
+                if (layer.Kind == EventKind.Freezes)
+                {
+                    AddLine(x, _plot.Y, x, _plot.Y + _plot.Height, key, 1, [2, 3]);
+                    Plot.Children.Add(new Polygon
+                    {
+                        Points = [new Point(x - 4, _plot.Y), new Point(x + 4, _plot.Y), new Point(x, _plot.Y + 7)],
+                        Fill = Brush(key),
+                    });
+                }
+                else
+                {
+                    var tall = layer.Kind == EventKind.Stutters ? 12 : 7;
+                    AddLine(x, _plot.Y + _plot.Height - tall, x, _plot.Y + _plot.Height, key, 1.5, null);
+                }
+            }
         }
     }
 
@@ -260,7 +304,7 @@ public sealed partial class FrameTimeChart : UserControl
         var x = _plot.X + 10;
         foreach (var line in _spec.Lines.Where(l => l.Legend))
         {
-            Plot.Children.Add(new Rectangle { Width = 10, Height = 3, Fill = Brush(Palette[line.Palette % Palette.Length]) }.At(x, _plot.Y + 8));
+            Plot.Children.Add(new Rectangle { Width = 10, Height = 3, Fill = Brush(Palette[line.Palette % Palette.Length]) }.At(x, _plot.Y + 4));
             AddText(line.Name, x + 14, _plot.Y - 2, "TextFillColorSecondaryBrush");
             x += 24 + line.Name.Length * 6.2;
         }
@@ -333,7 +377,7 @@ public sealed partial class FrameTimeChart : UserControl
     {
         var first = _spec!.Lines[0];
         var worst = first.Values.Where(double.IsFinite).DefaultIfEmpty(0).Max();
-        return $"{_spec.Label} chart, {_spec.Lines.Count} line(s) over {TimeLabel(_tMax)}, highest value {Format(worst)} {_spec.Unit}, {_markers.Count} freeze markers.";
+        return $"{_spec.Label} chart, {_spec.Lines.Count} line(s) over {TimeLabel(_tMax)}, highest value {Format(worst)} {_spec.Unit}, {string.Join(", ", _layers.Where(l => l.Count > 0).Select(l => $"{l.Count} {l.Label.ToLowerInvariant()}"))} marked.";
     }
 
     private static string Label(double v) => Math.Abs(v) >= 1000 ? $"{v / 1000:0.#}k" : v.ToString("0.#", CultureInfo.InvariantCulture);

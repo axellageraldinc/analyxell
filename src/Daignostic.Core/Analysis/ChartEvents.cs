@@ -1,0 +1,156 @@
+using Daignostic.Core.Capture;
+
+namespace Daignostic.Core.Analysis;
+
+/// <summary>The kinds of moments the chart can mark. Each one is switched on and off by the user.</summary>
+public enum EventKind
+{
+    Freezes,
+    Stutters,
+    FpsDrops,
+    DroppedFrames,
+    TearingPossible,
+}
+
+/// <summary>A moment (start equals end) or a stretch of the run, in seconds.</summary>
+public sealed record ChartEvent(double StartSec, double EndSec);
+
+/// <summary>All the moments of one kind, with the words the UI shows for them.</summary>
+public sealed record EventLayer(EventKind Kind, string Label, string Meaning, IReadOnlyList<ChartEvent> Events)
+{
+    public int Count => Events.Count;
+
+    public bool IsSpan => Kind is EventKind.FpsDrops or EventKind.TearingPossible;
+}
+
+/// <summary>Finds the moments worth marking on the chart. Everything comes from the capture; nothing is guessed.</summary>
+public static class ChartEventBuilder
+{
+    /// <summary>A one-second stretch counts as an FPS drop when its average falls this far below the run's typical second.</summary>
+    public const double DropFraction = 0.75;
+
+    public static IReadOnlyList<EventLayer> Build(CaptureRun run)
+    {
+        var layers = new List<EventLayer>
+        {
+            Freezes(Detectors.FindFreezes(run.TimeSec, run.FrameMs).Select(f => f.TimeSec)),
+            Stutters(Detectors.FindStutters(run.TimeSec, run.FrameMs).Select(s => s.TimeSec)),
+            FpsDrops(run),
+        };
+
+        var dropped = Dropped(run);
+        if (dropped.Count > 0)
+        {
+            layers.Add(new EventLayer(EventKind.DroppedFrames, "Dropped frames",
+                "Frames the game made but the display never showed.", dropped));
+        }
+
+        var tearing = Tearing(run);
+        if (tearing.Count > 0)
+        {
+            layers.Add(new EventLayer(EventKind.TearingPossible, "Tearing possible",
+                "Frames sent to the screen with tearing allowed (VSync off). A capture cannot see tearing itself, only whether it could happen.", tearing));
+        }
+
+        return layers;
+    }
+
+    public static EventLayer Freezes(IEnumerable<double> times) => new(
+        EventKind.Freezes, "Freezes", "Frames of 200 ms or more: the game visibly hung.",
+        times.Select(t => new ChartEvent(t, t)).ToList());
+
+    public static EventLayer Stutters(IEnumerable<double> times) => new(
+        EventKind.Stutters, "Stutters", "Frames that took more than twice as long as their neighbours.",
+        times.Select(t => new ChartEvent(t, t)).ToList());
+
+    public static EventLayer FpsDrops(CaptureRun run)
+    {
+        var fps = run.FrameMs.Select(ms => ms > 0 && double.IsFinite(ms) ? 1000.0 / ms : double.NaN).ToArray();
+        var (times, values) = Smoothing.BinAverage(run.TimeSec, fps);
+        var spans = new List<ChartEvent>();
+        if (values.Length >= 4)
+        {
+            var sorted = values.OrderBy(v => v).ToArray();
+            var typical = sorted[sorted.Length / 2];
+            var limit = Math.Min(typical * DropFraction, typical - 5);
+            for (var i = 0; i < values.Length; i++)
+            {
+                if (values[i] >= limit)
+                {
+                    continue;
+                }
+
+                var start = times[i] - 0.5;
+                var end = times[i] + 0.5;
+                if (spans.Count > 0 && start - spans[^1].EndSec < 0.01)
+                {
+                    spans[^1] = spans[^1] with { EndSec = end };
+                }
+                else
+                {
+                    spans.Add(new ChartEvent(start, end));
+                }
+            }
+        }
+
+        return new EventLayer(EventKind.FpsDrops, "FPS drops",
+            "Seconds where the average frame rate fell more than a quarter below the run's typical second.", spans);
+    }
+
+    private static List<ChartEvent> Dropped(CaptureRun run)
+    {
+        var result = new List<ChartEvent>();
+        var n = Math.Min(run.Dropped.Length, run.TimeSec.Length);
+        for (var i = 0; i < n; i++)
+        {
+            if (run.Dropped[i])
+            {
+                result.Add(new ChartEvent(run.TimeSec[i], run.TimeSec[i]));
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>Stretches of at least half a second where tearing was allowed; short gaps are bridged.</summary>
+    private static List<ChartEvent> Tearing(CaptureRun run)
+    {
+        var spans = new List<ChartEvent>();
+        var n = Math.Min(run.AllowsTearing.Length, run.TimeSec.Length);
+        double? start = null;
+        var last = 0.0;
+        for (var i = 0; i < n; i++)
+        {
+            var on = run.AllowsTearing[i] >= 0.5;
+            if (on)
+            {
+                start ??= run.TimeSec[i];
+                last = run.TimeSec[i];
+            }
+            else if (start is not null)
+            {
+                Add(spans, start.Value, last);
+                start = null;
+            }
+        }
+
+        if (start is not null)
+        {
+            Add(spans, start.Value, last);
+        }
+
+        return spans.Where(s => s.EndSec - s.StartSec >= 0.5).ToList();
+
+        static void Add(List<ChartEvent> list, double from, double to)
+        {
+            if (list.Count > 0 && from - list[^1].EndSec < 1.0)
+            {
+                list[^1] = list[^1] with { EndSec = to };
+            }
+            else
+            {
+                list.Add(new ChartEvent(from, to));
+            }
+        }
+    }
+}

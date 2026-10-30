@@ -26,6 +26,19 @@ public sealed record NextStepItem(string Number, string Text, string Why);
 
 public sealed record ChartViewItem(ChartView View, string Label);
 
+/// <summary>One switch under the chart: show or hide one kind of marked moment.</summary>
+public sealed partial class EventToggle(EventLayer layer, bool isOn, Action changed) : ObservableObject
+{
+    public EventLayer Layer { get; } = layer;
+
+    public string Text => $"{Layer.Label} ({Layer.Count})";
+
+    [ObservableProperty]
+    public partial bool IsOn { get; set; } = isOn;
+
+    partial void OnIsOnChanged(bool value) => changed();
+}
+
 public sealed record BackgroundRow(string Name, string Cpu, string Disk, string Gpu, string Memory, string Note);
 
 /// <summary>The sections of the Analyze page. Each one shows only what belongs to it, so the page stays readable.</summary>
@@ -78,6 +91,8 @@ public sealed partial class AnalyzeViewModel : ObservableObject
 
     public ObservableCollection<ChartViewItem> ChartViews { get; } = [];
 
+    public ObservableCollection<EventToggle> EventToggles { get; } = [];
+
     public ObservableCollection<CaptureListing> Catalog { get; } = [];
 
     public AiPanelViewModel Ai { get; }
@@ -85,7 +100,7 @@ public sealed partial class AnalyzeViewModel : ObservableObject
     public CapFrameXViewModel CapFrameX { get; }
 
     /// <summary>Raised when the chart should be redrawn. The spec is null when nothing is loaded.</summary>
-    public event Action<ChartSpec?, IReadOnlyList<double>>? ChartChanged;
+    public event Action<ChartSpec?, IReadOnlyList<EventLayer>>? ChartChanged;
 
     public LoadedCapture? Current
     {
@@ -135,6 +150,10 @@ public sealed partial class AnalyzeViewModel : ObservableObject
 
     [ObservableProperty]
     public partial string ChartCaption { get; set; } = "";
+
+    /// <summary>What the marks on the chart mean, for the kinds that are switched on.</summary>
+    [ObservableProperty]
+    public partial string EventExplanation { get; set; } = "";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsOverviewTab), nameof(IsAiTab), nameof(IsFindingsTab), nameof(IsPcTab), nameof(IsBackgroundTab))]
@@ -201,6 +220,8 @@ public sealed partial class AnalyzeViewModel : ObservableObject
     public bool HasNotes => NoteFindings.Count > 0;
 
     public bool HasBackground => BackgroundRows.Count > 0;
+
+    public bool HasEventToggles => EventToggles.Count > 0;
 
     public string SettingsHeader => Current?.Result.Settings is { } s ? $"Game settings: {s.GameName}" : "Game settings";
 
@@ -438,6 +459,17 @@ public sealed partial class AnalyzeViewModel : ObservableObject
             }
         }
 
+        var wasOn = EventToggles.Where(t => t.IsOn).Select(t => t.Layer.Kind).ToHashSet();
+        var firstShow = EventToggles.Count == 0 || !keepView;
+        EventToggles.Clear();
+        foreach (var layer in ChartEventBuilder.Build(r.Run).Where(l => l.Count > 0))
+        {
+            // Freezes are on to begin with; after a re-analysis the user's choices are kept.
+            EventToggles.Add(new EventToggle(layer, firstShow ? layer.Kind == EventKind.Freezes : wasOn.Contains(layer.Kind), RaiseChart));
+        }
+
+        OnPropertyChanged(nameof(HasEventToggles));
+
         var previous = SelectedChartView?.View;
         ChartViews.Clear();
         foreach (var view in ChartDataBuilder.Available(r.Run))
@@ -466,14 +498,18 @@ public sealed partial class AnalyzeViewModel : ObservableObject
     {
         if (Current is null || SelectedChartView is null)
         {
-            ChartChanged?.Invoke(null, []);
+            ChartChanged?.Invoke(null, Array.Empty<EventLayer>());
             return;
         }
 
         var spec = ChartDataBuilder.Build(Current.Result.Run, SelectedChartView.View);
+        var shown = EventToggles.Where(t => t.IsOn).Select(t => t.Layer).ToList();
         ChartTitle = $"{spec.Label} ({spec.Unit})";
         ChartCaption = spec.Caption;
-        ChartChanged?.Invoke(spec, Current.Result.Freezes.Select(f => f.TimeSec).ToList());
+        EventExplanation = shown.Count == 0
+            ? "Switch on the markers below to see where problems happened."
+            : string.Join("  ", shown.Select(l => $"{l.Label}: {l.Meaning}"));
+        ChartChanged?.Invoke(spec, shown);
     }
 
     private string? BuildPreview(string? note) =>
