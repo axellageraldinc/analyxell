@@ -9,7 +9,7 @@
   Open a <a href="https://github.com/CXWorld/CapFrameX">CapFrameX</a> capture, see what happened, and get a plain-language explanation you can trust.
 </p>
 
-> **Status: pre-release (0.1.1).** The app works and is tested, but it has not been tried on many PCs yet.
+> **Status: pre-release (0.2.0).** The app works and is tested, but it has not been tried on many PCs yet.
 
 ## What it does
 

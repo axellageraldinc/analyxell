@@ -4,6 +4,8 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-31
+
 ### Changed
 
 - **Renamed to analyxell** (from the old working name). The app, installer, folders and repository all use the new name.
