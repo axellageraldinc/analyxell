@@ -324,7 +324,8 @@ public sealed partial class FrameTimeChart : UserControl
             return;
         }
 
-        var x = _plot.X + 10;
+        // One row lets the layout space the entries, so they can never overlap whatever their text width.
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         foreach (var line in _spec.Lines.Where(l => l.Legend))
         {
             var key = LegendKey(line);
@@ -350,10 +351,10 @@ public sealed partial class FrameTimeChart : UserControl
             AutomationProperties.SetName(entry, (on ? "Hide " : "Show ") + line.Name);
             ToolTipService.SetToolTip(entry, on ? "Press to hide this line" : "Press to show this line");
             entry.Tapped += LegendEntry_Tapped;
-            entry.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            Plot.Children.Add(entry.At(x, 1));
-            x += entry.DesiredSize.Width + 10;
+            row.Children.Add(entry);
         }
+
+        Plot.Children.Add(row.At(_plot.X + 6, 1));
     }
 
     private void LegendEntry_Tapped(object sender, TappedRoutedEventArgs e)
