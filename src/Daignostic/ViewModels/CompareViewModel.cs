@@ -35,10 +35,21 @@ public sealed partial class CompareViewModel : ObservableObject
 
     public AiPanelViewModel Ai { get; }
 
-    /// <summary>Raised when the overlay chart should be redrawn (both captures set) or cleared (null).</summary>
-    public event Action<ComparisonResult?>? ComparisonChanged;
+    public ObservableCollection<ChartViewItem> ChartViews { get; } = [];
+
+    /// <summary>Raised when the overlay chart should be redrawn, or cleared (null spec). The freezes are run B's.</summary>
+    public event Action<ChartSpec?, IReadOnlyList<double>>? ChartChanged;
 
     public ComparisonResult? Comparison { get; private set; }
+
+    [ObservableProperty]
+    public partial ChartViewItem? SelectedChartView { get; set; }
+
+    [ObservableProperty]
+    public partial string ChartTitle { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string ChartCaption { get; set; } = "";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanCompare))]
@@ -64,6 +75,38 @@ public sealed partial class CompareViewModel : ObservableObject
     partial void OnAChanged(LoadedCapture? value) => Recompute();
 
     partial void OnBChanged(LoadedCapture? value) => Recompute();
+
+    partial void OnSelectedChartViewChanged(ChartViewItem? value) => RaiseChart();
+
+    /// <summary>Redraws the overlay for the selected metric, or clears it when there is nothing to compare.</summary>
+    public void RaiseChart()
+    {
+        if (Comparison is null || A is null || B is null || SelectedChartView is null)
+        {
+            ChartChanged?.Invoke(null, []);
+            return;
+        }
+
+        var spec = ChartDataBuilder.BuildComparison(A.Result.Run, B.Result.Run, SelectedChartView.View, A.Name, B.Name);
+        ChartTitle = $"{spec.Label} ({spec.Unit})";
+        ChartCaption = spec.Caption + " Red markers are B's freezes.";
+        ChartChanged?.Invoke(spec, B.Result.Freezes.Select(f => f.TimeSec).ToList());
+    }
+
+    private void RefreshChartViews()
+    {
+        var previous = SelectedChartView?.View;
+        ChartViews.Clear();
+        if (A is not null && B is not null && CanCompare)
+        {
+            foreach (var view in ChartDataBuilder.AvailableForComparison(A.Result.Run, B.Result.Run))
+            {
+                ChartViews.Add(new ChartViewItem(view, ChartDataBuilder.BuildComparison(A.Result.Run, B.Result.Run, view, A.Name, B.Name).Label));
+            }
+        }
+
+        SelectedChartView = ChartViews.FirstOrDefault(c => c.View == previous) ?? ChartViews.FirstOrDefault();
+    }
 
     [RelayCommand]
     private Task LoadAAsync() => LoadIntoAsync(isA: true);
@@ -106,7 +149,8 @@ public sealed partial class CompareViewModel : ObservableObject
         if (!CanCompare)
         {
             Summary = "Pick two different captures: a baseline (A) and a later run (B).";
-            ComparisonChanged?.Invoke(null);
+            RefreshChartViews();
+            RaiseChart();
             OnPropertyChanged(nameof(HasRows));
             Ai.Reset();
             return;
@@ -133,7 +177,8 @@ public sealed partial class CompareViewModel : ObservableObject
 
         OnPropertyChanged(nameof(HasRows));
         Ai.Reset();
-        ComparisonChanged?.Invoke(cmp);
+        RefreshChartViews();
+        RaiseChart();
     }
 
     private string? BuildPack(string? note) =>

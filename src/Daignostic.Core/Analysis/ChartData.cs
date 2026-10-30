@@ -1,4 +1,4 @@
-using Daignostic.Core.Capture;
+﻿using Daignostic.Core.Capture;
 
 namespace Daignostic.Core.Analysis;
 
@@ -15,7 +15,7 @@ public enum ChartView
 }
 
 /// <summary>One line on a chart. <see cref="Palette"/> is an index the UI maps to theme colours.</summary>
-public sealed record ChartLine(string Name, double[] Times, double[] Values, int Palette, double Thickness = 1.4, double Opacity = 1.0);
+public sealed record ChartLine(string Name, double[] Times, double[] Values, int Palette, double Thickness = 1.4, double Opacity = 1.0, bool Legend = true);
 
 public sealed record ChartReference(double Value, string Label);
 
@@ -108,6 +108,87 @@ public static class ChartDataBuilder
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(view));
+        }
+    }
+
+    /// <summary>Views both runs have data for, so two runs can be overlaid on the same chart.</summary>
+    public static IReadOnlyList<ChartView> AvailableForComparison(CaptureRun a, CaptureRun b) =>
+        Enum.GetValues<ChartView>().Where(v => BuildComparison(a, b, v, "A", "B").Lines.Count > 0).ToList();
+
+    /// <summary>
+    /// One metric per view, drawn for run A (amber) and run B (blue) so they are easy to tell apart. Time-based views
+    /// show a faint raw line and a bold one-second average per run; sensor views show the metric named in the caption.
+    /// </summary>
+    public static ChartSpec BuildComparison(CaptureRun a, CaptureRun b, ChartView view, string nameA, string nameB)
+    {
+        const int PaletteA = 1;
+        const int PaletteB = 0;
+        var labelA = $"A: {nameA}";
+        var labelB = $"B: {nameB}";
+
+        switch (view)
+        {
+            case ChartView.FrameTime:
+            case ChartView.Fps:
+            case ChartView.Latency:
+            {
+                double[] Values(CaptureRun r) => view switch
+                {
+                    ChartView.Fps => r.FrameMs.Select(ms => ms > 0 && double.IsFinite(ms) ? 1000.0 / ms : double.NaN).ToArray(),
+                    ChartView.Latency => r.PcLatencyMs,
+                    _ => r.FrameMs,
+                };
+
+                var va = Values(a);
+                var vb = Values(b);
+                if (view == ChartView.Latency && (va.Length != a.TimeSec.Length || vb.Length != b.TimeSec.Length || va.All(v => !double.IsFinite(v) || v <= 0) || vb.All(v => !double.IsFinite(v) || v <= 0)))
+                {
+                    return Spec(view, "Latency", "ms", "", [], [], null, true, true);
+                }
+
+                var (ta, avgA) = Smoothing.BinAverage(a.TimeSec, va);
+                var (tb, avgB) = Smoothing.BinAverage(b.TimeSec, vb);
+                var label = view == ChartView.Fps ? "FPS" : view == ChartView.Latency ? "Latency" : "Frame time";
+                var unit = view == ChartView.Fps ? "fps" : "ms";
+                var refs = view == ChartView.FrameTime ? [new ChartReference(1000.0 / 60, "60 fps"), new ChartReference(1000.0 / 30, "30 fps")]
+                    : view == ChartView.Fps ? [new ChartReference(60, "60"), new ChartReference(30, "30")]
+                    : Array.Empty<ChartReference>();
+                return Spec(view, label, unit, $"Bold lines are one-second averages; faint lines are every frame. {(view == ChartView.Fps ? "Higher" : "Lower")} is better.",
+                    [
+                        new(labelA + " (all frames)", a.TimeSec, va, PaletteA, 1.0, 0.3, false),
+                        new(labelB + " (all frames)", b.TimeSec, vb, PaletteB, 1.0, 0.3, false),
+                        new(labelA, ta, avgA, PaletteA, 2.6),
+                        new(labelB, tb, avgB, PaletteB, 2.6),
+                    ],
+                    refs, null, zeroBased: true, clip: true);
+            }
+
+            default:
+            {
+                var (name, type, label, unit, fixedMax, zero) = view switch
+                {
+                    ChartView.Load => ("GPU Core", "Load", "GPU load", "%", (double?)100, true),
+                    ChartView.Temperatures => ("GPU Core", "Temperature", "GPU temperature", "°C", null, false),
+                    ChartView.Clocks => ("GPU Core", "Clock", "GPU core clock", "MHz", null, false),
+                    ChartView.Memory => ("GPU Memory Dedicated", "Data", "Video memory used", "GB", null, true),
+                    ChartView.Power => ("GPU Power", "Power", "GPU power draw", "W", null, true),
+                    _ => ("", "", "", "", null, true),
+                };
+
+                var lines = new List<ChartLine>();
+                void Add(CaptureRun r, string text, int palette)
+                {
+                    var s = r.FindSensor(name, type);
+                    if (s is not null && s.Values.Length == r.SensorTimeSec.Length && s.Values.Any(double.IsFinite))
+                    {
+                        lines.Add(new ChartLine(text, r.SensorTimeSec, s.Values, palette, 2.2));
+                    }
+                }
+
+                Add(a, labelA, PaletteA);
+                Add(b, labelB, PaletteB);
+                return Spec(view, label, unit, $"{label} for both runs.", lines.Count == 2 ? lines : [], [], fixedMax, zero, false);
+            }
         }
     }
 

@@ -114,13 +114,27 @@
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1">
                     <StackPanel Spacing="8">
-                        <Grid>
-                            <TextBlock Text="Frame time (ms): A in grey, B in blue" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                            <TextBlock
-                                HorizontalAlignment="Right"
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="Lower is smoother. Red markers are B's freezes." />
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{x:Bind ViewModel.ChartTitle, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock
+                                    Text="{x:Bind ViewModel.ChartCaption, Mode=OneWay}"
+                                    TextWrapping="Wrap"
+                                    Style="{StaticResource CaptionTextBlockStyle}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <ComboBox
+                                Grid.Column="1"
+                                AutomationProperties.AutomationId="CompareViewCombo"
+                                ItemsSource="{x:Bind ViewModel.ChartViews, Mode=OneWay}"
+                                SelectedItem="{x:Bind ViewModel.SelectedChartView, Mode=TwoWay}"
+                                DisplayMemberPath="Label"
+                                MinWidth="200"
+                                VerticalAlignment="Top" />
                         </Grid>
                         <controls:FrameTimeChart x:Name="Chart" Height="280" />
                     </StackPanel>

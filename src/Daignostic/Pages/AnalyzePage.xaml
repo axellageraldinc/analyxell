@@ -11,6 +11,50 @@
     DragOver="Page_DragOver"
     Drop="Page_Drop">
 
+    <Page.Resources>
+        <DataTemplate x:Key="NextStepTemplate" x:DataType="vm:NextStepItem">
+            <Grid ColumnSpacing="12" Padding="0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="28" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Width="26" Height="26" CornerRadius="13" Background="{ThemeResource AccentFillColorDefaultBrush}" VerticalAlignment="Top">
+                    <TextBlock Text="{x:Bind Number, Mode=OneTime}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" FontWeight="SemiBold" />
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{x:Bind Text, Mode=OneTime}" TextWrapping="Wrap" />
+                    <TextBlock
+                        Text="{x:Bind Why, Mode=OneTime}"
+                        TextWrapping="Wrap"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="FindingTemplate" x:DataType="vm:FindingItem">
+            <InfoBar
+                Margin="0,0,0,8"
+                IsOpen="True"
+                IsClosable="False"
+                Severity="{x:Bind Severity, Mode=OneTime}"
+                Title="{x:Bind Title, Mode=OneTime}">
+                <StackPanel Spacing="6" Margin="0,0,0,8">
+                    <TextBlock Text="{x:Bind Detail, Mode=OneTime}" TextWrapping="Wrap" />
+                    <StackPanel Spacing="2" Visibility="{x:Bind HasSuggestions, Mode=OneTime}">
+                        <TextBlock Text="What you can try" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Bind Suggestions, Mode=OneTime}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <TextBlock
+                        Text="{x:Bind Evidence, Mode=OneTime}"
+                        TextWrapping="Wrap"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </InfoBar>
+        </DataTemplate>
+    </Page.Resources>
+
     <ScrollViewer>
         <StackPanel Padding="32,8,32,32" Spacing="16" MaxWidth="1240" HorizontalAlignment="Stretch">
 
@@ -109,36 +153,14 @@
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.HasCapture, Mode=OneWay}">
 
-                <!-- PC at a glance, details on demand -->
-                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.AutomationId="PcSpecsExpander">
-                    <Expander.Header>
-                        <StackPanel Spacing="2" Padding="0,6">
-                            <TextBlock Text="This PC" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{x:Bind ViewModel.SpecSummary, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                        </StackPanel>
-                    </Expander.Header>
-                    <StackPanel Spacing="12">
-                    <TextBlock
-                        TextWrapping="Wrap"
-                        Style="{StaticResource CaptionTextBlockStyle}"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="Something missing or wrong, such as G-SYNC, the monitor or where the game is installed? Add it in PC setup." />
-                    <Button AutomationProperties.AutomationId="PcSetupInSpecsButton" Content="Edit PC setup..." Click="Setup_Click" />
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.SpecSections, Mode=OneWay}">
-                        <ItemsRepeater.Layout>
-                            <UniformGridLayout MinItemWidth="330" MinColumnSpacing="24" MinRowSpacing="16" ItemsStretch="Fill" />
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
-                            <DataTemplate x:DataType="vm:SpecSectionView">
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="{x:Bind Title, Mode=OneTime}" Style="{StaticResource BodyStrongTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-                                    <TextBlock Text="{x:Bind Lines, Mode=OneTime}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" IsTextSelectionEnabled="True" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
-                    </StackPanel>
-                </Expander>
+                <!-- The one-line answer, then the numbers behind it -->
+                <InfoBar
+                    AutomationProperties.AutomationId="VerdictBar"
+                    IsOpen="True"
+                    IsClosable="False"
+                    Severity="{x:Bind ViewModel.VerdictSeverity, Mode=OneWay}"
+                    Title="{x:Bind ViewModel.VerdictHeadline, Mode=OneWay}"
+                    Message="{x:Bind ViewModel.VerdictDetail, Mode=OneWay}" />
 
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Cards, Mode=OneTime}">
                     <ItemsRepeater.Layout>
@@ -151,117 +173,249 @@
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
 
-                <!-- The main feature -->
-                <controls:AiPanel ViewModel="{x:Bind ViewModel.Ai, Mode=OneTime}" />
+                <SelectorBar x:Name="Tabs" AutomationProperties.AutomationId="AnalyzeTabs" SelectionChanged="Tabs_SelectionChanged">
+                    <SelectorBarItem x:Name="TabOverview" AutomationProperties.AutomationId="TabOverview" Text="Overview" Tag="Overview" IsSelected="True" />
+                    <SelectorBarItem x:Name="TabAi" AutomationProperties.AutomationId="TabAi" Text="Ask AI" Tag="Ai" />
+                    <SelectorBarItem x:Name="TabFindings" AutomationProperties.AutomationId="TabFindings" Text="Findings" Tag="Findings" />
+                    <SelectorBarItem x:Name="TabPc" AutomationProperties.AutomationId="TabPc" Text="PC and setup" Tag="Pc" />
+                    <SelectorBarItem x:Name="TabBackground" AutomationProperties.AutomationId="TabBackground" Text="Background programs" Tag="Background" />
+                </SelectorBar>
 
-                <!-- What to do -->
-                <Border
-                    Visibility="{x:Bind ViewModel.HasNextSteps, Mode=OneWay}"
-                    Padding="20,16"
-                    CornerRadius="8"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="What you can do" Style="{StaticResource SubtitleTextBlockStyle}" />
-                        <TextBlock
-                            TextWrapping="Wrap"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="In order of importance. Try one at a time, record the same route again, and use Compare to see whether it helped." />
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.NextSteps, Mode=OneWay}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:NextStepItem">
-                                    <Grid ColumnSpacing="12" Padding="0,6">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="28" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Border Width="26" Height="26" CornerRadius="13" Background="{ThemeResource AccentFillColorDefaultBrush}" VerticalAlignment="Top">
-                                            <TextBlock Text="{x:Bind Number, Mode=OneTime}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" FontWeight="SemiBold" />
-                                        </Border>
-                                        <StackPanel Grid.Column="1" Spacing="2">
-                                            <TextBlock Text="{x:Bind Text, Mode=OneTime}" TextWrapping="Wrap" />
-                                            <TextBlock
-                                                Text="{x:Bind Why, Mode=OneTime}"
-                                                TextWrapping="Wrap"
-                                                Style="{StaticResource CaptionTextBlockStyle}"
-                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </Border>
+                <!-- Overview: chart and the first steps -->
+                <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.IsOverviewTab, Mode=OneWay}">
 
-                <!-- Chart -->
-                <Border
-                    Padding="16,12,16,8"
-                    CornerRadius="8"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1">
-                    <StackPanel Spacing="8">
-                        <Grid ColumnSpacing="12">
+                    <!-- Compact AI bar -->
+                    <Border
+                        Padding="20,14"
+                        CornerRadius="8"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1">
+                        <Grid ColumnSpacing="16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Spacing="2">
-                                <TextBlock Text="{x:Bind ViewModel.ChartTitle, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                <TextBlock
-                                    Text="{x:Bind ViewModel.ChartCaption, Mode=OneWay}"
-                                    TextWrapping="Wrap"
-                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock
+                                AutomationProperties.AutomationId="AiBarStatus"
+                                Text="{x:Bind ViewModel.Ai.BarStatus, Mode=OneWay}"
+                                TextWrapping="Wrap"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <Button
+                                    AutomationProperties.AutomationId="AskAiBarButton"
+                                    Content="Ask AI"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    Padding="20,6"
+                                    Visibility="{x:Bind ViewModel.Ai.IsConfigured, Mode=OneWay}"
+                                    IsEnabled="{x:Bind ViewModel.Ai.NotBusy, Mode=OneWay}"
+                                    Command="{x:Bind ViewModel.AskAiAndShowCommand, Mode=OneTime}" />
+                                <Button
+                                    AutomationProperties.AutomationId="OpenAiTabButton"
+                                    Content="Open Ask AI tab"
+                                    Click="OpenAiTab_Click" />
                             </StackPanel>
-                            <ComboBox
-                                Grid.Column="1"
-                                AutomationProperties.AutomationId="ChartViewCombo"
-                                ItemsSource="{x:Bind ViewModel.ChartViews, Mode=OneWay}"
-                                SelectedItem="{x:Bind ViewModel.SelectedChartView, Mode=TwoWay}"
-                                DisplayMemberPath="Label"
-                                MinWidth="200"
-                                VerticalAlignment="Top" />
                         </Grid>
-                        <controls:FrameTimeChart x:Name="Chart" Height="280" />
-                        <TextBlock
-                            Style="{StaticResource CaptionTextBlockStyle}"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="Red markers are freezes of 200 ms or more." />
-                    </StackPanel>
-                </Border>
+                    </Border>
 
-                <!-- Findings -->
-                <TextBlock Text="What stands out" Style="{StaticResource SubtitleTextBlockStyle}" />
-                <ItemsControl ItemsSource="{x:Bind ViewModel.Findings, Mode=OneWay}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:FindingItem">
-                            <InfoBar
-                                Margin="0,0,0,8"
-                                IsOpen="True"
-                                IsClosable="False"
-                                Severity="{x:Bind Severity, Mode=OneTime}"
-                                Title="{x:Bind Title, Mode=OneTime}">
-                                <StackPanel Spacing="6" Margin="0,0,0,8">
-                                    <TextBlock Text="{x:Bind Detail, Mode=OneTime}" TextWrapping="Wrap" />
-                                    <StackPanel Spacing="2" Visibility="{x:Bind HasSuggestions, Mode=OneTime}">
-                                        <TextBlock Text="What you can try" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
-                                        <TextBlock Text="{x:Bind Suggestions, Mode=OneTime}" TextWrapping="Wrap" />
-                                    </StackPanel>
+                    <!-- Chart -->
+                    <Border
+                        Padding="16,12,16,8"
+                        CornerRadius="8"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="{x:Bind ViewModel.ChartTitle, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
                                     <TextBlock
-                                        Text="{x:Bind Evidence, Mode=OneTime}"
+                                        Text="{x:Bind ViewModel.ChartCaption, Mode=OneWay}"
                                         TextWrapping="Wrap"
                                         Style="{StaticResource CaptionTextBlockStyle}"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
-                            </InfoBar>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                                <ComboBox
+                                    Grid.Column="1"
+                                    AutomationProperties.AutomationId="ChartViewCombo"
+                                    ItemsSource="{x:Bind ViewModel.ChartViews, Mode=OneWay}"
+                                    SelectedItem="{x:Bind ViewModel.SelectedChartView, Mode=TwoWay}"
+                                    DisplayMemberPath="Label"
+                                    MinWidth="200"
+                                    VerticalAlignment="Top" />
+                            </Grid>
+                            <controls:FrameTimeChart x:Name="Chart" Height="280" />
+                            <TextBlock
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Red markers are freezes of 200 ms or more." />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- What to do -->
+                    <Border
+                        Visibility="{x:Bind ViewModel.HasTopSteps, Mode=OneWay}"
+                        Padding="20,16"
+                        CornerRadius="8"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="What you can do" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock
+                                TextWrapping="Wrap"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="In order of importance. Try one at a time, record the same route again, and use Compare to see whether it helped." />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.TopSteps, Mode=OneWay}" ItemTemplate="{StaticResource NextStepTemplate}" />
+                            <Expander
+                                AutomationProperties.AutomationId="MoreStepsExpander"
+                                Header="{x:Bind ViewModel.MoreStepsHeader, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.HasMoreSteps, Mode=OneWay}"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch">
+                                <ItemsControl ItemsSource="{x:Bind ViewModel.MoreSteps, Mode=OneWay}" ItemTemplate="{StaticResource NextStepTemplate}" />
+                            </Expander>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Ask AI: the full panel -->
+                <controls:AiPanel
+                    ViewModel="{x:Bind ViewModel.Ai, Mode=OneTime}"
+                    Visibility="{x:Bind ViewModel.IsAiTab, Mode=OneWay}" />
+
+                <!-- Findings: what needs attention, the rest folded away -->
+                <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.IsFindingsTab, Mode=OneWay}">
+                    <TextBlock
+                        Visibility="{x:Bind ViewModel.HasAttention, Mode=OneWay}"
+                        Text="Needs attention"
+                        Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.AttentionFindings, Mode=OneWay}" ItemTemplate="{StaticResource FindingTemplate}" />
+                    <Expander
+                        AutomationProperties.AutomationId="OtherNotesExpander"
+                        Header="{x:Bind ViewModel.NotesHeader, Mode=OneWay}"
+                        IsExpanded="{x:Bind ViewModel.NotesExpanded, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.HasNotes, Mode=OneWay}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.NoteFindings, Mode=OneWay}" ItemTemplate="{StaticResource FindingTemplate}" />
+                    </Expander>
+                </StackPanel>
+
+                <!-- PC and setup -->
+                <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.IsPcTab, Mode=OneWay}">
+                    <Border
+                        Padding="20,16"
+                        CornerRadius="8"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1">
+                        <StackPanel Spacing="12" AutomationProperties.AutomationId="PcSpecs">
+                            <TextBlock Text="This PC" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock Text="{x:Bind ViewModel.SpecSummary, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.SpecSections, Mode=OneWay}">
+                                <ItemsRepeater.Layout>
+                                    <UniformGridLayout MinItemWidth="330" MinColumnSpacing="24" MinRowSpacing="16" ItemsStretch="Fill" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:SpecSectionView">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="{x:Bind Title, Mode=OneTime}" Style="{StaticResource BodyStrongTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                            <TextBlock Text="{x:Bind Lines, Mode=OneTime}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" IsTextSelectionEnabled="True" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Settings the capture cannot show -->
+                    <Expander
+                        Header="{x:Bind ViewModel.SettingsHeader, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.HasSettings, Mode=OneWay}"
+                        IsExpanded="True"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch">
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                TextWrapping="Wrap"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Read from the game's config file at its last save, or entered by you. It may differ from what was active during this capture. Values marked (raw id) are the game's own numbers, not preset names." />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.SettingRows, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:SettingRow">
+                                        <Grid ColumnSpacing="16" Padding="0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="260" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{x:Bind Label, Mode=OneTime}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Value, Mode=OneTime}" />
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Source, Mode=OneTime}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Expander>
+
+                    <Border
+                        Padding="20,16"
+                        CornerRadius="8"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Help daignostic know more" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock
+                                TextWrapping="Wrap"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Some things a capture cannot show: the game's graphics settings, whether G-SYNC or FreeSync is on, driver options, and where the game is installed. Add what you know to make the findings more accurate. It is all optional and stays on this PC." />
+                            <TextBlock
+                                Visibility="{x:Bind ViewModel.HasNoReader, Mode=OneWay}"
+                                TextWrapping="Wrap"
+                                FontWeight="SemiBold"
+                                Text="daignostic has no built-in reader for this game's settings. Type them in, or let your own AI pull them out of the game's config file." />
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Button AutomationProperties.AutomationId="GameSettingsButton" Content="Add game settings..." Click="GameSettings_Click" />
+                                <Button AutomationProperties.AutomationId="PcSetupButton" Content="Edit PC setup..." Click="Setup_Click" />
+                            </StackPanel>
+                            <Expander
+                                Header="What daignostic knows about your setup"
+                                Visibility="{x:Bind ViewModel.HasSystemRows, Mode=OneWay}"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch">
+                                <ItemsControl ItemsSource="{x:Bind ViewModel.SystemRows, Mode=OneWay}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SettingRow">
+                                            <Grid ColumnSpacing="16" Padding="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="300" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{x:Bind Label, Mode=OneTime}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                <TextBlock Grid.Column="1" Text="{x:Bind Value, Mode=OneTime}" TextWrapping="Wrap" />
+                                                <TextBlock Grid.Column="2" Text="{x:Bind Source, Mode=OneTime}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Expander>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
 
                 <!-- Programs competing with the game -->
                 <Border
+                    Visibility="{x:Bind ViewModel.IsBackgroundTab, Mode=OneWay}"
                     Padding="20,16"
                     CornerRadius="8"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
@@ -282,6 +436,12 @@
                             <ProgressRing Width="22" Height="22" IsActive="{x:Bind ViewModel.IsScanning, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsScanning, Mode=OneWay}" />
                             <TextBlock Text="{x:Bind ViewModel.ScanStatus, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         </StackPanel>
+                        <TextBlock
+                            AutomationProperties.AutomationId="BackgroundSummary"
+                            Text="{x:Bind ViewModel.BackgroundSummary, Mode=OneWay}"
+                            Visibility="{x:Bind ViewModel.HasBackgroundSummary, Mode=OneWay}"
+                            TextWrapping="Wrap"
+                            Style="{StaticResource BodyStrongTextBlockStyle}" />
                         <StackPanel Spacing="2" Visibility="{x:Bind ViewModel.HasBackground, Mode=OneWay}">
                             <Grid ColumnSpacing="12" Padding="0,4">
                                 <Grid.ColumnDefinitions>
@@ -322,83 +482,6 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- Settings the capture cannot show -->
-                <Expander
-                    Header="{x:Bind ViewModel.SettingsHeader, Mode=OneWay}"
-                    Visibility="{x:Bind ViewModel.HasSettings, Mode=OneWay}"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Stretch">
-                    <StackPanel Spacing="8">
-                        <TextBlock
-                            TextWrapping="Wrap"
-                            Style="{StaticResource CaptionTextBlockStyle}"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="Read from the game's config file at its last save, or entered by you. It may differ from what was active during this capture. Values marked (raw id) are the game's own numbers, not preset names." />
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.SettingRows, Mode=OneWay}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:SettingRow">
-                                    <Grid ColumnSpacing="16" Padding="0,2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="260" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{x:Bind Label, Mode=OneTime}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        <TextBlock Grid.Column="1" Text="{x:Bind Value, Mode=OneTime}" />
-                                        <TextBlock Grid.Column="2" Text="{x:Bind Source, Mode=OneTime}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </Expander>
-
-                <Border
-                    Padding="20,16"
-                    CornerRadius="8"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Help daignostic know more" Style="{StaticResource SubtitleTextBlockStyle}" />
-                        <TextBlock
-                            TextWrapping="Wrap"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="Some things a capture cannot show: the game's graphics settings, whether G-SYNC or FreeSync is on, driver options, and where the game is installed. Add what you know to make the findings more accurate. It is all optional and stays on this PC." />
-                        <TextBlock
-                            Visibility="{x:Bind ViewModel.HasNoReader, Mode=OneWay}"
-                            TextWrapping="Wrap"
-                            FontWeight="SemiBold"
-                            Text="daignostic has no built-in reader for this game's settings. Type them in, or let your own AI pull them out of the game's config file." />
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Button AutomationProperties.AutomationId="GameSettingsButton" Content="Add game settings..." Click="GameSettings_Click" />
-                            <Button AutomationProperties.AutomationId="PcSetupButton" Content="Edit PC setup..." Click="Setup_Click" />
-                        </StackPanel>
-                        <Expander
-                            Header="What daignostic knows about your setup"
-                            Visibility="{x:Bind ViewModel.HasSystemRows, Mode=OneWay}"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch">
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.SystemRows, Mode=OneWay}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:SettingRow">
-                                        <Grid ColumnSpacing="16" Padding="0,2">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="300" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{x:Bind Label, Mode=OneTime}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                            <TextBlock Grid.Column="1" Text="{x:Bind Value, Mode=OneTime}" TextWrapping="Wrap" />
-                                            <TextBlock Grid.Column="2" Text="{x:Bind Source, Mode=OneTime}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </Expander>
                     </StackPanel>
                 </Border>
             </StackPanel>

@@ -1,4 +1,4 @@
-using Daignostic.Core.Ai;
+﻿using Daignostic.Core.Ai;
 using Daignostic.Core.Config;
 using Daignostic.Core.Settings;
 using Daignostic.Core.SystemInfo;
@@ -10,6 +10,9 @@ internal static class AppServices
 {
     public const string AiKeyName = "aikey";
 
+    /// <summary>How long a single AI request may take before the app gives up.</summary>
+    public const int AiTimeoutSeconds = 120;
+
     public static SettingsStore SettingsStore { get; } = new(SettingsStore.DefaultPath);
 
     public static DpapiSecretStore Secrets { get; } = new(DpapiSecretStore.DefaultDirectory);
@@ -20,7 +23,7 @@ internal static class AppServices
 
     public static ISystemProbe Probe { get; } = new WindowsSystemProbe();
 
-    public static HttpClient Http { get; } = new() { Timeout = TimeSpan.FromSeconds(120) };
+    public static HttpClient Http { get; } = new() { Timeout = TimeSpan.FromSeconds(AiTimeoutSeconds) };
 
     public static IReadOnlyList<IGameConfigReader> ConfigReaders { get; } = GameConfigReaders.CreateDefaults();
 

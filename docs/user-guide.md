@@ -18,7 +18,7 @@ daignostic checks whether CapFrameX is installed. The **CapFrameX** button in th
 
 ## The Analyze page, top to bottom
 
-**This PC.** One line with your GPU, CPU, memory and resolution. Open it for the full picture: graphics (driver, video memory, clocks, power, temperatures, Resizable BAR), processor (cores, boost clock), memory, display (refresh range, variable refresh), motherboard and Windows settings, and the drive the game is installed on. The motherboard is shown here only; it is never sent to an AI.
+The page leads with a one-line **verdict** (healthy, worth fixing, serious problems) and the numbers behind it, then splits the rest into tabs so you only read what you need.
 
 **The cards**
 
@@ -30,30 +30,36 @@ daignostic checks whether CapFrameX is installed. The **CapFrameX** button in th
 | Freezes | Frames that took 200 ms or more: the game visibly hung. |
 | Limited by | Whether the GPU, CPU, heat or power limit holds performance back, and how confident that call is. |
 
-**Ask an AI.** The main feature; see below.
+**Overview tab**
 
-**What you can do.** The most valuable things to try, most important first. Try one at a time, record the same route again, and use **Compare**.
+- **Ask AI bar.** One line and a button. Pressing **Ask AI** jumps to the Ask AI tab so you can watch it work.
+- **The chart.** Pick a view: frame time, FPS, GPU and CPU load, temperatures, clock speeds, memory, power or latency (only the views your capture has data for). Red markers are freezes. Hover to read exact values. For frame time and FPS the white line is a one-second average, and extreme spikes are clipped so one huge freeze does not flatten everything else.
+- **What you can do.** The three most valuable things to try, most important first; **Show more steps** has the rest. Try one at a time, record the same route again, and use **Compare**.
 
-**The chart.** Pick a view: frame time, FPS, GPU and CPU load, temperatures, clock speeds, memory, power or latency (only the views your capture has data for). Red markers are freezes. Hover to read exact values. For frame time and FPS the white line is a one-second average, and extreme spikes are clipped so one huge freeze does not flatten everything else.
+**Ask AI tab.** The full AI panel; see below.
 
-**What stands out.** Findings, each with the measurements behind it ("Based on: ...") and **What you can try**. Blue is information, yellow is worth a look, red is serious. These come from fixed rules, not an AI; see [Diagnostic rules](rules.md).
+**Findings tab.** What needs attention comes first, each with the measurements behind it ("Based on: ...") and **What you can try**. Blue is information, yellow is worth a look, red is serious. Lower-priority notes are folded into **other notes** (opened for you when nothing else needs attention). The tab title shows how many things need a look. These come from fixed rules, not an AI; see [Diagnostic rules](rules.md).
 
-**Is something else slowing the game down?** A capture cannot show which other programs were running. Press **Check background programs (10 s)** to sample your PC right now: which programs use CPU, disk and GPU, and which well-known troublemakers are open (overlays, recorders, browsers, launchers, cloud sync, security scans, vendor software, virtual machines). For the best result start the game, idle in a menu, switch back and run it. It only reads. The result reflects that moment, not necessarily the captured session.
+**PC and setup tab.**
 
-**Help daignostic know more.** Things a capture cannot show. All optional, all kept on this PC:
+- **This PC.** Your GPU, CPU, memory and resolution, then the full picture: graphics (driver, video memory, clocks, power, temperatures, Resizable BAR), processor (cores, boost clock), memory, display (refresh range, variable refresh), motherboard and Windows settings, and the drive the game is installed on. The motherboard is shown here only; it is never sent to an AI.
+- **Game settings** (when daignostic can read them) and **Help daignostic know more**: things a capture cannot show. All optional, all kept on this PC:
+  - **Add game settings...** For games daignostic cannot read by itself: type or paste them (JSON, `key=value` or `key: value` lines), or let your own AI pull the graphics settings out of the game's config file. For the AI route, likely secrets and your user name are removed first, you see exactly what is sent, and the app keeps only settings whose names and values really appear in the file. Settings are shown as the game's own raw values, never guessed into friendly names.
+  - **Edit PC setup...** (also the **PC setup...** button in the page header.) Tell daignostic what it cannot read: G-SYNC/FreeSync state, VSync, Reflex or low-latency mode, frame cap, driver shader cache size, GPU power mode, your monitor, and where the game is installed. The install folder lets it find out whether the game is on an SSD or a hard disk, NVMe or SATA, and how full the drive is. Answers are used as given and never verified.
 
-- **Add game settings...** For games daignostic cannot read by itself: type or paste them (JSON, `key=value` or `key: value` lines), or let your own AI pull the graphics settings out of the game's config file. For the AI route, likely secrets and your user name are removed first, you see exactly what is sent, and the app keeps only settings whose names and values really appear in the file. Settings are shown as the game's own raw values, never guessed into friendly names.
-- **Edit PC setup...** (also the **PC setup...** button in the page header, and inside **This PC**.) Tell daignostic what it cannot read: G-SYNC/FreeSync state, VSync, Reflex or low-latency mode, frame cap, driver shader cache size, GPU power mode, your monitor, and where the game is installed. The install folder lets it find out whether the game is on an SSD or a hard disk, NVMe or SATA, and how full the drive is. Answers are used as given and never verified.
+**Background programs tab.** A capture cannot show which other programs were running. Press **Check background programs (10 s)** to sample your PC right now: which programs use CPU, disk and GPU, and which well-known troublemakers are open (overlays, recorders, browsers, launchers, cloud sync, security scans, vendor software, virtual machines). For the best result start the game, idle in a menu, switch back and run it. It only reads. The result reflects that moment, not necessarily the captured session.
+
+**Header buttons.** **Open capture...**, **Recent captures**, **PC setup...**, **Open CapFrameX** (or **Get CapFrameX** if it is not installed) and **Export report...**.
 
 ## Asking an AI (optional)
 
 AI is optional. Without it, everything above still works.
 
-**Inside daignostic.** In **Settings**, turn on "Ask an AI from inside daignostic", enter the endpoint address and a **model name** exactly as your provider spells it (use **List models** to see what your endpoint offers), add an API key if needed, and press **Test AI connection**. Then, on the Analyze page:
+**Inside daignostic.** In **Settings**, turn on "Ask an AI from inside daignostic", enter the endpoint address and a **model name** exactly as your provider spells it (use **List models** to see what your endpoint offers), add an API key if needed, and press **Test AI connection**. Then, on the Analyze page (the **Ask AI** tab):
 
 1. Open **Preview exactly what will be sent or exported**. That text is the entire message.
 2. Optionally add a note ("I turned ray tracing off in this run").
-3. Press **Ask AI**.
+3. Press **Ask AI**. A progress card shows what is happening and how long it has taken, and has a **Cancel** button. Slow answers get a hint; failures say what went wrong (cannot reach the AI, key or model rejected, took too long, or an answer in the wrong format, which you can read) and what to try, with **Try again** and a shortcut to Settings.
 
 The answer ranks the likely causes for your data, with confidence, things to try, and the evidence behind each claim. Claims that cite no evidence are discarded and counted. It also lists **what the AI could not tell from this data**. The AI answers once and does not ask questions: this is not a chat, and it has no access to your PC.
 
@@ -61,7 +67,7 @@ The answer ranks the likely causes for your data, with confidence, things to try
 
 ## Comparing two runs
 
-Pick the earlier run as **A** and the later one as **B** (load captures with the buttons, or from the Analyze page). The table shows each measure, the change, and whether B is better. *Context* rows (GPU load, VRAM, temperature) are shown for information and are not scored. Change **one thing per run** so the result means something. The AI panel works here too.
+Pick the earlier run as **A** and the later one as **B** (load captures with the buttons, or from the Analyze page). The table shows each measure, the change, and whether B is better. The chart overlays both runs: A in yellow, B in blue, with bold one-second averages over faint per-frame lines. Use the picker to switch between frame time, FPS and (when both captures have them) GPU load, temperature, clock, video memory, power and latency. *Context* rows (GPU load, VRAM, temperature) are shown for information and are not scored. Change **one thing per run** so the result means something. The AI panel works here too.
 
 ## Exporting a report
 

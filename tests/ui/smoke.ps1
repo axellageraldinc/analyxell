@@ -38,8 +38,8 @@ function Ui {
 function HasText([string]$text) { return (Ui @('search', $text)) -match 'Found [1-9]' }
 
 function Shot([string]$name) {
-    $h = (& winapp ui list-windows -a Daignostic 2>&1 | Out-String)
-    if ("$h" -match 'HWND (\d+): "[^"]*" \(window,') { & winapp ui screenshot -w $Matches[1] --capture-screen -o (Join-Path $work "$name.png") 2>&1 | Out-Null }
+    $h = (& winapp ui list-windows -a Daignostic 2>&1 | Out-String) -replace "$([char]27)\[[0-9;]*m", ''
+    if ("$h" -match 'HWND (\d+): "[^"]*" \(window,') { & winapp ui screenshot -w $Matches[1] -o (Join-Path $work "$name.png") 2>&1 | Out-Null }
 }
 
 function WaitFor([string]$text, [int]$seconds = 20) {
@@ -65,21 +65,29 @@ if ($run -notmatch 'ProcessId') { Write-Host $run; Stop-Job $mock; exit 2 }
 try {
     Write-Host 'Analyze page'
     Check 'capture opens from the command line' (WaitFor 'Sample Game' 30)
-    Check 'PC summary is shown up front' (HasText 'Sample GPU 12GB')
     Check 'metric cards are shown' ((HasText 'Average') -and (HasText 'Freezes'))
-    # The later capture (no freezes) is loaded last, so it is the one shown on the Analyze page.
-    Check 'findings are shown for the selected capture' (HasText 'Frame delivery looks smooth')
     Check 'device name is not displayed' (-not (HasText 'SAMPLE-DEVICE-NAME'))
-    Check 'AI is the highlighted feature' (HasText 'Ask an AI what is wrong')
-    Check 'AI is optional: set-up and export-for-own-AI are offered' ((HasText 'AI is optional') -and (Ui @('search', 'ExportPackButton')) -match 'Found [1-9]')
-    Check 'CapFrameX can be opened or fetched from the header' ((Ui @('search', 'CapFrameXHeaderButton')) -match 'Found [1-9]')
+    Check 'a one-line verdict leads the page' ((Ui @('search', 'VerdictBar')) -match 'Found [1-9]' -and (HasText 'This run looks healthy'))
+    Check 'the page is split into tabs' (((Ui @('search', 'TabOverview')) -match 'Found [1-9]') -and ((Ui @('search', 'TabAi')) -match 'Found [1-9]') -and ((Ui @('search', 'TabFindings')) -match 'Found [1-9]') -and ((Ui @('search', 'TabPc')) -match 'Found [1-9]') -and ((Ui @('search', 'TabBackground')) -match 'Found [1-9]'))
+    Check 'the overview has a compact AI bar, not the whole AI panel' (((Ui @('search', 'AiBarStatus')) -match 'Found [1-9]') -and -not (HasText 'Anything the AI should know'))
+    Check 'the CapFrameX header button is labelled' ((HasText 'Open CapFrameX') -or (HasText 'Get CapFrameX'))
     Check 'PC setup is easy to find in the header' ((Ui @('search', 'PcSetupHeaderButton')) -match 'Found [1-9]')
     Check 'a chart view picker is offered' ((Ui @('search', 'ChartViewCombo')) -match 'Found [1-9]')
-    Check 'missing game settings are called out with a way to add them' ((HasText 'no built-in reader') -and (Ui @('search', 'GameSettingsButton')) -match 'Found [1-9]')
     Shot '1-analyze'
 
+    Write-Host 'Findings, PC and AI tabs'
+    Ui @('invoke', 'TabFindings') | Out-Null; Start-Sleep 1
+    Check 'findings tab shows the findings' (HasText 'Frame delivery looks smooth')
+    Shot '1b-findings'
+    Ui @('invoke', 'TabPc') | Out-Null; Start-Sleep 1
+    Check 'PC tab shows the specs' (HasText 'Sample GPU 12GB')
+    Check 'missing game settings are called out with a way to add them' ((HasText 'no built-in reader') -and (Ui @('search', 'GameSettingsButton')) -match 'Found [1-9]')
+    Shot '1c-pc'
+    Ui @('invoke', 'TabAi') | Out-Null; Start-Sleep 1
+    Check 'AI is optional: set-up and export-for-own-AI are offered' ((HasText 'AI is optional') -and (Ui @('search', 'ExportPackButton')) -match 'Found [1-9]')
+
     Write-Host 'Background check'
-    Ui @('scroll-into-view', 'CheckBackgroundButton') | Out-Null; Start-Sleep 1
+    Ui @('invoke', 'TabBackground') | Out-Null; Start-Sleep 1
     Ui @('invoke', 'CheckBackgroundButton') | Out-Null
     $bgDone = $false
     for ($i = 0; $i -lt 40 -and -not $bgDone; $i++) {
@@ -92,6 +100,7 @@ try {
     Write-Host 'Compare page'
     Ui @('invoke', 'NavCompare') | Out-Null; Start-Sleep 2
     Check 'comparison summary is shown' (WaitFor 'B is better on' 10)
+    Check 'a metric picker is offered and both runs are named in the legend' (((Ui @('search', 'CompareViewCombo')) -match 'Found [1-9]') -and (HasText 'baseline'))
     Check 'freezes are compared between the runs' (HasText 'Freezes (200 ms or more)')
     Check 'context rows are not counted as better or worse' (HasText 'Context')
     Shot '3-compare'
@@ -126,8 +135,9 @@ try {
 
     Write-Host 'AI analysis'
     Ui @('invoke', 'NavAnalyze') | Out-Null; Start-Sleep 2
-    Ui @('scroll-into-view', 'AskAiButton') | Out-Null; Start-Sleep 1
-    Ui @('invoke', 'AskAiButton') | Out-Null
+    Ui @('invoke', 'TabOverview') | Out-Null; Start-Sleep 1
+    Ui @('invoke', 'AskAiBarButton') | Out-Null
+    Check 'asking from the overview opens the AI tab' (WaitFor 'Anything the AI should know' 10)
     Check 'cited AI claim is shown' (WaitFor 'Freezes look GPU-side' 15)
     Check 'uncited AI claim is discarded and flagged' ((-not (HasText 'Made-up claim')) -and (HasText 'discarded because they cited no measured evidence'))
     Check 'what the AI could not tell is shown instead of a question' (HasText 'Whether VSync was on')
@@ -142,6 +152,31 @@ try {
     Check 'request leaked no device name, board or user path' (($null -ne $analysis) -and (-not $analysis.leaked))
     Check 'the AI was told never to ask questions' (($null -ne $analysis) -and $analysis.noQuestionRule)
     Check 'suggestions were included for the AI to build on' (($null -ne $analysis) -and $analysis.hasSuggestions)
+
+    function UseModel([string]$model) {
+        Ui @('invoke', 'SettingsItem') | Out-Null; Start-Sleep 1
+        Ui @('set-value', 'ModelBox', $model) | Out-Null
+        Ui @('invoke', 'SaveSettingsButton') | Out-Null; Start-Sleep 1
+        Ui @('invoke', 'NavAnalyze') | Out-Null; Start-Sleep 1
+        Ui @('invoke', 'TabAi') | Out-Null; Start-Sleep 1
+    }
+
+    Write-Host 'AI progress and errors'
+    UseModel 'slow-model'
+    Ui @('invoke', 'AskAiButton') | Out-Null
+    Check 'a progress card with a clock and Cancel is shown while waiting' ((WaitFor 'Waiting for the answer' 10) -and ((Ui @('search', 'CancelAiButton')) -match 'Found [1-9]'))
+    Shot '5b-ai-progress'
+    Ui @('invoke', 'CancelAiButton') | Out-Null
+    Check 'cancelling says nothing was changed' (WaitFor 'You cancelled the request' 10)
+
+    UseModel 'garbage-model'
+    Ui @('invoke', 'AskAiButton') | Out-Null
+    Check 'an unreadable reply is explained and shown' ((WaitFor 'not in a form daignostic can read' 15) -and ((Ui @('search', 'AiTryAgainButton')) -match 'Found [1-9]'))
+    Shot '5c-ai-error'
+
+    UseModel 'badkey-model'
+    Ui @('invoke', 'AskAiButton') | Out-Null
+    Check 'a rejected key points to Settings' ((WaitFor 'did not accept your API key' 15) -and ((Ui @('search', 'AiOpenSettingsButton')) -match 'Found [1-9]'))
 }
 finally {
     Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force

@@ -11,8 +11,8 @@ public sealed partial class ComparePage : Page
     {
         ViewModel = new CompareViewModel();
         InitializeComponent();
-        ViewModel.ComparisonChanged += OnComparisonChanged;
-        Loaded += (_, _) => OnComparisonChanged(ViewModel.Comparison);
+        ViewModel.ChartChanged += OnChartChanged;
+        Loaded += (_, _) => ViewModel.RaiseChart();
     }
 
     public CompareViewModel ViewModel { get; }
@@ -23,29 +23,14 @@ public sealed partial class ComparePage : Page
         ViewModel.Ai.RefreshPreview();
     }
 
-    private void OnComparisonChanged(ComparisonResult? comparison)
+    private void OnChartChanged(ChartSpec? spec, IReadOnlyList<double> freezes)
     {
-        if (comparison is null || ViewModel.A is null || ViewModel.B is null)
+        if (spec is null)
         {
             Chart.Clear();
             return;
         }
 
-        var a = ViewModel.A.Result.Run;
-        var b = ViewModel.B.Result.Run;
-        var spec = new ChartSpec(
-            ChartView.FrameTime,
-            "Frame time",
-            "ms",
-            "A in grey, B in blue. Lower is smoother.",
-            [
-                new ChartLine("A", a.TimeSec, a.FrameMs, 3),
-                new ChartLine("B", b.TimeSec, b.FrameMs, 0),
-            ],
-            [new ChartReference(1000.0 / 60, "60 fps"), new ChartReference(1000.0 / 30, "30 fps")],
-            null,
-            ZeroBased: true,
-            ClipSpikes: true);
-        Chart.SetSpec(spec, ViewModel.B.Result.Freezes.Select(f => f.TimeSec).ToList());
+        Chart.SetSpec(spec, freezes);
     }
 }

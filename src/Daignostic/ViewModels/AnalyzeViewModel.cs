@@ -28,6 +28,16 @@ public sealed record ChartViewItem(ChartView View, string Label);
 
 public sealed record BackgroundRow(string Name, string Cpu, string Disk, string Gpu, string Memory, string Note);
 
+/// <summary>The sections of the Analyze page. Each one shows only what belongs to it, so the page stays readable.</summary>
+public enum AnalyzeTab
+{
+    Overview,
+    Ai,
+    Findings,
+    Pc,
+    Background,
+}
+
 public sealed partial class AnalyzeViewModel : ObservableObject
 {
     private LoadedCapture? _current;
@@ -38,6 +48,9 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         CatalogStatus = "";
         StatusMessage = "";
         ScanStatus = "";
+        VerdictHeadline = "";
+        VerdictDetail = "";
+        CapFrameX = new CapFrameXViewModel();
         Ai = new AiPanelViewModel(RunAiAsync, BuildPreview, BuildPack, "daignostic-ai-pack");
         if (AppState.Selected is { } selected)
         {
@@ -47,9 +60,13 @@ public sealed partial class AnalyzeViewModel : ObservableObject
 
     public ObservableCollection<MetricItem> Cards { get; } = [];
 
-    public ObservableCollection<FindingItem> Findings { get; } = [];
+    public ObservableCollection<FindingItem> AttentionFindings { get; } = [];
 
-    public ObservableCollection<NextStepItem> NextSteps { get; } = [];
+    public ObservableCollection<FindingItem> NoteFindings { get; } = [];
+
+    public ObservableCollection<NextStepItem> TopSteps { get; } = [];
+
+    public ObservableCollection<NextStepItem> MoreSteps { get; } = [];
 
     public ObservableCollection<SettingRow> SettingRows { get; } = [];
 
@@ -85,9 +102,6 @@ public sealed partial class AnalyzeViewModel : ObservableObject
                 OnPropertyChanged(nameof(HasSettings));
                 OnPropertyChanged(nameof(SettingsHeader));
                 OnPropertyChanged(nameof(HasNoReader));
-                OnPropertyChanged(nameof(HasSystemRows));
-                OnPropertyChanged(nameof(HasNextSteps));
-                OnPropertyChanged(nameof(HasBackground));
             }
         }
     }
@@ -122,6 +136,48 @@ public sealed partial class AnalyzeViewModel : ObservableObject
     [ObservableProperty]
     public partial string ChartCaption { get; set; } = "";
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOverviewTab), nameof(IsAiTab), nameof(IsFindingsTab), nameof(IsPcTab), nameof(IsBackgroundTab))]
+    public partial AnalyzeTab SelectedTab { get; set; }
+
+    [ObservableProperty]
+    public partial string VerdictHeadline { get; set; }
+
+    [ObservableProperty]
+    public partial string VerdictDetail { get; set; }
+
+    [ObservableProperty]
+    public partial InfoBarSeverity VerdictSeverity { get; set; }
+
+    [ObservableProperty]
+    public partial string FindingsTabText { get; set; } = "Findings";
+
+    [ObservableProperty]
+    public partial string MoreStepsHeader { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string NotesHeader { get; set; } = "";
+
+    /// <summary>What the last background-program check concluded, repeated here so the result is next to the button.</summary>
+    [ObservableProperty]
+    public partial string BackgroundSummary { get; set; } = "";
+
+    public bool HasBackgroundSummary => BackgroundSummary.Length > 0;
+
+    /// <summary>The other notes stay folded away unless there is nothing else to read.</summary>
+    [ObservableProperty]
+    public partial bool NotesExpanded { get; set; }
+
+    public bool IsOverviewTab => SelectedTab == AnalyzeTab.Overview;
+
+    public bool IsAiTab => SelectedTab == AnalyzeTab.Ai;
+
+    public bool IsFindingsTab => SelectedTab == AnalyzeTab.Findings;
+
+    public bool IsPcTab => SelectedTab == AnalyzeTab.Pc;
+
+    public bool IsBackgroundTab => SelectedTab == AnalyzeTab.Background;
+
     public bool NotScanning => !IsScanning;
 
     public bool HasCapture => Current is not null;
@@ -136,7 +192,13 @@ public sealed partial class AnalyzeViewModel : ObservableObject
 
     public bool HasSystemRows => SystemRows.Count > 0;
 
-    public bool HasNextSteps => NextSteps.Count > 0;
+    public bool HasTopSteps => TopSteps.Count > 0;
+
+    public bool HasMoreSteps => MoreSteps.Count > 0;
+
+    public bool HasAttention => AttentionFindings.Count > 0;
+
+    public bool HasNotes => NoteFindings.Count > 0;
 
     public bool HasBackground => BackgroundRows.Count > 0;
 
@@ -151,6 +213,20 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         : $"{Current.Result.Metrics.DurationSec / 60:0.#} min capture  ·  {Current.Result.Info.GraphicsApi}";
 
     partial void OnSelectedChartViewChanged(ChartViewItem? value) => RaiseChart();
+
+    [RelayCommand]
+    private void ShowTab(AnalyzeTab tab) => SelectedTab = tab;
+
+    /// <summary>Switches to the AI tab so the user can follow progress, then asks.</summary>
+    [RelayCommand]
+    private async Task AskAiAndShowAsync()
+    {
+        SelectedTab = AnalyzeTab.Ai;
+        if (Ai.AskCommand.CanExecute(null))
+        {
+            await Ai.AskCommand.ExecuteAsync(null);
+        }
+    }
 
     [RelayCommand]
     private async Task OpenFileAsync()
@@ -182,7 +258,7 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         }
     }
 
-    /// <summary>Re-runs the analysis after the user changed settings or setup, keeping the chosen chart view.</summary>
+    /// <summary>Re-runs the analysis after the user changed settings or setup, keeping the chosen chart view and tab.</summary>
     public async Task ReanalyzeAsync(BackgroundScanResult? background = null)
     {
         if (Current is null)
@@ -193,7 +269,7 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         IsLoading = true;
         try
         {
-            Show(await AppState.ReanalyzeAsync(Current, background), keepChartView: true);
+            Show(await AppState.ReanalyzeAsync(Current, background), keepView: true);
         }
         finally
         {
@@ -268,11 +344,22 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         }
     }
 
-    private void Show(LoadedCapture capture, bool keepChartView = false)
+    private void Show(LoadedCapture capture, bool keepView = false)
     {
         Current = capture;
         var r = capture.Result;
         var m = r.Metrics;
+
+        var verdict = OverallVerdict.From(r);
+        VerdictHeadline = verdict.Headline;
+        VerdictDetail = verdict.Detail;
+        VerdictSeverity = verdict.Level switch
+        {
+            Severity.High => InfoBarSeverity.Error,
+            Severity.Medium => InfoBarSeverity.Warning,
+            Severity.Low => InfoBarSeverity.Informational,
+            _ => InfoBarSeverity.Success,
+        };
 
         Cards.Clear();
         Cards.Add(new MetricItem("Average", F(m.AverageFps), "fps"));
@@ -282,23 +369,33 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         Cards.Add(new MetricItem("Freezes", r.Freezes.Count.ToString(CultureInfo.InvariantCulture), "frames of 200 ms+"));
         Cards.Add(new MetricItem("Limited by", Verdict(r.Bottleneck.Verdict), $"{r.Bottleneck.Confidence} confidence"));
 
-        Findings.Clear();
+        AttentionFindings.Clear();
+        NoteFindings.Clear();
         foreach (var f in r.Findings.OrderByDescending(f => f.Severity))
         {
-            Findings.Add(new FindingItem(
+            var item = new FindingItem(
                 f.Title,
                 f.Detail,
                 "Based on: " + string.Join(", ", f.Evidence),
                 Map(f),
                 string.Join(Environment.NewLine, f.Suggestions.Select(s => "• " + s)),
-                f.Suggestions.Count > 0));
+                f.Suggestions.Count > 0);
+            (f.Severity >= Severity.Medium ? AttentionFindings : NoteFindings).Add(item);
         }
 
-        NextSteps.Clear();
+        var attention = r.Findings.Count(f => f.Severity >= Severity.Low);
+        FindingsTabText = attention > 0 ? $"Findings ({attention})" : "Findings";
+        NotesHeader = NoteFindings.Count == 1 ? "1 other note" : $"{NoteFindings.Count} other notes";
+        NotesExpanded = AttentionFindings.Count == 0;
+
+        TopSteps.Clear();
+        MoreSteps.Clear();
         foreach (var s in r.NextSteps)
         {
-            NextSteps.Add(new NextStepItem(s.Order.ToString(CultureInfo.InvariantCulture), s.Text, s.FindingTitle));
+            (TopSteps.Count < 3 ? TopSteps : MoreSteps).Add(new NextStepItem(s.Order.ToString(CultureInfo.InvariantCulture), s.Text, s.FindingTitle));
         }
+
+        MoreStepsHeader = MoreSteps.Count == 1 ? "Show 1 more step" : $"Show {MoreSteps.Count} more steps";
 
         SettingRows.Clear();
         if (r.Settings is { } settings)
@@ -320,6 +417,11 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         {
             SpecSections.Add(new SpecSectionView(section.Title, string.Join(Environment.NewLine, section.Items.Select(i => $"{i.Label}: {i.Value}"))));
         }
+
+        BackgroundSummary = string.Join(
+            Environment.NewLine + Environment.NewLine,
+            r.Findings.Where(f => f.Id.StartsWith("BACKGROUND", StringComparison.Ordinal)).Select(f => f.Title + ". " + f.Detail));
+        OnPropertyChanged(nameof(HasBackgroundSummary));
 
         BackgroundRows.Clear();
         if (r.Background is { } scan)
@@ -343,11 +445,18 @@ public sealed partial class AnalyzeViewModel : ObservableObject
             ChartViews.Add(new ChartViewItem(view, ChartDataBuilder.Build(r.Run, view).Label));
         }
 
-        var keep = keepChartView && previous is not null ? ChartViews.FirstOrDefault(c => c.View == previous) : null;
+        var keep = keepView && previous is not null ? ChartViews.FirstOrDefault(c => c.View == previous) : null;
         SelectedChartView = keep ?? ChartViews.FirstOrDefault();
+        if (!keepView)
+        {
+            SelectedTab = AnalyzeTab.Overview;
+        }
 
         OnPropertyChanged(nameof(HasSystemRows));
-        OnPropertyChanged(nameof(HasNextSteps));
+        OnPropertyChanged(nameof(HasTopSteps));
+        OnPropertyChanged(nameof(HasMoreSteps));
+        OnPropertyChanged(nameof(HasAttention));
+        OnPropertyChanged(nameof(HasNotes));
         OnPropertyChanged(nameof(HasBackground));
         Ai.Reset();
         RaiseChart();

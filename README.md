@@ -26,7 +26,7 @@ You played a game and it stuttered. A capture tells you *that* it did; daignosti
 | Analyze | Compare |
 |---|---|
 | ![Analyze page](docs/images/analyze.png) | ![Compare page](docs/images/compare.png) |
-| ![Charts, findings and suggestions](docs/images/analyze-details.png) | |
+| ![Findings tab](docs/images/analyze-details.png) | |
 
 ## Safe by design
 
@@ -51,7 +51,7 @@ Requires Windows 10 (1809) or newer, x64. Nothing else needs to be installed.
 
 1. Record a gameplay session with CapFrameX (it saves a `.json` capture).
 2. Start daignostic and drop the capture on the window, or choose **Open capture...**.
-3. Read **What stands out**. Open **Preview exactly what will be sent** if you want an AI explanation, then press **Ask AI**.
+3. Read the verdict at the top, then **What you can do**. For an AI explanation open the **Ask AI** tab, check **Preview exactly what will be sent**, then press **Ask AI**.
 4. Change one setting in the game, record again, and use **Compare** to see if it helped.
 
 More in the [user guide](docs/user-guide.md).

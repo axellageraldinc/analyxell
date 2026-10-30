@@ -252,13 +252,13 @@ public sealed partial class FrameTimeChart : UserControl
 
     private void DrawLegend()
     {
-        if (_spec!.Lines.Count < 2)
+        if (_spec!.Lines.Count(l => l.Legend) < 2)
         {
             return;
         }
 
         var x = _plot.X + 10;
-        foreach (var line in _spec.Lines)
+        foreach (var line in _spec.Lines.Where(l => l.Legend))
         {
             Plot.Children.Add(new Rectangle { Width = 10, Height = 3, Fill = Brush(Palette[line.Palette % Palette.Length]) }.At(x, _plot.Y + 8));
             AddText(line.Name, x + 14, _plot.Y - 2, "TextFillColorSecondaryBrush");
@@ -283,7 +283,7 @@ public sealed partial class FrameTimeChart : UserControl
 
         var t = (pos.X - _plot.X) / _plot.Width * _tMax;
         var lines = new List<string> { TimeLabel(t) };
-        foreach (var s in _spec.Lines.Where(l => l.Opacity >= 0.99 || _spec.Lines.Count == 1 || l.Name == "Frame time" || l.Name == "FPS" || l.Name == "Latency"))
+        foreach (var s in _spec.Lines.Where(l => l.Legend))
         {
             var i = NearestIndex(s.Times, t);
             if (i < 0 || i >= s.Values.Length)

@@ -17,6 +17,8 @@ public sealed partial class AnalyzePage : Page
         ViewModel = new AnalyzeViewModel();
         InitializeComponent();
         ViewModel.ChartChanged += OnChartChanged;
+        ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        TabFindings.Text = ViewModel.FindingsTabText;
         Loaded += async (_, _) =>
         {
             ViewModel.RaiseChart();
@@ -45,6 +47,41 @@ public sealed partial class AnalyzePage : Page
     }
 
     private void OnChartChanged(ChartSpec? spec, IReadOnlyList<double> freezes) => Chart.SetSpec(spec, freezes);
+
+    private bool _syncingTabs;
+
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(AnalyzeViewModel.FindingsTabText):
+                TabFindings.Text = ViewModel.FindingsTabText;
+                break;
+            case nameof(AnalyzeViewModel.SelectedTab):
+                // Keeps the tab strip in step when the code switches tabs (for example Ask AI from the overview).
+                _syncingTabs = true;
+                Tabs.SelectedItem = ViewModel.SelectedTab switch
+                {
+                    AnalyzeTab.Ai => TabAi,
+                    AnalyzeTab.Findings => TabFindings,
+                    AnalyzeTab.Pc => TabPc,
+                    AnalyzeTab.Background => TabBackground,
+                    _ => TabOverview,
+                };
+                _syncingTabs = false;
+                break;
+        }
+    }
+
+    private void Tabs_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
+    {
+        if (!_syncingTabs && sender.SelectedItem?.Tag is string tag && Enum.TryParse<AnalyzeTab>(tag, out var tab))
+        {
+            ViewModel.SelectedTab = tab;
+        }
+    }
+
+    private void OpenAiTab_Click(object sender, RoutedEventArgs e) => ViewModel.SelectedTab = AnalyzeTab.Ai;
 
     private async void RecentButton_Click(object sender, RoutedEventArgs e) =>
         await ViewModel.RefreshCatalogCommand.ExecuteAsync(null);

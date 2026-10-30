@@ -150,7 +150,7 @@ public static class AiResponseParser
     /// </summary>
     public static AiAnalysis Parse(string text, ISet<string> validKeys)
     {
-        var json = ExtractJsonObject(text) ?? throw new AiException("The AI reply did not contain a JSON object.");
+        var json = ExtractJsonObject(text) ?? throw new AiException("The AI reply did not contain the structured answer this app needs.", kind: AiErrorKind.Reply, rawReply: text);
 
         JsonDocument doc;
         try
@@ -159,7 +159,7 @@ public static class AiResponseParser
         }
         catch (JsonException ex)
         {
-            throw new AiException("The AI reply was not valid JSON.", ex);
+            throw new AiException("The AI reply was not valid JSON.", ex, AiErrorKind.Reply, text);
         }
 
         using (doc)

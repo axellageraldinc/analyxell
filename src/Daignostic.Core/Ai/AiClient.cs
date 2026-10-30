@@ -11,11 +11,20 @@ public enum AiErrorKind
     Endpoint,
     Key,
     Model,
+
+    /// <summary>The request ran out of time.</summary>
+    Timeout,
+
+    /// <summary>The AI answered, but not in a form this app can read.</summary>
+    Reply,
 }
 
-public sealed class AiException(string message, Exception? inner = null, AiErrorKind kind = AiErrorKind.Other) : Exception(message, inner)
+public sealed class AiException(string message, Exception? inner = null, AiErrorKind kind = AiErrorKind.Other, string? rawReply = null) : Exception(message, inner)
 {
     public AiErrorKind Kind { get; } = kind;
+
+    /// <summary>What the AI actually said, kept so the user can see why it could not be read.</summary>
+    public string? RawReply { get; } = rawReply;
 }
 
 /// <summary>Sends a system and user message to a language model and returns its text reply.</summary>
@@ -125,7 +134,7 @@ public sealed class OpenAiCompatibleClient(HttpClient http, AiOptions options, F
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new AiException("The AI request timed out.", ex, AiErrorKind.Endpoint);
+            throw new AiException("The AI did not answer in time.", ex, AiErrorKind.Timeout);
         }
 
         using (response)
@@ -186,11 +195,11 @@ public sealed class OpenAiCompatibleClient(HttpClient http, AiOptions options, F
             using var doc = JsonDocument.Parse(responseBody);
             var message = doc.RootElement.GetProperty("choices")[0].GetProperty("message");
             var content = message.GetProperty("content").GetString();
-            return string.IsNullOrWhiteSpace(content) ? throw new AiException("The AI returned an empty reply.") : content;
+            return string.IsNullOrWhiteSpace(content) ? throw new AiException("The AI returned an empty reply.", kind: AiErrorKind.Reply) : content;
         }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException)
         {
-            throw new AiException("The AI endpoint returned a reply this app cannot read.", ex);
+            throw new AiException("The AI endpoint returned a reply this app cannot read.", ex, AiErrorKind.Reply, responseBody);
         }
     }
 }

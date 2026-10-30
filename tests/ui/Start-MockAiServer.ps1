@@ -49,6 +49,18 @@ try {
         }
         ($entry | ConvertTo-Json -Compress) | Add-Content $LogPath -Encoding utf8
 
+        # Model names steer failure modes so the app's progress and error screens can be tested.
+        if ([string]$req.model -like '*slow*') { Start-Sleep -Seconds 8 }
+        if ([string]$req.model -like '*badkey*') {
+            $ctx.Response.StatusCode = 401
+            Send $ctx @{ error = @{ message = 'Invalid API key' } }
+            continue
+        }
+        if ([string]$req.model -like '*garbage*') {
+            Send $ctx @{ choices = @(@{ message = @{ role = 'assistant'; content = 'Sure! Here is my opinion, in plain words and not JSON.' } }) }
+            continue
+        }
+
         $content = @{
             summary = 'Two long freezes while the GPU stayed busy.'
             inconclusive = $false

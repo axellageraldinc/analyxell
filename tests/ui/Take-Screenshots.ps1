@@ -22,7 +22,7 @@ if ($run -notmatch 'ProcessId') { Write-Host $run; exit 1 }
 Start-Sleep 9
 
 function Shot($name) {
-    $h = (& winapp ui list-windows -a Daignostic 2>&1 | Out-String)
+    $h = (& winapp ui list-windows -a Daignostic 2>&1 | Out-String) -replace "$([char]27)\[[0-9;]*m", ''
     if ("$h" -match 'HWND (\d+): "[^"]*" \(window,') { & winapp ui screenshot -w $Matches[1] -o (Join-Path $images "$name.png") 2>&1 | Out-Null }
 }
 
@@ -31,8 +31,7 @@ function Shot($name) {
 Shot 'compare'
 & winapp ui invoke NavAnalyze -a Daignostic 2>&1 | Out-Null; Start-Sleep 2
 Shot 'analyze'
-& winapp ui scroll-into-view CheckBackgroundButton -a Daignostic 2>&1 | Out-Null; Start-Sleep 2
-& winapp ui hover 'Is something else slowing the game down?' -a Daignostic 2>&1 | Out-Null; Start-Sleep 2
+& winapp ui invoke TabFindings -a Daignostic 2>&1 | Out-Null; Start-Sleep 2
 Shot 'analyze-details'
 Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force
 Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Packages') -Filter 'axellageraldinc.Daignostic_*' -Directory -ErrorAction SilentlyContinue |
