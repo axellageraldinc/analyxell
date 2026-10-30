@@ -70,7 +70,7 @@ AI is optional. Without it, everything above still works.
 2. Optionally add a note ("I turned ray tracing off in this run").
 3. Press **Ask AI**. A progress card shows what is happening and how long it has taken, and has a **Cancel** button. Slow answers get a hint; failures say what went wrong (cannot reach the AI, key or model rejected, took too long, or an answer in the wrong format, which you can read) and what to try, with **Try again** and a shortcut to Settings.
 
-The answer ranks the likely causes for your data, with confidence, things to try, and the evidence behind each claim. Claims that cite no evidence are discarded and counted. It also lists **what the AI could not tell from this data**. The AI answers once and does not ask questions: this is not a chat, and it has no access to your PC.
+The answer ranks the likely causes for your data, with confidence, things to try, and the evidence behind each claim. Claims that cite no evidence are discarded and counted. It also lists **what the AI could not tell from this data**. You can also type a question of your own ("Ask the AI something specific"); it is answered in a separate card. Each time you ask again, the AI receives a short digest of the previous exchange so it keeps the context. The AI answers once per request and never asks you questions back: this is not a chat, and it has no access to your PC.
 
 **With your own AI.** Press **Export for my own AI...** to save one file containing instructions, the exact measured data, and how to check the answer. Give it to any chat or model you like.
 

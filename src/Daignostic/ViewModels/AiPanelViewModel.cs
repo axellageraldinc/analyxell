@@ -75,18 +75,76 @@ public sealed partial class AiPanelViewModel : ObservableObject
 
     private readonly Dictionary<string, string> _answers = [];
 
+    // What was asked and answered last time. Sent as a short digest, never as a transcript, and labelled as the AI's own
+    // earlier output so it is not mistaken for evidence.
+    private string _previousDigest = "";
+
+    /// <summary>The user's own question, answered directly by the AI in addition to its analysis.</summary>
+    [ObservableProperty]
+    public partial string Question { get; set; } = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasQuestionAnswer))]
+    public partial string QuestionAnswer { get; set; } = "";
+
+    public bool HasQuestionAnswer => QuestionAnswer.Length > 0;
+
+    partial void OnQuestionChanged(string value) => RefreshPreview();
+
     /// <summary>The user's note, followed by their answers to the AI's open questions. Null when both are empty.</summary>
     private string? EffectiveNote()
     {
-        var answered = _answers.Where(a => !string.IsNullOrWhiteSpace(a.Value)).ToList();
-        var note = Note.Trim();
-        if (answered.Count == 0)
+        var parts = new List<string>();
+        if (Note.Trim().Length > 0)
         {
-            return note.Length == 0 ? null : note;
+            parts.Add(Note.Trim());
         }
 
-        var lines = answered.Select(a => $"- {a.Key}: {a.Value.Trim()}");
-        return (note.Length > 0 ? note + "\n\n" : "") + "Answers to your open questions:\n" + string.Join("\n", lines);
+        var answered = _answers.Where(a => !string.IsNullOrWhiteSpace(a.Value)).ToList();
+        if (answered.Count > 0)
+        {
+            parts.Add("Answers to your open questions:\n" + string.Join("\n", answered.Select(a => $"- {a.Key}: {a.Value.Trim()}")));
+        }
+
+        if (Question.Trim().Length > 0)
+        {
+            parts.Add("Question from the user (answer it directly in answer_to_question): " + Question.Trim());
+        }
+
+        if (_previousDigest.Length > 0)
+        {
+            parts.Add("Your previous answer (it may be wrong; re-check it against the facts):\n" + _previousDigest);
+        }
+
+        return parts.Count == 0 ? null : string.Join("\n\n", parts);
+    }
+
+    /// <summary>A few lines on the last exchange: what the user asked and what the AI concluded.</summary>
+    private static string DigestOf(AiAnalysis analysis, string question)
+    {
+        var lines = new List<string>();
+        if (question.Length > 0)
+        {
+            lines.Add("The user asked: " + question);
+        }
+
+        if (analysis.QuestionAnswer is { Length: > 0 } answer)
+        {
+            lines.Add("You answered: " + (answer.Length > 400 ? answer[..400] + "..." : answer));
+        }
+
+        if (analysis.Summary.Length > 0)
+        {
+            lines.Add("Summary: " + analysis.Summary);
+        }
+
+        foreach (var item in analysis.Items.Take(4))
+        {
+            lines.Add($"- {item.Title} ({(string.IsNullOrWhiteSpace(item.Confidence) ? "unrated" : item.Confidence)})");
+        }
+
+        var text = string.Join("\n", lines);
+        return text.Length > 1200 ? text[..1200] + "..." : text;
     }
 
     private void OnUnknownAnswered(string question, string answer)
@@ -236,6 +294,9 @@ public sealed partial class AiPanelViewModel : ObservableObject
     public void Reset()
     {
         _answers.Clear();
+        _previousDigest = "";
+        QuestionAnswer = "";
+        Question = "";
         ClearAnswer();
         ClearError();
         ExportStatus = "";
@@ -246,6 +307,7 @@ public sealed partial class AiPanelViewModel : ObservableObject
     private void ClearAnswer()
     {
         Items.Clear();
+        QuestionAnswer = "";
         UnknownItems.Clear();
         Checks.Clear();
         OnPropertyChanged(nameof(HasChecks));
@@ -311,6 +373,7 @@ public sealed partial class AiPanelViewModel : ObservableObject
     private async Task AskAsync()
     {
         ClearError();
+        var askedQuestion = Question.Trim();
         ClearAnswer();
         _cts?.Cancel();
         _cts = new CancellationTokenSource();
@@ -326,6 +389,9 @@ public sealed partial class AiPanelViewModel : ObservableObject
         {
             var analysis = await _run(EffectiveNote(), cts.Token);
             Analysis = analysis;
+            QuestionAnswer = analysis.QuestionAnswer ?? "";
+            _previousDigest = DigestOf(analysis, askedQuestion);
+            Question = "";
             Items.Clear();
             var first = true;
             foreach (var item in analysis.Items)

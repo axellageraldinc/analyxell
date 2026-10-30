@@ -4,6 +4,11 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+### Added
+
+- Ask the AI your own question (a box above the note, and another under its open questions). It answers it directly, separately from the analysis.
+- When you ask again, the AI gets a short digest of the last exchange (your question, its answer and main points), labelled as its own earlier output so it re-checks it against the facts instead of repeating it. It is shown in the preview; no transcript is sent.
+
 ## [0.1.1] - 2026-10-30
 
 ### Changed

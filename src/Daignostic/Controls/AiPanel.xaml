@@ -148,6 +148,14 @@
         </Expander>
 
         <TextBox
+            AutomationProperties.AutomationId="AiQuestionBox"
+            Header="Ask the AI something specific (optional)"
+            PlaceholderText="For example: could this freeze be caused by my hard disk?"
+            Text="{x:Bind ViewModel.Question, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            MaxLength="400"
+            AcceptsReturn="False" />
+
+        <TextBox
             AutomationProperties.AutomationId="AiNoteBox"
             Header="Anything the AI should know? (optional)"
             PlaceholderText="For example: I turned ray tracing off between these runs"
@@ -157,6 +165,19 @@
         <!-- The answer -->
         <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasResult, Mode=OneWay}" AutomationProperties.AutomationId="AiResult">
             <TextBlock Text="The AI's answer" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <Border
+                AutomationProperties.AutomationId="AiQuestionAnswer"
+                Visibility="{x:Bind ViewModel.HasQuestionAnswer, Mode=OneWay}"
+                Padding="16,12"
+                CornerRadius="8"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+                BorderThickness="1">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Answer to your question" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <TextBlock Text="{x:Bind ViewModel.QuestionAnswer, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                </StackPanel>
+            </Border>
             <InfoBar
                 AutomationProperties.AutomationId="AiStale"
                 Severity="Warning"
@@ -278,6 +299,12 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+                <TextBox
+                    AutomationProperties.AutomationId="AiQuestionBox2"
+                    Header="Something else you want to ask the AI? (optional)"
+                    PlaceholderText="Any question about this capture"
+                    Text="{x:Bind ViewModel.Question, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    MaxLength="400" />
                 <Button
                     AutomationProperties.AutomationId="AskAgainButton"
                     Content="Ask again with my answers"

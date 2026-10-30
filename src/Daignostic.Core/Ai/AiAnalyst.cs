@@ -18,7 +18,8 @@ public sealed record AiAnalysis(
     int DroppedUncited,
     string RawText,
     IReadOnlyList<string>? Unknowns = null,
-    IReadOnlyList<string>? NextChecks = null);
+    IReadOnlyList<string>? NextChecks = null,
+    string? QuestionAnswer = null);
 
 /// <summary>A read-only check or form daignostic can offer the user, so the AI never has to ask or reach into the PC.</summary>
 public sealed record AiCheck(string Id, string Title, string Why);
@@ -73,8 +74,9 @@ public static class AiPrompts
         11. How to read this data. The findings come from fixed rules in the app, so trust them over your own guess about what was measured. A capture cannot show: why a spike happened (the sensors around it only narrow it down), actual tearing (only whether it was allowed), VSync forced in the GPU driver (the capture shows what the game asked for, so a "setup.vsync" fact outranks "present.sync_interval_zero_pct"), network lag, crashes or driver quality. Settings the user typed in ("setup.*" facts and settings entered for the game) are the user's own statements: use them as given, and do not list one as unknown just because a capture cannot confirm it. Findings marked as a likely explanation are hypotheses: keep them as hypotheses. A CPU limit means the GPU waits for the processor, so lowering resolution or GPU settings will not raise the frame rate. Hitches that fade as the run goes on point to shader compilation or loading, which a second run will confirm. Never claim a fix is certain: say what to change, then to record again and compare.
         12. Drive activity facts name the monitoring software's drives: "nvme/N" is an NVMe SSD and "hdd/N" is a SATA or other drive (a hard disk or SATA SSD); N is its order in that software, not a Windows disk number, so do not guess which folder or game it holds. Compare with "system.game_drive.*" facts when present. A busy drive at the moment of a freeze is a lead, not proof.
         13. If "user_note" contains "Answers to your open questions", those are the user's own statements about their PC. Use them as given (they are not verified), do not list those questions as unknown again, and say how they change your conclusion.
+        14. "user_note" can also hold a question from the user ("Question from the user"), and your own earlier answer ("Your previous answer"). Answer the question directly and plainly in "answer_to_question", using only the facts and findings. Your previous answer is not evidence and may be wrong: re-check it against the facts, and say so if you now think differently. This is still one answer; never ask the user anything back.
         Reply with ONLY a JSON object, no markdown, in exactly this shape:
-        {"summary":"one or two sentences","inconclusive":false,"findings":[{"title":"short","explanation":"what it means","evidence":["fps.p1","finding:FREEZES"],"actions":["one concrete thing to try"],"confidence":"low|medium|high"}],"unknowns":["what could not be determined from this data"],"next_checks":["background_check"]}
+        {"summary":"one or two sentences","inconclusive":false,"findings":[{"title":"short","explanation":"what it means","evidence":["fps.p1","finding:FREEZES"],"actions":["one concrete thing to try"],"confidence":"low|medium|high"}],"unknowns":["what could not be determined from this data"],"next_checks":["background_check"],"answer_to_question":"only when the user asked a question: a direct answer, otherwise an empty string"}
         """;
 
     /// <summary>The exact user message sent to the model for a single capture. The UI shows this before sending.</summary>
@@ -193,7 +195,7 @@ public static class AiPrompts
         }
 
         var trimmed = note.Trim();
-        w.WriteString("user_note", trimmed.Length > 2000 ? trimmed[..2000] : trimmed);
+        w.WriteString("user_note", trimmed.Length > 4000 ? trimmed[..4000] : trimmed);
     }
 }
 
@@ -252,7 +254,8 @@ public static class AiResponseParser
 
             var unknowns = Strings(root, "unknowns").Take(6).ToList();
             var checks = validChecks is null ? [] : Strings(root, "next_checks").Where(validChecks.Contains).Distinct().Take(3).ToList();
-            return new AiAnalysis(summary, inconclusive || items.Count == 0, items, dropped, text, unknowns, checks);
+            var questionAnswer = Str(root, "answer_to_question").Trim();
+            return new AiAnalysis(summary, inconclusive || items.Count == 0, items, dropped, text, unknowns, checks, questionAnswer.Length == 0 ? null : questionAnswer);
         }
     }
 

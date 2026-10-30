@@ -73,4 +73,17 @@ public class AnswersAndDiskTests
         Assert.Contains("NVMe drive 1 (nvme/1)", finding.Detail);
         Assert.Contains("The game is installed on a SSD (NVMe)", finding.Detail);
     }
+
+    [Fact]
+    public void A_question_from_the_user_gets_its_own_answer_and_the_prompt_says_how_to_treat_earlier_output()
+    {
+        var reply = """{"summary":"x","inconclusive":false,"findings":[{"title":"t","explanation":"e","evidence":["fps.average"],"actions":[],"confidence":"low"}],"unknowns":[],"answer_to_question":"Probably not: the drive was idle."}""";
+        var empty = """{"summary":"x","inconclusive":false,"findings":[{"title":"t","explanation":"e","evidence":["fps.average"],"actions":[],"confidence":"low"}],"unknowns":[],"answer_to_question":""}""";
+        var keys = new HashSet<string> { "fps.average" };
+
+        Assert.Equal("Probably not: the drive was idle.", AiResponseParser.Parse(reply, keys).QuestionAnswer);
+        Assert.Null(AiResponseParser.Parse(empty, keys).QuestionAnswer);
+        Assert.Contains("answer_to_question", AiPrompts.System);
+        Assert.Contains("Your previous answer is not evidence", AiPrompts.System);
+    }
 }
