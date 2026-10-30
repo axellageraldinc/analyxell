@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Daignostic.Core.Config;
 using Daignostic.Core.Settings;
 
 namespace Daignostic.Core;
@@ -7,4 +8,6 @@ namespace Daignostic.Core;
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(AppSettings))]
 [JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(GameProfile))]
+[JsonSerializable(typeof(UserSetupData))]
 internal sealed partial class CoreJsonContext : JsonSerializerContext;

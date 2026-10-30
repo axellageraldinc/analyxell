@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using Daignostic.Core.Ai;
 using Daignostic.Core.Analysis;
@@ -149,7 +149,7 @@ public class AiTests
     public async Task Errors_never_leak_the_api_key()
     {
         var handler = new StubHandler(_ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized) { Content = new StringContent("denied sk-test-key") }));
-        var client = new OpenAiCompatibleClient(new HttpClient(handler), new AiOptions(), () => "sk-test-key");
+        var client = new OpenAiCompatibleClient(new HttpClient(handler), new AiOptions("http://127.0.0.1:8480", "m"), () => "sk-test-key");
 
         var ex = await Assert.ThrowsAsync<AiException>(() => client.CompleteAsync("s", "u", CancellationToken.None));
         Assert.DoesNotContain("sk-test-key", ex.Message);
@@ -160,7 +160,7 @@ public class AiTests
     public async Task Unreachable_endpoint_gives_a_friendly_error()
     {
         var handler = new StubHandler(_ => throw new HttpRequestException("refused"));
-        var client = new OpenAiCompatibleClient(new HttpClient(handler), new AiOptions(), () => null);
+        var client = new OpenAiCompatibleClient(new HttpClient(handler), new AiOptions("http://127.0.0.1:8480", "m"), () => null);
         var ex = await Assert.ThrowsAsync<AiException>(() => client.CompleteAsync("s", "u", CancellationToken.None));
         Assert.Contains("Is it running", ex.Message);
     }
@@ -171,7 +171,7 @@ public class AiTests
         var r = CaptureAnalyzer.Analyze(TestData.File(TestData.RunWithFreezes(95, 10)));
         var handler = new StubHandler(_ => Task.FromResult(Reply(
             """{"choices":[{"message":{"content":"{\"summary\":\"s\",\"findings\":[{\"title\":\"t\",\"explanation\":\"e\",\"evidence\":[\"finding:FREEZES\",\"freeze.count\"],\"actions\":[],\"confidence\":\"high\"}]}"}}]}""")));
-        var analyst = new AiAnalyst(new OpenAiCompatibleClient(new HttpClient(handler), new AiOptions(), () => null));
+        var analyst = new AiAnalyst(new OpenAiCompatibleClient(new HttpClient(handler), new AiOptions("http://127.0.0.1:8480", "m"), () => null));
 
         var analysis = await analyst.AnalyzeAsync(r, null, CancellationToken.None);
         Assert.Equal(["finding:FREEZES", "freeze.count"], Assert.Single(analysis.Items).Evidence);
@@ -301,15 +301,15 @@ public class ConfigAndSettingsTests : IDisposable
     public void Settings_round_trip_and_survive_corruption()
     {
         var store = new SettingsStore(Path.Combine(_dir, "s", "settings.json"));
-        Assert.Equal("text", store.Load().AiPreset);
+        Assert.Equal("", store.Load().AiModel);
 
-        store.Save(new AppSettings { AiPreset = "balanced", CapturesFolder = @"D:\Caps" });
+        store.Save(new AppSettings { AiModel = "balanced", CapturesFolder = @"D:\Caps" });
         var loaded = store.Load();
-        Assert.Equal("balanced", loaded.AiPreset);
+        Assert.Equal("balanced", loaded.AiModel);
         Assert.Equal(@"D:\Caps", loaded.CapturesFolder);
 
         File.WriteAllText(store.FilePath, "{ corrupt");
-        Assert.Equal("text", store.Load().AiPreset);
+        Assert.Equal("", store.Load().AiModel);
     }
 
     [Fact]

@@ -1,8 +1,8 @@
 namespace Daignostic.Core.Capture;
 
 /// <summary>
-/// Descriptive information about a capture. Deliberately excludes machine identifiers
-/// such as the device name or motherboard so the model can be shared with an AI safely.
+/// Descriptive information about a capture. The device (computer) name is deliberately not read at all.
+/// <see cref="Motherboard"/> is shown to the user but is never included in AI messages or reports.
 /// </summary>
 public sealed record CaptureInfo(
     string Game,
@@ -16,7 +16,12 @@ public sealed record CaptureInfo(
     string Os,
     string SystemRam,
     string RecordedAtUtc,
-    string CaptureToolVersion);
+    string CaptureToolVersion,
+    string Motherboard = "",
+    string ResizableBar = "",
+    string GameMode = "",
+    string Hags = "",
+    string DisplayLayer = "");
 
 /// <summary>One logged hardware sensor sampled on the sensor time grid.</summary>
 public sealed record SensorSeries(string Id, string Name, string Type, double[] Values);
@@ -30,6 +35,19 @@ public sealed class CaptureRun
     public double[] GpuActiveMs { get; init; } = [];
     public double[] CpuActiveMs { get; init; } = [];
     public bool[] Dropped { get; init; } = [];
+
+    /// <summary>1 when the frame was presented with tearing allowed (typically VSync off). One value per frame.</summary>
+    public double[] AllowsTearing { get; init; } = [];
+
+    /// <summary>The present sync interval per frame; 0 means not synchronised to the display refresh.</summary>
+    public double[] SyncInterval { get; init; } = [];
+
+    /// <summary>Estimated end-to-end input latency per frame in ms, when the capture includes it.</summary>
+    public double[] PcLatencyMs { get; init; } = [];
+
+    /// <summary>Animation error per frame in ms (how far presentation timing deviates from smooth motion).</summary>
+    public double[] AnimationErrorMs { get; init; } = [];
+
     public double[] SensorTimeSec { get; init; } = [];
     public IReadOnlyList<SensorSeries> Sensors { get; init; } = [];
 

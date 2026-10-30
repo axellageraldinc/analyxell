@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using Daignostic.Core.Ai;
 using Daignostic.Core.Analysis;
@@ -79,6 +79,17 @@ public static class MarkdownReport
 
                 sb.AppendLine();
                 sb.AppendLine($"Evidence: {string.Join(", ", item.Evidence)}");
+                sb.AppendLine();
+            }
+
+            if (ai.Unknowns is { Count: > 0 })
+            {
+                sb.AppendLine("What the AI could not tell from this data:");
+                foreach (var u in ai.Unknowns)
+                {
+                    sb.AppendLine($"- {u}");
+                }
+
                 sb.AppendLine();
             }
 

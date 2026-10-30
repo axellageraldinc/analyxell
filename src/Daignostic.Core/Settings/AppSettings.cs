@@ -8,13 +8,29 @@ public sealed class AppSettings
 {
     public string CapturesFolder { get; set; } = "";
 
-    public string AiEndpoint { get; set; } = "http://127.0.0.1:8480";
+    /// <summary>AI inside the app is optional. Off until the user turns it on and configures an endpoint.</summary>
+    public bool AiEnabled { get; set; }
 
-    public string AiPreset { get; set; } = "text";
+    public string AiEndpoint { get; set; } = "";
+
+    /// <summary>The model name exactly as the endpoint expects it, for example "gpt-5" or "claude-sonnet-5-5".</summary>
+    public string AiModel { get; set; } = "";
+
+    /// <summary>When false, the API key is kept in memory for this session only and never written to disk.</summary>
+    public bool SaveApiKey { get; set; } = true;
+
+    /// <summary>Include the names of background programs in AI messages. Off by default; categories are sent instead.</summary>
+    public bool ShareBackgroundAppNames { get; set; }
 
     public bool UseCapFrameXMcp { get; set; } = true;
 
     public string CapFrameXMcpUrl { get; set; } = CapFrameXMcpClient.DefaultEndpoint.ToString();
+
+    public bool AiConfigured =>
+        AiEnabled &&
+        AiModel.Trim().Length > 0 &&
+        Uri.TryCreate(AiEndpoint.Trim(), UriKind.Absolute, out var uri) &&
+        (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 }
 
 public sealed class SettingsStore(string filePath)

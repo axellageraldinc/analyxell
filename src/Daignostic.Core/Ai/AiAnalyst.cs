@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using Daignostic.Core.Analysis;
 
@@ -16,7 +16,8 @@ public sealed record AiAnalysis(
     bool Inconclusive,
     IReadOnlyList<AiItem> Items,
     int DroppedUncited,
-    string RawText);
+    string RawText,
+    IReadOnlyList<string>? Unknowns = null);
 
 public static class AiPrompts
 {
@@ -27,10 +28,13 @@ public static class AiPrompts
         2. Every claim must cite evidence: fact keys from "facts" (for example "fps.p1"), or "finding:<ID>" for a finding id.
         3. Separate measured results from hypotheses. Never present a hypothesis as proven. Suggest one change to test at a time.
         4. If the data cannot support a conclusion, say so and set "inconclusive" to true.
-        5. Suggest only in-game settings or simple checks. Never suggest commands, registry edits, BIOS changes, downloads or deleting files.
-        6. Be concise. Plain language.
+        5. Each finding already carries "suggestions" written by the app. Build on them: put the most valuable first, explain why for THIS data, and drop ones that clearly do not apply. You may add a suggestion only if it is an in-game setting or a simple, reversible check. Never suggest commands, registry edits, BIOS changes, downloads or deleting files.
+        6. Tell the user how to check the result: change one thing, record again, compare.
+        7. Be concise. Plain language.
+        8. This is a single question and a single answer, not a conversation. NEVER ask the user a question and never end by asking for more information: nobody can answer you. You cannot look anything up and you have no access to the user's PC; you only see this JSON.
+        9. When something you need is missing, do not ask for it. Work with what is there: state the assumption you made, give guidance that holds either way ("if X, then Y; otherwise Z"), and list what you could not determine in "unknowns" as plain statements, for example "Which drive the game is installed on" or "Whether VSync was on".
         Reply with ONLY a JSON object, no markdown, in exactly this shape:
-        {"summary":"one or two sentences","inconclusive":false,"findings":[{"title":"short","explanation":"what it means","evidence":["fps.p1","finding:FREEZES"],"actions":["one concrete thing to try"],"confidence":"low|medium|high"}]}
+        {"summary":"one or two sentences","inconclusive":false,"findings":[{"title":"short","explanation":"what it means","evidence":["fps.p1","finding:FREEZES"],"actions":["one concrete thing to try"],"confidence":"low|medium|high"}],"unknowns":["what could not be determined from this data"]}
         """;
 
     /// <summary>The exact user message sent to the model for a single capture. The UI shows this before sending.</summary>
@@ -71,13 +75,13 @@ public static class AiPrompts
 
     /// <summary>Evidence keys the model is allowed to cite for a single capture.</summary>
     public static HashSet<string> ValidKeys(AnalysisResult result) =>
-        [.. result.Facts.Keys, .. result.Findings.Select(f => "finding:" + f.Id)];
+        [.. result.Facts.Keys, .. result.Findings.Where(f => !f.LocalOnly).Select(f => "finding:" + f.Id)];
 
     public static HashSet<string> ValidKeys(ComparisonResult comparison, AnalysisResult a, AnalysisResult b) =>
         [
             .. comparison.Facts.Keys,
-            .. a.Findings.Select(f => "finding:A_" + f.Id),
-            .. b.Findings.Select(f => "finding:B_" + f.Id),
+            .. a.Findings.Where(f => !f.LocalOnly).Select(f => "finding:A_" + f.Id),
+            .. b.Findings.Where(f => !f.LocalOnly).Select(f => "finding:B_" + f.Id),
         ];
 
     private static void WriteFacts(Utf8JsonWriter w, IReadOnlyDictionary<string, string> facts)
@@ -100,7 +104,8 @@ public static class AiPrompts
 
     private static void WriteFindingItems(Utf8JsonWriter w, IReadOnlyList<Finding> findings, string prefix)
     {
-        foreach (var f in findings)
+        // Local-only findings mention things like program names; their anonymous numbers travel as facts instead.
+        foreach (var f in findings.Where(f => !f.LocalOnly))
         {
             w.WriteStartObject();
             w.WriteString("id", prefix + f.Id);
@@ -111,6 +116,13 @@ public static class AiPrompts
             foreach (var e in f.Evidence)
             {
                 w.WriteStringValue(e);
+            }
+
+            w.WriteEndArray();
+            w.WriteStartArray("suggestions");
+            foreach (var s in f.Suggestions)
+            {
+                w.WriteStringValue(s);
             }
 
             w.WriteEndArray();
@@ -183,7 +195,8 @@ public static class AiResponseParser
                 }
             }
 
-            return new AiAnalysis(summary, inconclusive || items.Count == 0, items, dropped, text);
+            var unknowns = Strings(root, "unknowns").Take(6).ToList();
+            return new AiAnalysis(summary, inconclusive || items.Count == 0, items, dropped, text, unknowns);
         }
     }
 

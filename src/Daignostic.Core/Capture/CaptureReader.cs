@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace Daignostic.Core.Capture;
 
@@ -59,7 +59,12 @@ public static class CaptureReader
         Os: Str(el, "OS"),
         SystemRam: Str(el, "SystemRam"),
         RecordedAtUtc: Str(el, "CreationDate"),
-        CaptureToolVersion: Str(el, "AppVersion"));
+        CaptureToolVersion: Str(el, "AppVersion"),
+        Motherboard: Str(el, "Motherboard"),
+        ResizableBar: Str(el, "ResizableBar"),
+        GameMode: Str(el, "WinGameMode"),
+        Hags: Str(el, "HAGS"),
+        DisplayLayer: Str(el, "DisplayLayer"));
 
     private static CaptureRun? ReadRun(JsonElement runEl)
     {
@@ -107,6 +112,10 @@ public static class CaptureReader
             GpuActiveMs = Doubles(data, "GpuActive"),
             CpuActiveMs = Doubles(data, "CpuActive"),
             Dropped = Bools(data, "Dropped"),
+            AllowsTearing = Doubles(data, "AllowsTearing"),
+            SyncInterval = Doubles(data, "SyncInterval"),
+            PcLatencyMs = Doubles(data, "PcLatency"),
+            AnimationErrorMs = Doubles(data, "AnimationError"),
             SensorTimeSec = sensorTimes,
             Sensors = sensors,
         };
