@@ -73,9 +73,10 @@ public static class CaptureAnalyzer
         var bottleneck = BottleneckAnalyzer.Analyze(run);
         var context = FreezeContextBuilder.Build(run, freezes);
         var extra = ExtraSignals.Compute(run);
+        var trends = RunTrends.Compute(run, stutters, freezes);
 
-        var facts = BuildFacts(capture.Info, metrics, stutters, freezes, bottleneck, context, extra, settings, system, background, shareBackgroundNames);
-        var findings = Rules.Evaluate(metrics, freezes, stutters, bottleneck, context, extra, settings, system, background, facts);
+        var facts = BuildFacts(capture.Info, metrics, stutters, freezes, bottleneck, context, extra, settings, system, background, shareBackgroundNames, trends);
+        var findings = Rules.Evaluate(metrics, freezes, stutters, bottleneck, context, extra, settings, system, background, facts, capture.Info, trends);
         var specs = PcSpecs.Build(capture.Info, run, extra, bottleneck, system);
 
         return new AnalysisResult(
@@ -94,7 +95,8 @@ public static class CaptureAnalyzer
         GameSettings? settings,
         SystemContext system,
         BackgroundScanResult? background,
-        bool shareBackgroundNames)
+        bool shareBackgroundNames,
+        RunTrends trends)
     {
         var f = new Dictionary<string, string>();
         void Put(string key, string? value)
@@ -124,6 +126,20 @@ public static class CaptureAnalyzer
         Put("pc.resizable_bar", info.ResizableBar);
         Put("pc.hags", info.Hags);
         Put("pc.game_mode", info.GameMode);
+        var memory = MemoryConfig.Parse(info.SystemRam);
+        PutNum("pc.memory_modules", memory.Modules, "0");
+        PutNum("pc.memory_mts", memory.SpeedMTs, "0");
+        PutNum("cpu.limited_pct", trends.CpuLimitedPct, "0");
+        PutNum("trend.fps_first_quarter", trends.FpsFirstQuarter);
+        PutNum("trend.fps_last_quarter", trends.FpsLastQuarter);
+        PutNum("trend.events_first_third", trends.DurationSec >= 60 ? trends.EventsFirstThird : null, "0");
+        PutNum("trend.events_last_third", trends.DurationSec >= 60 ? trends.EventsLastThird : null, "0");
+        PutNum("trend.vram_first_gb", trends.VramFirstQuarterGb);
+        PutNum("trend.vram_last_gb", trends.VramLastQuarterGb);
+        PutNum("trend.ram_first_pct", trends.RamFirstQuarterPct, "0");
+        PutNum("trend.ram_last_pct", trends.RamLastQuarterPct, "0");
+        PutNum("trend.gpu_temp_first_c", trends.GpuTempFirstQuarterC, "0");
+        PutNum("trend.gpu_temp_last_c", trends.GpuTempLastQuarterC, "0");
         PutNum("capture.duration_sec", m.DurationSec, "0");
 
         PutNum("fps.average", m.AverageFps);

@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using Daignostic.Core.Background;
+using Daignostic.Core.Capture;
 using Daignostic.Core.Config;
 using Daignostic.Core.SystemInfo;
 
@@ -25,7 +26,9 @@ internal static class Rules
         GameSettings? settings,
         SystemContext system,
         BackgroundScanResult? background,
-        IReadOnlyDictionary<string, string> facts)
+        IReadOnlyDictionary<string, string> facts,
+        CaptureInfo info,
+        RunTrends trends)
     {
         var list = new List<Finding>();
 
@@ -181,10 +184,14 @@ internal static class Rules
                 ]);
                 break;
             case BottleneckVerdict.CpuBound:
-                Add("CPU_BOUND", Severity.Info, "CPU-bound", bottleneck.Reasoning, ["bottleneck.verdict", "cpu.busiest_thread_load_avg"],
+                Add("CPU_BOUND", metrics.AverageFps < 60 ? Severity.Medium : Severity.Info, "The CPU is holding the GPU back",
+                    bottleneck.Reasoning + " The graphics card is waiting for the processor, so lowering resolution or GPU-heavy settings will barely raise the frame rate.",
+                    ["bottleneck.verdict", "cpu.busiest_thread_load_avg", "gpu.load_avg"],
                 [
                     "Lower CPU-heavy settings: view distance, crowd and NPC density, shadow distance, physics.",
-                    "Close background programs and check the background results below.",
+                    "Check that the memory runs at its rated speed (XMP/EXPO in the BIOS) and in dual-channel mode.",
+                    "Close background programs and check the background results.",
+                    "To test it: lower the resolution. If the frame rate hardly changes, the CPU is the limit.",
                 ]);
                 break;
             case BottleneckVerdict.Balanced:
@@ -295,6 +302,9 @@ internal static class Rules
                 ]);
         }
 
+        // 5b. Causes that need several signals: CPU limits, change over time, memory setup, Windows options.
+        DeepRules.Evaluate(Add, metrics, freezes, stutters, bottleneck, trends, info, system);
+
         // 6. Programs competing with the game.
         if (background is not null)
         {
@@ -311,13 +321,36 @@ internal static class Rules
         return list;
     }
 
-    private delegate void AddFinding(string id, Severity severity, string title, string detail, string[] keys, string[] suggestions, bool localOnly = false);
+    internal delegate void AddFinding(string id, Severity severity, string title, string detail, string[] keys, string[] suggestions, bool localOnly = false);
 
     private static void EvaluateDisplay(AddFinding add, FrameMetrics metrics, ExtraSignals x, SystemContext system, bool vrr)
     {
         var tearing = x.TearingAllowedPct >= 90 && x.SyncZeroPct >= 90;
         if (!tearing)
         {
+            return;
+        }
+
+        // What the user entered about VSync wins over what a capture can see: the capture records what the game asked for,
+        // and a VSync override in the GPU driver happens after that, so it is invisible in the capture.
+        var vsync = system.Get("setup.vsync") ?? "";
+        if (vsync.Contains("driver", StringComparison.OrdinalIgnoreCase) ||
+            vsync.StartsWith("Fast", StringComparison.OrdinalIgnoreCase))
+        {
+            add("TEARING_HANDLED_BY_DRIVER", Severity.Info, "VSync is on in the GPU driver, so tearing is unlikely",
+                "The capture shows the game asking for no sync, but you said VSync is on in the driver. The driver applies it after the game, where a capture cannot see it. "
+                + (vrr ? "Together with variable refresh this is the recommended setup: no tearing, and low latency as long as the frame rate stays inside the display's range." : "Without variable refresh, VSync removes tearing but can add some latency and halve the frame rate when the game cannot keep up with the refresh rate."),
+                ["present.tearing_allowed_pct", "present.sync_interval_zero_pct", "setup.vsync", "display.vrr_evidence"],
+                vrr ? ["Keep the frame rate a few fps below the monitor's maximum (a cap such as 141 on a 144 Hz monitor) so VSync never has to wait."] : []);
+            return;
+        }
+
+        if (vsync.StartsWith("On", StringComparison.OrdinalIgnoreCase))
+        {
+            add("VSYNC_ENTERED_BUT_NOT_SEEN", Severity.Info, "You said VSync is on, but this capture shows no sync",
+                "The capture shows frames presented without VSync. Either the setting was changed after this capture was recorded, or the game ignored it. Record a new run to check. I cannot see tearing itself, only the conditions for it.",
+                ["present.tearing_allowed_pct", "present.sync_interval_zero_pct", "setup.vsync"],
+                ["Record the same route again with the current settings."]);
             return;
         }
 

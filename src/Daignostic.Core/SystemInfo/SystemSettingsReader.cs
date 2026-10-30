@@ -67,6 +67,17 @@ public static class SystemSettingsReader
             Auto("windowed_vrr", "Variable refresh rate for windowed games", gpuPrefs.Contains("VRROptimizeEnable=1", StringComparison.OrdinalIgnoreCase) ? "On" : "Off");
         }
 
+        // Windows features that can cost a little smoothness. Only read here; daignostic never changes them.
+        var dvr = probe.RegistryDword("HKCU", @"System\GameConfigStore", "GameDVR_Enabled");
+        var capture = probe.RegistryDword("HKCU", @"Software\Microsoft\Windows\CurrentVersion\GameDVR", "AppCaptureEnabled");
+        if (dvr is not null || capture is not null)
+        {
+            Auto("game_dvr", "Windows background game recording", dvr == 1 || capture == 1 ? "On" : "Off");
+        }
+
+        var hvci = probe.RegistryDword("HKLM", @"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity", "Enabled");
+        Auto("memory_integrity", "Windows Memory integrity", hvci switch { 1 => "On", 0 => "Off", _ => null });
+
         var plan = probe.RegistryString("HKLM", @"SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes", "ActivePowerScheme");
         if (plan is not null)
         {

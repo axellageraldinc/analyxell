@@ -6,6 +6,9 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ### Changed
 
+- CPU bottlenecks are now spelled out: "The CPU is holding the GPU back", whether one thread is the limit, and stretches where the CPU limited an otherwise GPU-bound run.
+- New diagnoses: performance that declines over a run (with the memory or heat growth that fits), hitches that fade (shader and loading), single-channel or slow memory, Resizable BAR, Game Mode, background recording, desktop-compositor presentation and Memory integrity. See docs/problems-and-causes.md.
+- Your VSync setup now counts: VSync set in the GPU driver cannot be seen in a capture, so the tearing findings believe what you entered.
 - Analyze page redesigned to show less at once: a one-line verdict, the metric cards, then tabs (Overview, Ask AI, Findings, PC and setup, Background programs). Findings that need attention come first and the rest are folded away; the overview shows the top three steps.
 - Compare page: pick the metric to overlay (frame time, FPS, latency, GPU load, temperature, clock, memory, power); the two runs are now yellow (A) and blue (B), named in the legend, with bold one-second averages over faint per-frame lines.
 - Asking an AI shows progress (elapsed time, what it is doing, hints when slow) with Cancel, and failures explain what went wrong and what to try (endpoint, key, model, timeout, unreadable answer) with Try again and a shortcut to Settings. Requests give up after 2 minutes.
