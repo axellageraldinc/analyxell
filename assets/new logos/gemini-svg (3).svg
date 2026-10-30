@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 256">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#15294A" />
+      <stop offset="100%" stop-color="#0A1424" />
+    </linearGradient>
+    <linearGradient id="wave-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2DD4BF" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+    <radialGradient id="glow-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(251, 191, 36, 0.4)" />
+      <stop offset="100%" stop-color="rgba(251, 191, 36, 0)" />
+    </radialGradient>
+  </defs>
+
+  <!-- App Tile Icon -->
+  <rect width="256" height="256" rx="56" fill="url(#bg-grad)" />
+  <line x1="32" y1="180" x2="224" y2="180" stroke="rgba(255,255,255,0.12)" stroke-width="4" stroke-dasharray="4 8" stroke-linecap="round" />
+  <circle cx="152" cy="45" r="40" fill="url(#glow-grad)" />
+  <path d="M 32 156 Q 64 116, 96 156 Q 112 176, 128 156 M 176 156 Q 200 186, 224 146" fill="none" stroke="url(#wave-grad)" stroke-width="16" stroke-linecap="round" />
+  <path d="M 128 156 L 152 70 L 176 156" fill="none" stroke="#FBBF24" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M 152 20 Q 152 45, 132 45 Q 152 45, 152 70 Q 152 45, 172 45 Q 152 45, 152 20 Z" fill="#FFF7E0" />
+
+  <!-- Typography: Geometric Path Outlines -->
+  <g transform="translate(40, 0)">
+    <!-- Base text (d, gnostic) -->
+    <g stroke="#FFF7E0" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 340,150 A 24,24 0 1,1 292,150 A 24,24 0 1,1 340,150 M 340,90 L 340,174" />
+      <path d="M 508,150 A 24,24 0 1,1 460,150 A 24,24 0 1,1 508,150 M 508,126 L 508,198 A 24,24 0 0,1 460,198" />
+      <path d="M 532,126 L 532,174 M 532,138 A 24,24 0 0,1 580,138 L 580,174" />
+      <path d="M 652,150 A 24,24 0 1,1 604,150 A 24,24 0 1,1 652,150" />
+      <path d="M 712,132 A 14,14 0 0,0 684,144 A 14,14 0 0,0 712,156 A 14,14 0 0,1 684,168" />
+      <path d="M 752,102 L 752,174 M 740,126 L 764,126" />
+      <path d="M 788,126 L 788,174 M 788,96 L 788,96" />
+      <path d="M 860,132 A 24,24 0 0,0 860,168" />
+    </g>
+
+    <!-- Highlight text (ai) -->
+    <g stroke="#2DD4BF" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 412,150 A 24,24 0 1,1 364,150 A 24,24 0 1,1 412,150 M 412,126 L 412,174" />
+      <path d="M 436,126 L 436,174 M 436,96 L 436,96" />
+    </g>
+  </g>
+</svg>

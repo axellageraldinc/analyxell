@@ -1,4 +1,4 @@
-# Architecture
+﻿# Architecture
 
 daignostic is a WinUI 3 desktop app on top of a UI-free analysis library.
 
@@ -24,9 +24,11 @@ daignostic is a WinUI 3 desktop app on top of a UI-free analysis library.
 | Namespace | Responsibility |
 |---|---|
 | `Capture` | `CaptureReader` parses a capture into frames and sensor series (only what the analysis needs; machine identifiers are dropped). |
-| `Analysis` | `FrameMetrics` (FPS statistics, matching CapFrameX's definitions), `Detectors` (stutters and freezes), `BottleneckAnalyzer`, `FreezeContext` (what the sensors did around each freeze), `Rules` (findings), `CaptureAnalyzer` (orchestrates and builds the *facts* table), `RunComparer`. |
-| `Config` | `IGameConfigReader` and the Wukong implementation: read-only, maps only values whose meaning is certain. |
-| `Ai` | `OpenAiCompatibleClient`, the system prompt, the message builder, and `AiResponseParser` which enforces citations. |
+| `Analysis` | `FrameMetrics` (FPS statistics, matching CapFrameX's definitions), `Detectors` (stutters and freezes), `BottleneckAnalyzer`, `ExtraSignals` (refresh, tearing flags, latency, pacing, memory), `FreezeContext` (what the sensors did around each freeze), `Rules` (findings, suggestions and the ranked next steps; see [rules](rules.md)), `PcSpecs`, `ChartDataBuilder` (the chart views), `CaptureAnalyzer` (orchestrates and builds the *facts* table), `RunComparer`. |
+| `Config` | `IGameConfigReader` and the Wukong implementation (read-only, maps only values whose meaning is certain), user-provided game profiles, `FreeFormSettingsParser`, and `GameSettingsMerger`. |
+| `SystemInfo` | `ISystemProbe` and its Windows implementation (registry, display mode, drive type and free space, shader cache size), `SystemSettingsReader`, `GameLocator` (Steam), and the setup fields users can fill in. |
+| `Background` | `BackgroundScanner`, the process sampler (CPU, disk I/O, memory, per-program GPU) and the curated `KnownApps` list. |
+| `Ai` | `OpenAiCompatibleClient` (chat and model list), the system prompts, the message builder, `AiResponseParser` which enforces citations, `AiExportPack` for use with any AI, and `AiSettingsImporter` (redaction, grounding checks). |
 | `Mcp` | `CapFrameXMcpClient` with a read-only tool allow-list; `CaptureCatalog` finds captures. |
 | `Settings` | Preferences and DPAPI secret storage. |
 | `Reporting` | Markdown export. |

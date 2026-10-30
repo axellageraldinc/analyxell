@@ -31,6 +31,9 @@ function Shot($name) {
 Shot 'compare'
 & winapp ui invoke NavAnalyze -a Daignostic 2>&1 | Out-Null; Start-Sleep 2
 Shot 'analyze'
+& winapp ui scroll-into-view CheckBackgroundButton -a Daignostic 2>&1 | Out-Null; Start-Sleep 2
+& winapp ui hover 'Is something else slowing the game down?' -a Daignostic 2>&1 | Out-Null; Start-Sleep 2
+Shot 'analyze-details'
 Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force
 Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Packages') -Filter 'axellageraldinc.Daignostic_*' -Directory -ErrorAction SilentlyContinue |
     ForEach-Object { Remove-Item (Join-Path $_.FullName 'LocalCache\Local\Daignostic') -Recurse -Force -ErrorAction SilentlyContinue }

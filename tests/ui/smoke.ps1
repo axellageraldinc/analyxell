@@ -1,11 +1,12 @@
-﻿<#
+<#
 .SYNOPSIS
   End-to-end UI smoke test. Builds and launches the app, then drives it with UI Automation (winapp ui).
 
 .DESCRIPTION
   Uses synthetic captures and a local mock AI endpoint, so it needs no game, no CapFrameX and no AI key.
-  It checks that the Analyze, Compare and Settings pages work, that the AI request is the previewed one, carries
-  no tools and leaks no machine identifiers, and that uncited AI claims are discarded.
+  It checks the Analyze, Compare and Settings pages, the AI flow (the request is the previewed one, carries no tools,
+  leaks no machine identifiers, forbids questions, and uncited AI claims are discarded), the extra chart views, the
+  suggestions, the background-program check, and the setup prompts.
 
   Requires: WinApp CLI 0.7+, .NET SDK 10, Developer Mode. Run:  powershell -File tests\ui\smoke.ps1
   Screenshots are written to artifacts\ui-test.
@@ -64,27 +65,51 @@ if ($run -notmatch 'ProcessId') { Write-Host $run; Stop-Job $mock; exit 2 }
 try {
     Write-Host 'Analyze page'
     Check 'capture opens from the command line' (WaitFor 'Sample Game' 30)
+    Check 'PC summary is shown up front' (HasText 'Sample GPU 12GB')
     Check 'metric cards are shown' ((HasText 'Average') -and (HasText 'Freezes'))
     # The later capture (no freezes) is loaded last, so it is the one shown on the Analyze page.
     Check 'findings are shown for the selected capture' (HasText 'Frame delivery looks smooth')
     Check 'device name is not displayed' (-not (HasText 'SAMPLE-DEVICE-NAME'))
+    Check 'AI is the highlighted feature' (HasText 'Ask an AI what is wrong')
+    Check 'AI is optional: set-up and export-for-own-AI are offered' ((HasText 'AI is optional') -and (Ui @('search', 'ExportPackButton')) -match 'Found [1-9]')
+    Check 'a chart view picker is offered' ((Ui @('search', 'ChartViewCombo')) -match 'Found [1-9]')
+    Check 'missing game settings are called out with a way to add them' ((HasText 'no built-in reader') -and (Ui @('search', 'GameSettingsButton')) -match 'Found [1-9]')
     Shot '1-analyze'
+
+    Write-Host 'Background check'
+    Ui @('scroll-into-view', 'CheckBackgroundButton') | Out-Null; Start-Sleep 1
+    Ui @('invoke', 'CheckBackgroundButton') | Out-Null
+    $bgDone = $false
+    for ($i = 0; $i -lt 40 -and -not $bgDone; $i++) {
+        Start-Sleep 1
+        $bgDone = (HasText 'No background program stood out') -or (HasText 'Other programs use') -or (HasText 'Programs that often affect games') -or (HasText 'Other programs are reading')
+    }
+    Check 'background check completes and reports' $bgDone
+    Shot '2-background'
 
     Write-Host 'Compare page'
     Ui @('invoke', 'NavCompare') | Out-Null; Start-Sleep 2
     Check 'comparison summary is shown' (WaitFor 'B is better on' 10)
     Check 'freezes are compared between the runs' (HasText 'Freezes (200 ms or more)')
     Check 'context rows are not counted as better or worse' (HasText 'Context')
-    Shot '2-compare'
+    Shot '3-compare'
 
-    Write-Host 'Settings page and AI connection'
+    Write-Host 'Settings page'
     Ui @('invoke', 'SettingsItem') | Out-Null; Start-Sleep 2
+    Check 'AI is off by default and the user is told it is optional' (HasText 'Everything else works without AI')
+    Check 'the MCP tutorial is there' (HasText 'How to turn on CapFrameX')
+    Ui @('invoke', 'AiEnabledSwitch') | Out-Null; Start-Sleep 1
+    Check 'the API key assurance is shown' (HasText 'Your key stays on this PC')
+    Check 'the field is called Model name, not Preset' ((HasText 'Model name') -and -not (HasText 'Preset'))
     Ui @('set-value', 'EndpointBox', "http://127.0.0.1:$MockPort") | Out-Null
+    Ui @('invoke', 'ListModelsButton') | Out-Null
+    Check 'models can be listed from the endpoint' (WaitFor '2 model(s) found' 10)
+    Ui @('set-value', 'ModelBox', 'test-model') | Out-Null
     Ui @('invoke', 'TestAiButton') | Out-Null
     Check 'AI connection test succeeds' (WaitFor 'The AI endpoint answered' 10)
     Ui @('invoke', 'SaveSettingsButton') | Out-Null; Start-Sleep 1
     Check 'settings can be saved' (HasText 'Settings saved')
-    Shot '3-settings'
+    Shot '4-settings'
 
     Write-Host 'AI analysis'
     Ui @('invoke', 'NavAnalyze') | Out-Null; Start-Sleep 2
@@ -92,14 +117,18 @@ try {
     Ui @('invoke', 'AskAiButton') | Out-Null
     Check 'cited AI claim is shown' (WaitFor 'Freezes look GPU-side' 15)
     Check 'uncited AI claim is discarded and flagged' ((-not (HasText 'Made-up claim')) -and (HasText 'discarded because they cited no measured evidence'))
-    Shot '4-ai'
+    Check 'what the AI could not tell is shown instead of a question' (HasText 'Whether VSync was on')
+    Shot '5-ai'
 
     Write-Host 'What the AI endpoint received'
     $requests = @(Get-Content $mockLog -ErrorAction SilentlyContinue | Where-Object { $_ } | ForEach-Object { $_ | ConvertFrom-Json })
     $analysis = $requests | Where-Object { $_.userLen -gt 100 } | Select-Object -Last 1
     Check 'an analysis request was sent' ($null -ne $analysis)
+    Check 'request used the chosen model name' (($null -ne $analysis) -and $analysis.model -eq 'test-model')
     Check 'request offered the model no tools' (($null -ne $analysis) -and (-not $analysis.hasTools))
     Check 'request leaked no device name, board or user path' (($null -ne $analysis) -and (-not $analysis.leaked))
+    Check 'the AI was told never to ask questions' (($null -ne $analysis) -and $analysis.noQuestionRule)
+    Check 'suggestions were included for the AI to build on' (($null -ne $analysis) -and $analysis.hasSuggestions)
 }
 finally {
     Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force

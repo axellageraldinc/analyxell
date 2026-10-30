@@ -1,4 +1,4 @@
-# 0006. The app and the AI are read-only; writes need explicit user action
+﻿# 0006. The app and the AI are read-only; writes need explicit user action
 
 - Status: Accepted
 - Date: 2026-10-30
@@ -15,7 +15,8 @@ daignostic never modifies game settings, CapFrameX settings or any file it did n
 |---|---|---|
 | App preferences | The user presses **Save settings** | The app's own data folder |
 | API key | The user enters one and saves | The app's own data folder, encrypted ([ADR 0007](0007-secrets-and-secret-scanning.md)) |
-| A Markdown report | The user presses **Export report** and picks a location in a save dialog | Where the user chooses |
+| Setup and game settings the user enters | The user presses Save in the setup or game-settings dialog | The app's own data folder |
+| A Markdown report or an AI analysis pack | The user presses **Export** and picks a location in a save dialog | Where the user chooses |
 
 The AI is given no tools ([ADR 0005](0005-openai-compatible-ai-without-tools.md)), and its advice is text that a person applies by hand. Any future feature that writes (for example applying a graphics preset) must ask the user explicitly each time and be added through a new ADR.
 

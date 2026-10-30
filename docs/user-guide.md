@@ -12,7 +12,9 @@ Tip: record 5 to 10 minutes that include the moments that bother you.
 - **Recent captures** lists captures found through CapFrameX (if it is running with MCP enabled) or in your captures folder (set in **Settings**).
 - From a terminal: `Daignostic.exe "C:\path\run1.json" "C:\path\run2.json"` opens one or more captures.
 
-## Reading the Analyze page
+## The Analyze page, top to bottom
+
+**This PC.** One line with your GPU, CPU, memory and resolution. Open it for the full picture: graphics (driver, video memory, clocks, power, temperatures, Resizable BAR), processor (cores, boost clock), memory, display (refresh range, variable refresh), motherboard and Windows settings, and the drive the game is installed on. The motherboard is shown here only; it is never sent to an AI.
 
 **The cards**
 
@@ -22,40 +24,53 @@ Tip: record 5 to 10 minutes that include the moments that bother you.
 | 1% low / 0.1% low | The frame rate of your worst 1% / 0.1% of frames. These decide how smooth the game *feels*; a good average with bad lows means stutter. |
 | Stutters | Frames that took more than twice as long as their neighbours. |
 | Freezes | Frames that took 200 ms or more: the game visibly hung. |
-| Limit | Whether the GPU, CPU, temperature or power limit holds performance back, and how confident that call is. |
+| Limited by | Whether the GPU, CPU, heat or power limit holds performance back, and how confident that call is. |
 
-**The chart** shows every frame's time in milliseconds (lower is smoother). The white line is a one-second average. Red markers are freezes. Spikes above the visible range are clipped so one huge freeze does not flatten the rest. Hover to read exact values.
+**Ask an AI.** The main feature; see below.
 
-**What stands out** lists findings. Each ends with "Based on: ..." naming the measurements behind it. Blue is information, yellow is worth a look, red is serious.
+**What you can do.** The most valuable things to try, most important first. Try one at a time, record the same route again, and use **Compare**.
 
-**Game settings** (when your game is supported) shows the graphics settings from the game's own config file. Values marked *(raw id)* are the game's internal numbers, not preset names. The file shows the settings at the game's *last save*, which may differ from what was active during the capture.
+**The chart.** Pick a view: frame time, FPS, GPU and CPU load, temperatures, clock speeds, memory, power or latency (only the views your capture has data for). Red markers are freezes. Hover to read exact values. For frame time and FPS the white line is a one-second average, and extreme spikes are clipped so one huge freeze does not flatten everything else.
 
-## Asking the AI
+**What stands out.** Findings, each with the measurements behind it ("Based on: ...") and **What you can try**. Blue is information, yellow is worth a look, red is serious. These come from fixed rules, not an AI; see [Diagnostic rules](rules.md).
 
-1. Configure an endpoint in **Settings** and use **Test AI connection**.
-2. On the Analyze page, open **Preview exactly what will be sent**. That text is the entire message.
-3. Optionally add a note ("I turned ray tracing off in this run").
-4. Press **Ask AI**.
+**Is something else slowing the game down?** A capture cannot show which other programs were running. Press **Check background programs (10 s)** to sample your PC right now: which programs use CPU, disk and GPU, and which well-known troublemakers are open (overlays, recorders, browsers, launchers, cloud sync, security scans, vendor software, virtual machines). For the best result start the game, idle in a menu, switch back and run it. It only reads. The result reflects that moment, not necessarily the captured session.
 
-The answer lists findings with a confidence, suggested things to try, and the evidence each claim rests on. Claims that cite no evidence are discarded and counted. An "inconclusive" notice means the data did not support a firm conclusion; take that seriously.
+**Help daignostic know more.** Things a capture cannot show. All optional, all kept on this PC:
 
-The AI can only suggest in-game settings or simple checks. It never runs anything.
+- **Add game settings...** For games daignostic cannot read by itself: type or paste them (JSON, `key=value` or `key: value` lines), or let your own AI pull the graphics settings out of the game's config file. For the AI route, likely secrets and your user name are removed first, you see exactly what is sent, and the app keeps only settings whose names and values really appear in the file. Settings are shown as the game's own raw values, never guessed into friendly names.
+- **Edit PC setup...** Tell daignostic what it cannot read: G-SYNC/FreeSync state, VSync, Reflex or low-latency mode, frame cap, driver shader cache size, GPU power mode, your monitor, and where the game is installed. The install folder lets it find out whether the game is on an SSD or a hard disk, NVMe or SATA, and how full the drive is. Answers are used as given and never verified.
+
+## Asking an AI (optional)
+
+AI is optional. Without it, everything above still works.
+
+**Inside daignostic.** In **Settings**, turn on "Ask an AI from inside daignostic", enter the endpoint address and a **model name** exactly as your provider spells it (use **List models** to see what your endpoint offers), add an API key if needed, and press **Test AI connection**. Then, on the Analyze page:
+
+1. Open **Preview exactly what will be sent or exported**. That text is the entire message.
+2. Optionally add a note ("I turned ray tracing off in this run").
+3. Press **Ask AI**.
+
+The answer ranks the likely causes for your data, with confidence, things to try, and the evidence behind each claim. Claims that cite no evidence are discarded and counted. It also lists **what the AI could not tell from this data**. The AI answers once and does not ask questions: this is not a chat, and it has no access to your PC.
+
+**With your own AI.** Press **Export for my own AI...** to save one file containing instructions, the exact measured data, and how to check the answer. Give it to any chat or model you like.
 
 ## Comparing two runs
 
-Pick the earlier run as **A** and the later one as **B** (load captures with the buttons, or from the Analyze page). The table shows each measure, the change, and whether B is better. *Context* rows (GPU load, VRAM, temperature) are shown for information and are not scored. Change **one thing per run** so the result means something.
+Pick the earlier run as **A** and the later one as **B** (load captures with the buttons, or from the Analyze page). The table shows each measure, the change, and whether B is better. *Context* rows (GPU load, VRAM, temperature) are shown for information and are not scored. Change **one thing per run** so the result means something. The AI panel works here too.
 
 ## Exporting a report
 
-**Export report...** saves a Markdown summary (metrics, findings, game settings and any AI analysis). You choose where it goes. It contains no file paths or device names.
+**Export report...** saves a Markdown summary (metrics, findings with suggestions, game settings and any AI analysis). You choose where it goes. It contains no file paths or computer name.
 
 ## Settings
 
 | Setting | Purpose |
 |---|---|
 | Captures folder | Where **Recent captures** looks when CapFrameX is not available. |
-| Find captures through CapFrameX (MCP) | Lets daignostic ask a running CapFrameX for its list of captures. Needs `McpEnabled` in CapFrameX's settings. Read-only. |
-| AI endpoint / preset / API key | Where AI questions go. Optional. |
+| Find captures through CapFrameX | Lets daignostic ask a running CapFrameX for its list of captures. The page has a step-by-step guide for turning MCP on in CapFrameX and **Test connection** says which of the usual problems you have. Read-only. |
+| Ask an AI from inside daignostic | Off by default. When on: endpoint, model name, API key, and whether to remember the key on this PC (encrypted) or keep it in memory only. |
+| Include other programs' names in AI messages | Off by default. When off, the AI gets only anonymous totals and category names. |
 
 ## Troubleshooting
 
@@ -63,7 +78,10 @@ Pick the earlier run as **A** and the later one as **B** (load captures with the
 |---|---|
 | "That file is not a readable CapFrameX capture" | Open the `.json` that CapFrameX saved, not a summary or exported CSV. |
 | No sensor-based findings | The capture has no sensor data. Enable sensor logging in CapFrameX and record again. |
+| No game settings | daignostic only reads some games by itself. Use **Add game settings...**. |
 | "Could not reach the AI endpoint" | Check the endpoint address and that the gateway is running. |
+| "Check the endpoint address and the model name" | The server answered 404: usually a misspelled model name. Use **List models**. |
 | "Check the API key in Settings" | The endpoint rejected the key (HTTP 401 or 403). |
-| CapFrameX not found | Start CapFrameX, make sure MCP is enabled, then use **Test connection** in Settings. Or just open the file directly. |
-| Every claim from the AI was discarded | The model ignored the citation rule. Try a stronger model or preset. |
+| CapFrameX not found | Follow the guide in Settings, then **Test connection**. Or just open the file directly. |
+| Every claim from the AI was discarded | The model ignored the citation rule. Try a stronger model. |
+| Background check shows GPU as n/a | Windows did not provide per-program GPU counters; CPU and disk results are still valid. |

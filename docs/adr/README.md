@@ -1,4 +1,4 @@
-# Architecture Decision Records
+﻿# Architecture Decision Records
 
 Each ADR records one technical decision: the context, the choice, and what follows from it. They are short and permanent: to change a decision, add a new ADR that supersedes the old one rather than editing history.
 
@@ -17,3 +17,6 @@ Format: **Status** (Accepted, Superseded by NNNN), **Context**, **Decision**, **
 | [0009](0009-no-trimming-self-contained-deployment.md) | No trimming; self-contained MSIX and portable builds | Accepted |
 | [0010](0010-game-config-readers.md) | Game settings come from read-only per-game readers | Accepted |
 | [0011](0011-release-artifacts-and-signing.md) | Release as MSIX installer and portable zip | Accepted |
+| [0012](0012-user-provided-and-ai-assisted-game-settings.md) | Game settings can be user-provided or extracted by the user's AI, and are always checked | Accepted |
+| [0013](0013-read-only-system-probes-and-background-check.md) | Read-only system probes and an on-demand background check | Accepted |
+| [0014](0014-suggestions-and-single-answer-ai.md) | Suggestions are deterministic; the AI is optional, answers once, never asks questions | Accepted |

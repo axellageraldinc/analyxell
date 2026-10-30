@@ -1,4 +1,4 @@
-<p align="center">
+﻿<p align="center">
   <img src="assets/logo.png" alt="daignostic logo" width="120">
 </p>
 
@@ -15,15 +15,17 @@
 
 You played a game and it stuttered. A capture tells you *that* it did; daignostic helps you work out *why*.
 
-- **Analyze a capture.** Average FPS, 1% and 0.1% lows, stutters, freezes, and whether the GPU or CPU is the limit. A frame-time chart marks every freeze.
-- **Explain it.** Rule-based findings cite the exact measurements they come from ("the GPU was busy during the freezes, and no drive passed 2% activity, so it is not disk streaming").
+- **Analyze a capture.** Average FPS, 1% and 0.1% lows, stutters, freezes, and whether the GPU or CPU is the limit. Charts for frame time, FPS, load, temperatures, clocks, memory, power and latency, with every freeze marked.
+- **Tell you what to do.** Findings cite the exact measurements behind them and come with concrete things to try, ranked in a "What you can do" list. It covers freezes, low FPS, heat, memory and VRAM pressure, tearing conditions, latency, pacing, and more ([the rules](docs/rules.md)). No AI needed.
+- **Look beyond the capture.** The PC's specs, which drive the game is on (SSD or HDD, NVMe or SATA, how full), Windows gaming settings, the GPU shader cache, and which other programs are competing for CPU, disk and GPU.
 - **Compare two runs.** Changed a setting? See, measure by measure, whether it helped.
-- **Ask an AI, safely.** Optionally send only the measured facts to an AI of your choice. You see the exact message first, the AI has no tools, and any claim that cites no evidence is thrown away.
-- **Read your game's settings.** Currently Black Myth: Wukong, so findings can say "ray tracing is on while the game hitches".
+- **Ask an AI, safely, or not at all.** Optionally have an AI explain it and rank the fixes for your data, or export one file and give it to any AI yourself. You see the exact message first, the AI has no tools and never asks questions back, and any claim that cites no evidence is thrown away.
+- **Know your game's settings.** Built in for Black Myth: Wukong. For any other game, type or paste them, or let your own AI pull them out of the config file, with every value checked against the file.
 
 | Analyze | Compare |
 |---|---|
 | ![Analyze page](docs/images/analyze.png) | ![Compare page](docs/images/compare.png) |
+| ![Charts, findings and suggestions](docs/images/analyze-details.png) | |
 
 ## Safe by design
 
@@ -55,7 +57,7 @@ More in the [user guide](docs/user-guide.md).
 
 ## AI setup (optional)
 
-daignostic talks to any OpenAI-compatible `/v1/chat/completions` endpoint, for example a self-hosted gateway such as [xellter](https://github.com/axellageraldinc/xellter). In **Settings**, set the endpoint, the preset or model name, and (if required) an API key. The key is stored encrypted for your Windows account and is never written to the settings file.
+AI is off until you turn it on, and everything else works without it. To use one from inside daignostic, open **Settings**, turn on the AI switch, and enter the endpoint address of any OpenAI-compatible service (a hosted one, or a local or self-hosted gateway such as [xellter](https://github.com/axellageraldinc/xellter)), the **model name** exactly as your provider spells it (**List models** shows what the endpoint offers), and an API key if required. The key is stored encrypted for your Windows account, never in the settings file, and can be kept in memory only. Prefer your own chat? **Export for my own AI** saves one file with the instructions and the measured data.
 
 ## Build from source
 
@@ -74,6 +76,7 @@ You need the .NET 10 SDK, [WinApp CLI](https://github.com/microsoft/winappCli) 0
 |---|---|
 | [User guide](docs/user-guide.md) | Using the app, reading the results |
 | [Architecture](docs/architecture.md) | How the code is organised |
+| [Diagnostic rules](docs/rules.md) | Every rule, its threshold and its advice |
 | [ADRs](docs/adr/README.md) | Technical decisions and why |
 | [BDRs](docs/bdr/README.md) | Product decisions and why |
 | [Privacy](docs/privacy.md) | Exactly what is read, stored and sent |

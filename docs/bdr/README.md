@@ -1,4 +1,4 @@
-# Business Decision Records
+﻿# Business Decision Records
 
 BDRs record *product* decisions: who the app is for, what it will and will not do, and why. They keep scope honest and explain trade-offs to contributors. Technical decisions live in the [ADRs](../adr/README.md).
 
@@ -14,3 +14,5 @@ Same rules as ADRs: short, permanent, superseded rather than rewritten. Copy [te
 | [0006](0006-honesty-over-confidence.md) | Honesty over confidence in every diagnosis | Accepted |
 | [0007](0007-distribution.md) | Distribute as an installer and a portable zip | Accepted |
 | [0008](0008-game-support-strategy.md) | Generic analysis first, per-game settings readers second | Accepted |
+| [0009](0009-ai-is-optional.md) | AI is optional, with a way to use any AI without connecting it | Accepted |
+| [0010](0010-tell-people-what-to-do.md) | Findings must say what to do, not just what is wrong | Accepted |
