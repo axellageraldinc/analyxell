@@ -31,12 +31,19 @@ $project = Join-Path $root 'src\Daignostic\Daignostic.csproj'
 $out = Join-Path $root 'artifacts'
 $rid = "win-$Arch"
 
+# Start from clean Release outputs so nothing built earlier with debug symbols (and their paths) is reused.
+foreach ($dir in @('src\Daignostic.Core\obj', 'src\Daignostic.Corein', 'src\Daignostic\obj', 'src\Daignosticin')) {
+    Get-ChildItem (Join-Path $root $dir) -Directory -Filter 'Release*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    Get-ChildItem (Join-Path $root $dir) -Directory -ErrorAction SilentlyContinue | ForEach-Object { Get-ChildItem $_.FullName -Directory -Filter 'Release*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }
+}
+
 New-Item -ItemType Directory -Force $out | Out-Null
 
 # 1. Portable: unpackaged, self-contained folder, zipped. No installation and no certificate needed.
 $portableDir = Join-Path $out "portable\$rid"
 Remove-Item $portableDir -Recurse -Force -ErrorAction SilentlyContinue
-dotnet publish $project -c Release -r $rid "-p:Platform=$Arch" -p:Portable=true -o $portableDir -nologo -v q
+# No debug symbols in releases: they (and the paths they embed in the DLLs) would carry the build machine's folder names.
+dotnet publish $project -c Release -r $rid "-p:Platform=$Arch" -p:Portable=true -p:DebugType=none -p:DebugSymbols=false -o $portableDir -nologo -v q
 if ($LASTEXITCODE -ne 0) { throw 'Portable publish failed.' }
 $zip = Join-Path $out "daignostic-$Version-portable-$rid.zip"
 Remove-Item $zip -ErrorAction SilentlyContinue
@@ -62,6 +69,6 @@ Remove-Item $msix -ErrorAction SilentlyContinue
 
 # Self-contained so the installer works on a PC without the .NET or Windows App SDK runtimes installed.
 winapp package $project --arch $Arch --cert $CertPath --cert-password $CertPassword --output $msix `
-    --self-contained -p SelfContained=true
+    --self-contained -p SelfContained=true -p DebugType=none -p DebugSymbols=false
 if ($LASTEXITCODE -ne 0) { throw 'MSIX packaging failed.' }
 Write-Host "Installer: $msix"
