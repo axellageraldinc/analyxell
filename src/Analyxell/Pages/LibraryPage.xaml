@@ -34,7 +34,7 @@
                 IsOpen="True"
                 IsClosable="False"
                 Title="Games appear here when a launcher says they are installed, or when you open a capture of them."
-                Message="You can also add one yourself. Settings you add are used for captures recorded after you saved them; for an older capture, enter its settings on the Analyze page." />
+                Message="Nothing here needs adding: open a game to set it up. Use Add a game only for a game no launcher knows about." />
 
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.IsScanning, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsScanning, Mode=OneWay}" />
@@ -47,45 +47,106 @@
                 Text="No games yet. Open a capture on the Analyze page, or add a game."
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
 
-            <ItemsControl ItemsSource="{x:Bind ViewModel.Games, Mode=OneTime}" AutomationProperties.AutomationId="LibraryGames">
+            <TextBlock Text="Your games" Style="{StaticResource SubtitleTextBlockStyle}" Visibility="{x:Bind ViewModel.HasKnown, Mode=OneWay}" />
+            <TextBlock
+                Visibility="{x:Bind ViewModel.HasKnown, Mode=OneWay}"
+                Text="Built in, opened in a capture, or added by you."
+                Style="{StaticResource CaptionTextBlockStyle}"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <ItemsControl ItemsSource="{x:Bind ViewModel.Known, Mode=OneTime}" AutomationProperties.AutomationId="LibraryGames">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:LibraryRow">
-                        <Expander Margin="0,0,0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                            <Expander.Header>
-                                <StackPanel Spacing="2" Padding="0,6">
-                                    <TextBlock Text="{x:Bind Game, Mode=OneTime}" Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                    <TextBlock Text="{x:Bind StatusText, Mode=OneTime}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                </StackPanel>
-                            </Expander.Header>
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="{x:Bind Detail, Mode=OneTime}" TextWrapping="Wrap" />
-                                <TextBlock Text="{x:Bind InstallText, Mode=OneTime}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                <TextBlock Text="{x:Bind LookedUp, Mode=OneTime}" Visibility="{x:Bind HasLookedUp, Mode=OneTime}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" />
-                                <ItemsControl ItemsSource="{x:Bind Settings, Mode=OneTime}" Visibility="{x:Bind HasSettings, Mode=OneTime}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:SettingRow">
-                                            <Grid ColumnSpacing="16" Padding="0,2">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="260" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{x:Bind Label, Mode=OneTime}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                                <TextBlock Grid.Column="1" Text="{x:Bind Value, Mode=OneTime}" TextWrapping="Wrap" />
-                                                <TextBlock Grid.Column="2" Text="{x:Bind Source, Mode=OneTime}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                <Button Content="Add to library..." Click="AddDetected_Click" Visibility="{x:Bind IsDetectedOnly, Mode=OneTime}" />
-                                <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind CanEdit, Mode=OneTime}">
-                                    <Button Content="Edit settings..." Tag="{x:Bind ProcessName, Mode=OneTime}" Click="Edit_Click" />
-                                    <Button Content="Set install folder..." Tag="{x:Bind ProcessName, Mode=OneTime}" Click="InstallFolder_Click" />
-                                    <Button AutomationProperties.AutomationId="LookUpOnlineButton" Content="Look up online..." Tag="{x:Bind ProcessName, Mode=OneTime}" Click="LookUp_Click" />
-                                    <Button Content="Remove from library" Tag="{x:Bind ProcessName, Mode=OneTime}" Click="Remove_Click" Visibility="{x:Bind IsUserAdded, Mode=OneTime}" />
-                                </StackPanel>
+                        <Border Margin="0,0,0,8" Padding="16,12" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <StackPanel Spacing="6">
+                                <Grid ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind Game, Mode=OneTime}" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{x:Bind StatusText, Mode=OneTime}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                        <Button AutomationProperties.AutomationId="SetupGameButton" Content="Set up..." Style="{StaticResource AccentButtonStyle}" Tag="{x:Bind Game, Mode=OneTime}" Click="Setup_Click" />
+                                        <Button Content="Remove" Tag="{x:Bind Game, Mode=OneTime}" Click="Remove_Click" Visibility="{x:Bind IsUserAdded, Mode=OneTime}" />
+                                    </StackPanel>
+                                </Grid>
+                                <Expander Header="What is known" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Visibility="{x:Bind HasDetails, Mode=OneTime}">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="{x:Bind Detail, Mode=OneTime}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{x:Bind InstallText, Mode=OneTime}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        <TextBlock Text="{x:Bind LookedUp, Mode=OneTime}" Visibility="{x:Bind HasLookedUp, Mode=OneTime}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" />
+                                        <ItemsControl ItemsSource="{x:Bind Settings, Mode=OneTime}" Visibility="{x:Bind HasSettings, Mode=OneTime}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:SettingRow">
+                                                    <Grid ColumnSpacing="16" Padding="0,2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="260" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{x:Bind Label, Mode=OneTime}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                        <TextBlock Grid.Column="1" Text="{x:Bind Value, Mode=OneTime}" TextWrapping="Wrap" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Expander>
                             </StackPanel>
-                        </Expander>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Text="Installed on this PC" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,8,0,0" Visibility="{x:Bind ViewModel.HasInstalled, Mode=OneWay}" />
+            <TextBlock
+                Visibility="{x:Bind ViewModel.HasInstalled, Mode=OneWay}"
+                Text="Found through Steam, Epic or GOG. No capture of these has been opened yet."
+                Style="{StaticResource CaptionTextBlockStyle}"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <ItemsControl ItemsSource="{x:Bind ViewModel.Installed, Mode=OneTime}" AutomationProperties.AutomationId="LibraryInstalled">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:LibraryRow">
+                        <Border Margin="0,0,0,8" Padding="16,12" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <StackPanel Spacing="6">
+                                <Grid ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind Game, Mode=OneTime}" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{x:Bind StatusText, Mode=OneTime}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                        <Button AutomationProperties.AutomationId="SetupGameButton" Content="Set up..." Style="{StaticResource AccentButtonStyle}" Tag="{x:Bind Game, Mode=OneTime}" Click="Setup_Click" />
+                                        <Button Content="Remove" Tag="{x:Bind Game, Mode=OneTime}" Click="Remove_Click" Visibility="{x:Bind IsUserAdded, Mode=OneTime}" />
+                                    </StackPanel>
+                                </Grid>
+                                <Expander Header="What is known" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Visibility="{x:Bind HasDetails, Mode=OneTime}">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="{x:Bind Detail, Mode=OneTime}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{x:Bind InstallText, Mode=OneTime}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        <TextBlock Text="{x:Bind LookedUp, Mode=OneTime}" Visibility="{x:Bind HasLookedUp, Mode=OneTime}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" />
+                                        <ItemsControl ItemsSource="{x:Bind Settings, Mode=OneTime}" Visibility="{x:Bind HasSettings, Mode=OneTime}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:SettingRow">
+                                                    <Grid ColumnSpacing="16" Padding="0,2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="260" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{x:Bind Label, Mode=OneTime}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                        <TextBlock Grid.Column="1" Text="{x:Bind Value, Mode=OneTime}" TextWrapping="Wrap" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Expander>
+                            </StackPanel>
+                        </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

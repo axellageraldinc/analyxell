@@ -101,7 +101,7 @@ try {
     Shot '1b-findings'
     Ui @('invoke', 'TabPc') | Out-Null; Start-Sleep 1
     Check 'PC tab shows the specs' (HasText 'Sample GPU 12GB')
-    Check 'missing game settings are called out with a way to add them' ((HasText 'no built-in reader') -and (Ui @('search', 'GameSettingsButton')) -match 'Found [1-9]')
+    Check 'missing game settings are called out with a way to add them' ((HasText 'no built-in reader') -and (Ui @('search', 'GameSetupButton')) -match 'Found [1-9]')
     Shot '1c-pc'
     Ui @('invoke', 'TabAi') | Out-Null; Start-Sleep 1
     Check 'AI is optional: set-up and export-for-own-AI are offered' ((HasText 'AI is optional') -and (Ui @('search', 'ExportPackButton')) -match 'Found [1-9]')

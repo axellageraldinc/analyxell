@@ -9,6 +9,9 @@ public sealed record ProfileItem(string Key, string Value);
 /// <summary>Settings for one game that the user provided. <see cref="Origin"/> says how they were obtained.</summary>
 public sealed class GameProfile
 {
+    /// <summary>The file this profile is stored in. Set by the store; never entered by the user.</summary>
+    public string Key { get; set; } = "";
+
     public string ProcessName { get; set; } = "";
 
     public string Game { get; set; } = "";
@@ -31,20 +34,34 @@ public sealed class GameProfile
     public List<ProfileItem> Items { get; set; } = [];
 }
 
-/// <summary>Per-game profiles stored as small JSON files in the app's own data folder.</summary>
+/// <summary>
+/// Per-game profiles stored as small JSON files in the app's own data folder. A game is identified by its name, so the
+/// user never has to point at a program file: a capture carries the game's name, and the process name is only an extra
+/// way to recognise it.
+/// </summary>
 public sealed class GameProfileStore(string directory)
 {
     public static string DefaultDirectory { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Analyxell", "games");
 
-    public GameProfile? Load(string processName)
+    /// <summary>The profile stored under this key (its file name), or null.</summary>
+    public GameProfile? Load(string key)
     {
-        var path = PathFor(processName);
+        var path = PathFor(key);
         try
         {
-            return File.Exists(path)
-                ? JsonSerializer.Deserialize(File.ReadAllText(path), CoreJsonContext.Default.GameProfile)
-                : null;
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
+            var profile = JsonSerializer.Deserialize(File.ReadAllText(path), CoreJsonContext.Default.GameProfile);
+            if (profile is not null)
+            {
+                profile.Key = key;
+            }
+
+            return profile;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
@@ -52,11 +69,32 @@ public sealed class GameProfileStore(string directory)
         }
     }
 
+    /// <summary>The profile for a game: by process name when there is one, otherwise by the game's name.</summary>
+    public GameProfile? FindFor(string processName, string gameName)
+    {
+        var wanted = NameKey(gameName);
+        foreach (var profile in List())
+        {
+            if ((processName.Length > 0 && profile.ProcessName.Equals(processName, StringComparison.OrdinalIgnoreCase)) ||
+                (wanted.Length > 0 && NameKey(profile.Game) == wanted))
+            {
+                return profile;
+            }
+        }
+
+        return null;
+    }
+
     public void Save(GameProfile profile)
     {
         Directory.CreateDirectory(directory);
+        if (profile.Key.Length == 0)
+        {
+            profile.Key = profile.ProcessName.Length > 0 ? profile.ProcessName : "game-" + NameKey(profile.Game);
+        }
+
         profile.SavedAtUtc = DateTime.UtcNow.ToString("o");
-        File.WriteAllText(PathFor(profile.ProcessName), JsonSerializer.Serialize(profile, CoreJsonContext.Default.GameProfile));
+        File.WriteAllText(PathFor(profile.Key), JsonSerializer.Serialize(profile, CoreJsonContext.Default.GameProfile));
     }
 
     /// <summary>Every game profile on this PC: games that were opened in a capture or added by the user.</summary>
@@ -72,8 +110,10 @@ public sealed class GameProfileStore(string directory)
         {
             try
             {
-                if (JsonSerializer.Deserialize(File.ReadAllText(file), CoreJsonContext.Default.GameProfile) is { ProcessName.Length: > 0 } profile)
+                var profile = JsonSerializer.Deserialize(File.ReadAllText(file), CoreJsonContext.Default.GameProfile);
+                if (profile is not null && (profile.ProcessName.Length > 0 || profile.Game.Length > 0))
                 {
+                    profile.Key = Path.GetFileNameWithoutExtension(file);
                     result.Add(profile);
                 }
             }
@@ -86,33 +126,49 @@ public sealed class GameProfileStore(string directory)
         return result;
     }
 
-    /// <summary>Remembers that a game was seen in a capture, without changing anything the user entered.</summary>
+    /// <summary>
+    /// Remembers that a game was seen in a capture, without changing anything the user entered. If the game is already
+    /// known by name, it only learns the process name.
+    /// </summary>
     public void EnsureSeen(string processName, string game)
     {
-        if (processName.Length == 0 || Load(processName) is not null)
+        if (processName.Length == 0 && game.Length == 0)
         {
             return;
         }
 
-        Directory.CreateDirectory(directory);
-        File.WriteAllText(PathFor(processName), JsonSerializer.Serialize(new GameProfile { ProcessName = processName, Game = game }, CoreJsonContext.Default.GameProfile));
+        if (FindFor(processName, game) is { } existing)
+        {
+            if (existing.ProcessName.Length == 0 && processName.Length > 0)
+            {
+                existing.ProcessName = processName;
+                Save(existing);
+            }
+
+            return;
+        }
+
+        Save(new GameProfile { ProcessName = processName, Game = game });
     }
 
-    public void Delete(string processName)
+    public void Delete(string key)
     {
-        var path = PathFor(processName);
+        var path = PathFor(key);
         if (File.Exists(path))
         {
             File.Delete(path);
         }
     }
 
-    private string PathFor(string processName)
+    /// <summary>The game's name reduced to letters and digits, so "CONTROLResonant" and "Control Resonant" are the same game.</summary>
+    public static string NameKey(string name) => new(name.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+
+    private string PathFor(string key)
     {
-        var safe = new string(processName.Where(c => char.IsLetterOrDigit(c) || c is '-' or '_' or '.').ToArray());
+        var safe = new string(key.Where(c => char.IsLetterOrDigit(c) || c is '-' or '_' or '.').ToArray());
         if (safe.Length == 0)
         {
-            throw new ArgumentException("A process name is required.", nameof(processName));
+            throw new ArgumentException("A key is required.", nameof(key));
         }
 
         return Path.Combine(directory, safe + ".json");

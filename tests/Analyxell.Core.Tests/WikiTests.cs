@@ -85,3 +85,15 @@ public class WikiTests
         Assert.Contains("OFFERS", Analyxell.Core.Ai.AiPrompts.System);
     }
 }
+
+public class FactLabelTests
+{
+    [Fact]
+    public void Findings_cite_plain_names_not_internal_keys_and_unknown_keys_are_pulled_apart()
+    {
+        Assert.Equal("1% low, freeze count", Analyxell.Core.Reporting.FactLabels.List(["fps.low1_average", "freeze.count", "fps.low1_average"]));
+        Assert.Equal("what the sensors showed around the freezes", Analyxell.Core.Reporting.FactLabels.For("freeze_ctx.gpu_load.at_freeze_avg"));
+        Assert.Equal("the finding \"freezes gpu busy\"", Analyxell.Core.Reporting.FactLabels.For("finding:FREEZES_GPU_BUSY"));
+        Assert.Equal("some new key", Analyxell.Core.Reporting.FactLabels.For("some.new_key"));
+    }
+}

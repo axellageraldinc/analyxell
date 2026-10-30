@@ -221,7 +221,7 @@
 
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Cards, Mode=OneTime}">
                     <ItemsRepeater.Layout>
-                        <UniformGridLayout MinItemWidth="156" MinColumnSpacing="12" MinRowSpacing="12" ItemsStretch="Fill" />
+                        <UniformGridLayout MinItemWidth="126" MinColumnSpacing="12" MinRowSpacing="12" ItemsStretch="Fill" />
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:MetricItem">
@@ -474,9 +474,8 @@
                                 FontWeight="SemiBold"
                                 Text="analyxell has no built-in reader for this game's settings. Type them in, or let your own AI pull them out of the game's config file." />
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <Button AutomationProperties.AutomationId="GameSettingsButton" Content="Add game settings..." Click="GameSettings_Click" />
+                                <Button AutomationProperties.AutomationId="GameSetupButton" Content="Set up this game..." Click="GameSetup_Click" />
                                 <Button AutomationProperties.AutomationId="PcSetupButton" Content="Edit PC setup..." Click="Setup_Click" />
-                                <Button AutomationProperties.AutomationId="LookUpGameButton" Content="Look this game up online..." Click="LookUp_Click" />
                             </StackPanel>
                             <Expander
                                 Header="What analyxell knows about your setup"

@@ -102,8 +102,12 @@ internal static class AppState
     private static Analyzed Analyze(CaptureFile file, BackgroundScanResult? background)
     {
         var info = file.Info;
-        AppServices.Profiles.EnsureSeen(info.ProcessName, info.Game);
-        var profile = info.ProcessName.Length > 0 ? AppServices.Profiles.Load(info.ProcessName) : null;
+        if (info.CaptureToolVersion != "sample")
+        {
+            AppServices.Profiles.EnsureSeen(info.ProcessName, info.Game);
+        }
+
+        var profile = AppServices.Profiles.FindFor(info.ProcessName, info.Game);
 
         // The game's own config file if analyxell can read it, otherwise what the user entered for the game.
         var live = GameConfigReaders.Find(info, AppServices.ConfigReaders)?.TryRead() ?? GameLibrary.ProfileAsSettings(profile);

@@ -13,8 +13,10 @@ namespace Analyxell.Dialogs;
 /// </summary>
 internal static class WikiLookupDialog
 {
-    public static async Task<bool> ShowAsync(XamlRoot root, string gameName, string processName, string installFolder)
+    public static async Task<bool> ShowAsync(XamlRoot root, GameProfile profile)
     {
+        var gameName = profile.Game;
+        var installFolder = profile.InstallPath;
         WikiGameInfo? found = null;
         string? resolved = null;
 
@@ -23,20 +25,21 @@ internal static class WikiLookupDialog
         var go = new Button { Content = "Look it up on PCGamingWiki" };
         AutomationProperties.SetAutomationId(go, "WikiLookupGo");
         var ring = new ProgressRing { Width = 22, Height = 22, IsActive = false, Visibility = Visibility.Collapsed };
-        var status = new TextBlock { TextWrapping = TextWrapping.Wrap, MaxWidth = 540 };
+        var status = new TextBlock { TextWrapping = TextWrapping.Wrap, MaxWidth = 640 };
         AutomationProperties.SetAutomationId(status, "WikiStatus");
-        var result = new TextBox { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxHeight = 300, MaxWidth = 540, Visibility = Visibility.Collapsed };
+        var result = new TextBox { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxHeight = 300, MaxWidth = 640, Visibility = Visibility.Collapsed };
         AutomationProperties.SetAutomationId(result, "WikiResult");
 
         var dialog = new ContentDialog
         {
             XamlRoot = root,
-            Title = "Look this game up",
-            PrimaryButtonText = "Save to the library",
+            Title = "What does " + gameName + " offer?",
+            PrimaryButtonText = "Use this",
             CloseButtonText = "Cancel",
             IsPrimaryButtonEnabled = false,
             DefaultButton = ContentDialogButton.Close,
         };
+        dialog.Resources["ContentDialogMaxWidth"] = 760.0;
 
         go.Click += async (_, _) =>
         {
@@ -57,12 +60,8 @@ internal static class WikiLookupDialog
                 resolved = ConfigPathResolver.Resolve(found.ConfigPaths, installFolder, p => File.Exists(p) || Directory.Exists(p));
                 result.Text = Describe(found, resolved);
                 result.Visibility = Visibility.Visible;
-                status.Text = "Found: " + found.Title + ". Read it below, then save it if it looks right.";
-                dialog.IsPrimaryButtonEnabled = processName.Length > 0;
-                if (processName.Length == 0)
-                {
-                    status.Text += " Add the game to the library first (choose its file), then look it up again to save this.";
-                }
+                status.Text = "Found: " + found.Title + ". Read it below, then press Use this if it looks right.";
+                dialog.IsPrimaryButtonEnabled = true;
             }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
             {
@@ -79,13 +78,13 @@ internal static class WikiLookupDialog
         dialog.Content = new StackPanel
         {
             Spacing = 10,
-            MinWidth = 520,
+            Width = 640,
             Children =
             {
                 new TextBlock
                 {
                     TextWrapping = TextWrapping.Wrap,
-                    MaxWidth = 540,
+                    MaxWidth = 640,
                     Opacity = 0.8,
                     Text = "This sends only the game's name to pcgamingwiki.com (a community-written wiki) and reads the answer. It finds where the game keeps its settings file and which upscalers, frame generation and VSync options it offers. It cannot tell what is switched on in your copy, or what the numbers in the settings file mean.",
                 },
@@ -96,12 +95,11 @@ internal static class WikiLookupDialog
             },
         };
 
-        if (await dialog.ShowAsync() != ContentDialogResult.Primary || found is null || processName.Length == 0)
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary || found is null)
         {
             return false;
         }
 
-        var profile = AppServices.Profiles.Load(processName) ?? new GameProfile { ProcessName = processName, Game = gameName };
         profile.GameFacts = [.. found.Features];
         profile.FactsSource = found.PageUrl;
         profile.ConfigPath = resolved ?? "";

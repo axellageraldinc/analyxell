@@ -20,7 +20,7 @@ public static partial class InstalledGameFinder
     private static readonly string[] NotGames =
     [
         "steamworks common redistributables", "steam linux runtime", "proton", "steamvr", "wallpaper engine", "source sdk",
-        "dedicated server", "directx", "redistributable",
+        "dedicated server", "directx", "redistributable", "dsx", "game compressor", "soundpad",
     ];
 
     public static IReadOnlyList<InstalledGame> Find(ISystemProbe probe)

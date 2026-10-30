@@ -17,7 +17,7 @@ internal static class GameSettingsDialog
     /// <summary>Settings for one capture: saved for that capture, and remembered for the game to pre-fill next time.</summary>
     public static Task<bool> ShowAsync(XamlRoot root, LoadedCapture capture)
     {
-        var profile = AppServices.Profiles.Load(capture.ProcessName) ?? new GameProfile { ProcessName = capture.ProcessName, Game = capture.Result.Info.Game };
+        var profile = AppServices.Profiles.FindFor(capture.ProcessName, capture.Result.Info.Game) ?? new GameProfile { ProcessName = capture.ProcessName, Game = capture.Result.Info.Game };
         var existing = AppServices.CaptureSettings.Load(CaptureSettingsResolver.KeyFor(capture.File.Info));
         var items = existing is { Items.Count: > 0 } && existing.Items.All(i => i.Key.StartsWith("profile.", StringComparison.Ordinal))
             ? existing.Items.Select(i => new ProfileItem(i.Label, i.Value)).ToList()
@@ -266,6 +266,7 @@ internal static class GameSettingsDialog
         root2.Children.Add(new TextBlock { Text = "Settings that will be saved", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
         root2.Children.Add(list);
         root2.Children.Add(status);
+        dialog.Resources["ContentDialogMaxWidth"] = 760.0;
         dialog.Content = new ScrollViewer { Content = root2, MaxHeight = 620 };
         Refresh();
 

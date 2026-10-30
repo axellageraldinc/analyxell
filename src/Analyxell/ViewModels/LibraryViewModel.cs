@@ -20,7 +20,8 @@ public sealed record LibraryRow(
     bool IsDetectedOnly = false,
     string InstallFolder = "",
     string LookedUp = "",
-    bool HasLookedUp = false);
+    bool HasLookedUp = false,
+    bool HasDetails = true);
 
 /// <summary>
 /// Lists every game analyxell knows, so a user can see that the game they want to diagnose is covered, what is known
@@ -28,7 +29,17 @@ public sealed record LibraryRow(
 /// </summary>
 public sealed partial class LibraryViewModel : ObservableObject
 {
-    public ObservableCollection<LibraryRow> Games { get; } = [];
+    /// <summary>Games the user can already work with: built in, opened in a capture, or added by hand.</summary>
+    public ObservableCollection<LibraryRow> Known { get; } = [];
+
+    /// <summary>Games a launcher says are installed that no capture has been opened for yet.</summary>
+    public ObservableCollection<LibraryRow> Installed { get; } = [];
+
+    public IEnumerable<LibraryRow> Games => Known.Concat(Installed);
+
+    public bool HasKnown => Known.Count > 0;
+
+    public bool HasInstalled => Installed.Count > 0;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
@@ -68,9 +79,9 @@ public sealed partial class LibraryViewModel : ObservableObject
         }
     }
 
-    private static string LookedUpText(string processName)
+    private static string LookedUpText(string game)
     {
-        if (processName.Length == 0 || AppServices.Profiles.Load(processName) is not { GameFacts.Count: > 0 } profile)
+        if (game.Length == 0 || AppServices.Profiles.FindFor("", game) is not { GameFacts.Count: > 0 } profile)
         {
             return "";
         }
@@ -82,10 +93,11 @@ public sealed partial class LibraryViewModel : ObservableObject
     public void Refresh()
     {
         var entries = GameLibrary.Build(AppServices.Profiles.List(), AppServices.ConfigReaders, _detected);
-        Games.Clear();
+        Known.Clear();
+        Installed.Clear();
         foreach (var e in entries)
         {
-            Games.Add(new LibraryRow(
+            (e.Status == LibraryStatus.Detected ? Installed : Known).Add(new LibraryRow(
                 e.Game,
                 e.ProcessName,
                 e.StatusText,
@@ -93,14 +105,17 @@ public sealed partial class LibraryViewModel : ObservableObject
                 e.InstallPath.Length > 0 ? "Installed in " + e.InstallPath : "Install folder not set",
                 e.Settings.Select(s => new SettingRow(s.Label, s.Value, s.Source)).ToList(),
                 e.Settings.Count > 0,
-                CanEdit: e.ProcessName.Length > 0,
+                CanEdit: true,
                 e.IsUserAdded,
                 IsDetectedOnly: e.Status == LibraryStatus.Detected,
                 InstallFolder: e.InstallPath,
-                LookedUp: LookedUpText(e.ProcessName),
-                HasLookedUp: LookedUpText(e.ProcessName).Length > 0));
+                LookedUp: LookedUpText(e.Game),
+                HasLookedUp: LookedUpText(e.Game).Length > 0,
+                HasDetails: e.Settings.Count > 0 || e.Status != LibraryStatus.Detected));
         }
 
-        Count = Games.Count;
+        Count = Known.Count + Installed.Count;
+        OnPropertyChanged(nameof(HasKnown));
+        OnPropertyChanged(nameof(HasInstalled));
     }
 }

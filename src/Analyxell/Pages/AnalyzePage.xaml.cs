@@ -138,15 +138,22 @@ public sealed partial class AnalyzePage : Page
         }
     }
 
-    private async void LookUp_Click(object sender, RoutedEventArgs e)
+    private async void GameSetup_Click(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.Current is { } capture && capture.ProcessName.Length > 0)
+        if (ViewModel.Current is not { } capture)
         {
-            var profile = AppServices.Profiles.Load(capture.ProcessName);
-            if (await WikiLookupDialog.ShowAsync(XamlRoot, capture.Result.Info.Game, capture.ProcessName, profile?.InstallPath ?? ""))
-            {
-                await ViewModel.ReanalyzeAsync();
-            }
+            return;
+        }
+
+        var changed = await GameSetupDialog.RunAsync(
+            XamlRoot,
+            capture.Result.Info.Game,
+            capture.ProcessName,
+            "",
+            _ => GameSettingsDialog.ShowAsync(XamlRoot, capture));
+        if (changed)
+        {
+            await ViewModel.ReanalyzeAsync();
         }
     }
 

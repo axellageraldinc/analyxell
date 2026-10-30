@@ -16,7 +16,7 @@ internal static class SetupDialog
     public static async Task<bool> ShowAsync(XamlRoot root, LoadedCapture capture)
     {
         var saved = AppServices.Setup.Load();
-        var profile = AppServices.Profiles.Load(capture.ProcessName) ?? new GameProfile { ProcessName = capture.ProcessName, Game = capture.Result.Info.Game };
+        var profile = AppServices.Profiles.FindFor(capture.ProcessName, capture.Result.Info.Game) ?? new GameProfile { ProcessName = capture.ProcessName, Game = capture.Result.Info.Game };
         var controls = new Dictionary<string, FrameworkElement>();
 
         var panel = new StackPanel { Spacing = 12, MinWidth = 520 };
@@ -88,6 +88,7 @@ internal static class SetupDialog
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Primary,
         };
+        dialog.Resources["ContentDialogMaxWidth"] = 760.0;
 
         if (await dialog.ShowAsync() != ContentDialogResult.Primary)
         {

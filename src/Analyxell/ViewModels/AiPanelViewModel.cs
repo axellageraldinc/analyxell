@@ -3,6 +3,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Analyxell.Core.Ai;
+using Analyxell.Core.Reporting;
 using Analyxell.Services;
 
 namespace Analyxell.ViewModels;
@@ -401,7 +402,7 @@ public sealed partial class AiPanelViewModel : ObservableObject
                     string.IsNullOrWhiteSpace(item.Confidence) ? "unrated" : item.Confidence,
                     item.Explanation,
                     string.Join(Environment.NewLine, item.Actions.Select(a => "• " + a)),
-                    "Evidence: " + string.Join(", ", item.Evidence),
+                    "Based on: " + FactLabels.List(item.Evidence),
                     item.Actions.Count > 0,
                     first));
                 first = false;

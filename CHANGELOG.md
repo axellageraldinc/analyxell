@@ -4,6 +4,13 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+### Changed
+
+- **Renamed to analyxell** (from the old working name). The app, installer, folders and repository all use the new name.
+- **One simple way to set a game up.** The Game library has no "add to library", game file or executable steps any more. Every game shows a **Set up...** button that opens one screen with three optional steps (install folder, online lookup, settings), the same from the library and from the Analyze page. Games are matched to captures by name.
+- Findings and AI answers name their measurements in plain words ("1% low, freeze count") instead of internal keys.
+- Seven metric cards fit one row; dialogs no longer clip their content.
+
 ### Added
 
 - **Look a game up (PCGamingWiki).** On the Analyze page (PC and setup tab) and in the Game library, "Look this game up online" asks PCGamingWiki, only when you press it and sending only the game's name, where the game keeps its settings file and which upscalers, frame generation, VSync and ray tracing options it offers. You read the result before saving. The settings file is then offered to the import with your AI, and the options reach the AI as facts that say what the game offers, not what is switched on.

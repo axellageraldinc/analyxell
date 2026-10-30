@@ -444,10 +444,10 @@ public sealed partial class AnalyzeViewModel : ObservableObject
 
         Cards.Clear();
         var fgOn = r.Facts.TryGetValue("framegen.rendered_fps", out var renderedText) && r.Facts.GetValueOrDefault("framegen.detected") == "yes";
-        Cards.Add(new MetricItem("Average", F(m.AverageFps), fgOn ? "fps on screen, generated frames included" : "fps"));
+        Cards.Add(new MetricItem("Average", F(m.AverageFps), fgOn ? "fps on screen" : "fps"));
         if (fgOn)
         {
-            Cards.Add(new MetricItem("Rendered", renderedText!, "fps your PC actually draws"));
+            Cards.Add(new MetricItem("Rendered", renderedText!, "fps your PC draws"));
         }
 
         Cards.Add(new MetricItem("1% low", F(m.Low1AverageFps), "fps, slowest 1%"));
@@ -463,7 +463,7 @@ public sealed partial class AnalyzeViewModel : ObservableObject
             var item = new FindingItem(
                 f.Title,
                 f.Detail,
-                "Based on: " + string.Join(", ", f.Evidence),
+                "Based on: " + FactLabels.List(f.Evidence),
                 Map(f),
                 string.Join(Environment.NewLine, f.Suggestions.Select(s => "• " + s)),
                 f.Suggestions.Count > 0);

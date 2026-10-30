@@ -57,12 +57,15 @@ The page leads with a one-line **verdict** (healthy, worth fixing, serious probl
 
 ## The game library
 
-**Game library** lists every game analyxell knows: the ones it can read by itself (Black Myth: Wukong today), every game you have opened a capture of, and games you add. Each shows whether its settings are read automatically, entered by you, or unknown ("diagnosable from captures, no settings yet"). Any game can be diagnosed from a capture; settings only make the findings and the AI more accurate.
+**Game library** lists the games analyxell knows, in two plain groups: **Your games** (built in, opened in a capture, or added by you) and **Installed on this PC** (found through Steam, Epic Games and GOG on any drive, with no capture opened yet). It reads only those launchers' manifest files and never searches your drives. Any game can be diagnosed from a capture; setting a game up only makes the findings and the AI more accurate for it.
 
-- **Found on this PC.** analyxell asks Steam (every library folder, on any drive), Epic Games and GOG what is installed, and lists those games too, marked "Not opened in a capture yet". It reads only the launchers' manifest files and never searches your drives. Games from elsewhere (other launchers, copied folders) are added by hand. Press **Look again** to re-check.
-- **Add a game...** (or **Add to library...** on a found game) choose the game's `.exe` (analyxell only reads its name and folder), then type or paste its settings, or let your own AI pull them out of its config file.
-- **Edit settings...** and **Set install folder...** change what is known; **Remove from library** forgets a game you added.
-- Settings saved here apply to captures recorded after you saved them. For an older capture, enter its settings on the Analyze page (PC and setup tab), where they are kept for that capture only.
+Nothing needs adding. Every game has one button, **Set up...**, which opens the same three optional steps wherever you start it (the library, or **Set up this game...** on the Analyze page's PC and setup tab):
+
+1. **Where the game is installed.** Found automatically for Steam games; choose a folder if not. It tells analyxell what kind of drive the game runs from.
+2. **What the game offers.** An online lookup on PCGamingWiki that you start: it sends only the game's name, and shows you what it found (where the settings file is, and which upscaling, frame generation and VSync options the game has) before you press **Use this**.
+3. **The game's settings.** Type or paste them, or let your own AI read the game's settings file (the lookup finds it for you). Settings you set up here apply to captures recorded after you saved them; for an older capture, enter its settings from the Analyze page.
+
+**Add a game...** is only for a game no launcher knows about, and asks for the name alone. Games are matched to captures by name, so no program file is ever needed.
 
 ## Asking an AI (optional)
 
