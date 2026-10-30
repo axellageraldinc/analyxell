@@ -117,6 +117,8 @@ public sealed partial class AnalyzeViewModel : ObservableObject
                 OnPropertyChanged(nameof(HasSettings));
                 OnPropertyChanged(nameof(SettingsHeader));
                 OnPropertyChanged(nameof(HasNoReader));
+                OnPropertyChanged(nameof(SettingsNote));
+                OnPropertyChanged(nameof(HasSettingsNote));
             }
         }
     }
@@ -207,6 +209,11 @@ public sealed partial class AnalyzeViewModel : ObservableObject
 
     public bool HasSettings => Current?.Result.Settings is not null;
 
+    /// <summary>Why the game's config file was not used for this capture, when it was saved after the capture was recorded.</summary>
+    public string SettingsNote => Current?.SettingsNote ?? "";
+
+    public bool HasSettingsNote => SettingsNote.Length > 0;
+
     public bool HasNoReader => Current is not null && Current.Result.Settings is null;
 
     public bool HasSystemRows => SystemRows.Count > 0;
@@ -246,6 +253,17 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         if (Ai.AskCommand.CanExecute(null))
         {
             await Ai.AskCommand.ExecuteAsync(null);
+        }
+    }
+
+    /// <summary>The user says the game's current config is what they played with: keep it for this capture and re-analyze.</summary>
+    [RelayCommand]
+    private async Task UseLiveConfigAsync()
+    {
+        if (Current is { LiveConfig: { } live } capture)
+        {
+            AppState.SaveCaptureSettings(capture, live);
+            await ReanalyzeAsync();
         }
     }
 

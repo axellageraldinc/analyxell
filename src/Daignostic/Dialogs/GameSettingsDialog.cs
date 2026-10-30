@@ -17,7 +17,10 @@ internal static class GameSettingsDialog
     public static async Task<bool> ShowAsync(XamlRoot root, LoadedCapture capture)
     {
         var profile = AppServices.Profiles.Load(capture.ProcessName) ?? new GameProfile { ProcessName = capture.ProcessName, Game = capture.Result.Info.Game };
-        var items = new List<ProfileItem>(profile.Items);
+        var existing = AppServices.CaptureSettings.Load(CaptureSettingsResolver.KeyFor(capture.File.Info));
+        var items = existing is { Items.Count: > 0 } && existing.Items.All(i => i.Key.StartsWith("profile.", StringComparison.Ordinal))
+            ? existing.Items.Select(i => new ProfileItem(i.Label, i.Value)).ToList()
+            : new List<ProfileItem>(profile.Items);
         var origin = string.IsNullOrWhiteSpace(profile.Origin) ? "entered by you" : profile.Origin;
         var list = new ListView { MaxHeight = 160, SelectionMode = ListViewSelectionMode.None };
         var status = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.8 };
@@ -148,7 +151,7 @@ internal static class GameSettingsDialog
         root2.Children.Add(new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,
-            Text = "daignostic can read a few games' settings by itself. For any other game, give it the settings here. They are saved on this PC, matched to this game, and shown as the game's own numbers without guessing what they mean.",
+            Text = "daignostic can read a few games' settings by itself. For any other game, give it the settings here. They are saved on this PC for this capture only, and shown as the game's own numbers without guessing what they mean.",
         });
         root2.Children.Add(pivot);
         root2.Children.Add(new TextBlock { Text = "Settings that will be saved", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
@@ -165,6 +168,14 @@ internal static class GameSettingsDialog
         profile.Items = items;
         profile.Origin = origin;
         AppServices.Profiles.Save(profile);
+
+        // The settings belong to this capture only; the game profile above just pre-fills the form next time.
+        var saved = new GameSettings(
+            capture.Result.Info.Game,
+            "entered by you",
+            DateTime.UtcNow,
+            [.. items.Select(i => new GameSetting("profile." + i.Key, i.Key, i.Value, IsRaw: true, Source: origin))]);
+        AppState.SaveCaptureSettings(capture, saved);
         return true;
     }
 }

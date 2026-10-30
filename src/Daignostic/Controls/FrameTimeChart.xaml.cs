@@ -32,6 +32,10 @@ public sealed partial class FrameTimeChart : UserControl
     ];
 
     private ChartSpec? _spec;
+
+    // Lines the user switched off by pressing their name in the legend. Cleared when the chart shows something else.
+    private readonly HashSet<string> _hidden = [];
+    private string _specIdentity = "";
     private IReadOnlyList<EventLayer> _layers = [];
     private double _yMin;
     private double _yMax = 40;
@@ -42,6 +46,13 @@ public sealed partial class FrameTimeChart : UserControl
 
     public void SetSpec(ChartSpec? spec, IReadOnlyList<EventLayer> layers)
     {
+        var identity = spec is null ? "" : spec.View + "|" + string.Join("|", spec.Lines.Where(l => l.Legend).Select(l => l.Name));
+        if (identity != _specIdentity)
+        {
+            _hidden.Clear();
+            _specIdentity = identity;
+        }
+
         _spec = spec;
         _layers = layers;
         Redraw();
@@ -78,7 +89,7 @@ public sealed partial class FrameTimeChart : UserControl
 
         DrawGrid();
         DrawBands();
-        foreach (var line in _spec.Lines)
+        foreach (var line in _spec.Lines.Where(IsShown))
         {
             DrawLine(line);
         }
@@ -91,7 +102,8 @@ public sealed partial class FrameTimeChart : UserControl
     private void ChooseRange()
     {
         var spec = _spec!;
-        var all = spec.Lines.SelectMany(l => l.Values).Where(double.IsFinite).OrderBy(v => v).ToArray();
+        var shown = spec.Lines.Where(IsShown).ToList();
+        var all = (shown.Count > 0 ? shown : spec.Lines).SelectMany(l => l.Values).Where(double.IsFinite).OrderBy(v => v).ToArray();
         if (all.Length == 0)
         {
             _yMin = 0;
@@ -300,6 +312,11 @@ public sealed partial class FrameTimeChart : UserControl
         }
     }
 
+    /// <summary>A line and its faint "all frames" twin share one legend entry, so they are shown or hidden together.</summary>
+    private static string LegendKey(ChartLine line) => line.Name.Replace(" (all frames)", "", StringComparison.Ordinal);
+
+    private bool IsShown(ChartLine line) => !_hidden.Contains(LegendKey(line));
+
     private void DrawLegend()
     {
         if (_spec!.Lines.Count(l => l.Legend) < 2)
@@ -310,11 +327,56 @@ public sealed partial class FrameTimeChart : UserControl
         var x = _plot.X + 10;
         foreach (var line in _spec.Lines.Where(l => l.Legend))
         {
-            Plot.Children.Add(new Rectangle { Width = 10, Height = 3, Fill = Brush(Palette[line.Palette % Palette.Length]) }.At(x, 11));
-            AddText(line.Name, x + 14, 4, "TextFillColorSecondaryBrush");
-            x += 24 + line.Name.Length * 6.2;
+            var key = LegendKey(line);
+            var on = !_hidden.Contains(key);
+            var label = new TextBlock
+            {
+                Text = line.Name,
+                FontSize = 11,
+                Foreground = Brush("TextFillColorSecondaryBrush"),
+                TextDecorations = on ? Windows.UI.Text.TextDecorations.None : Windows.UI.Text.TextDecorations.Strikethrough,
+            };
+            var entry = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 4,
+                Padding = new Thickness(4, 2, 6, 2),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                Opacity = on ? 1 : 0.45,
+                Tag = key,
+            };
+            entry.Children.Add(new Rectangle { Width = 10, Height = 3, VerticalAlignment = VerticalAlignment.Center, Fill = Brush(Palette[line.Palette % Palette.Length]) });
+            entry.Children.Add(label);
+            AutomationProperties.SetName(entry, (on ? "Hide " : "Show ") + line.Name);
+            ToolTipService.SetToolTip(entry, on ? "Press to hide this line" : "Press to show this line");
+            entry.Tapped += LegendEntry_Tapped;
+            entry.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Plot.Children.Add(entry.At(x, 1));
+            x += entry.DesiredSize.Width + 10;
+        }
+    }
+
+    private void LegendEntry_Tapped(object sender, TappedRoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not FrameworkElement { Tag: string key } || _spec is null)
+        {
+            return;
         }
 
+        if (!_hidden.Remove(key))
+        {
+            // At least one line always stays visible.
+            var remaining = _spec.Lines.Where(l => l.Legend).Select(LegendKey).Distinct().Count(k => !_hidden.Contains(k) && k != key);
+            if (remaining == 0)
+            {
+                return;
+            }
+
+            _hidden.Add(key);
+        }
+
+        Redraw();
     }
 
     private void Plot_PointerMoved(object sender, PointerRoutedEventArgs e)
@@ -333,7 +395,7 @@ public sealed partial class FrameTimeChart : UserControl
 
         var t = (pos.X - _plot.X) / _plot.Width * _tMax;
         var lines = new List<string> { TimeLabel(t) };
-        foreach (var s in _spec.Lines.Where(l => l.Legend))
+        foreach (var s in _spec.Lines.Where(l => l.Legend && IsShown(l)))
         {
             var i = NearestIndex(s.Times, t);
             if (i < 0 || i >= s.Values.Length)

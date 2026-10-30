@@ -64,6 +64,7 @@ public static class CaptureReader
         ResizableBar: Str(el, "ResizableBar"),
         GameMode: Str(el, "WinGameMode"),
         Hags: Str(el, "HAGS"),
+        Id: Str(el, "Id"),
         DisplayLayer: Str(el, "DisplayLayer"));
 
     private static CaptureRun? ReadRun(JsonElement runEl)

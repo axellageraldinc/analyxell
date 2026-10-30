@@ -354,6 +354,19 @@
                         </StackPanel>
                     </Border>
 
+                    <InfoBar
+                        AutomationProperties.AutomationId="SettingsNote"
+                        Severity="Warning"
+                        Title="The game's settings file may not match this capture"
+                        Message="{x:Bind ViewModel.SettingsNote, Mode=OneWay}"
+                        IsOpen="{x:Bind ViewModel.HasSettingsNote, Mode=OneWay}"
+                        IsClosable="False">
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                            <Button AutomationProperties.AutomationId="UseConfigAnywayButton" Content="These are the settings I played with" Command="{x:Bind ViewModel.UseLiveConfigCommand, Mode=OneTime}" />
+                            <Button AutomationProperties.AutomationId="EnterSettingsButton" Content="Enter the settings used..." Click="GameSettings_Click" />
+                        </StackPanel>
+                    </InfoBar>
+
                     <!-- Settings the capture cannot show -->
                     <Expander
                         Header="{x:Bind ViewModel.SettingsHeader, Mode=OneWay}"

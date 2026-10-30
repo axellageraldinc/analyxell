@@ -9,5 +9,6 @@ namespace Daignostic.Core;
 [JsonSerializable(typeof(AppSettings))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(GameProfile))]
+[JsonSerializable(typeof(CaptureSettingsSnapshot))]
 [JsonSerializable(typeof(UserSetupData))]
 internal sealed partial class CoreJsonContext : JsonSerializerContext;

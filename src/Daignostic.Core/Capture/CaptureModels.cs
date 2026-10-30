@@ -21,7 +21,8 @@ public sealed record CaptureInfo(
     string ResizableBar = "",
     string GameMode = "",
     string Hags = "",
-    string DisplayLayer = "");
+    string DisplayLayer = "",
+    string Id = "");
 
 /// <summary>One logged hardware sensor sampled on the sensor time grid.</summary>
 public sealed record SensorSeries(string Id, string Name, string Type, double[] Values);

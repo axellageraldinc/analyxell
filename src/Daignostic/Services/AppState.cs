@@ -7,7 +7,7 @@ using Daignostic.Core.SystemInfo;
 
 namespace Daignostic.Services;
 
-public sealed record LoadedCapture(string Name, string Path, CaptureFile File, AnalysisResult Result, BackgroundScanResult? Background)
+public sealed record LoadedCapture(string Name, string Path, CaptureFile File, AnalysisResult Result, BackgroundScanResult? Background, string? SettingsNote = null, GameSettings? LiveConfig = null)
 {
     public string ProcessName => File.Info.ProcessName;
 }
@@ -36,8 +36,8 @@ internal static class AppState
         var loaded = await Task.Run(() =>
         {
             var file = CaptureReader.Load(path);
-            var result = Analyze(file, null);
-            return new LoadedCapture(file.DisplayName, path, file, result, null);
+            var analyzed = Analyze(file, null);
+            return new LoadedCapture(file.DisplayName, path, file, analyzed.Result, null, analyzed.Note, analyzed.LiveConfig);
         });
 
         var existing = Loaded.FirstOrDefault(l => string.Equals(l.Path, path, StringComparison.OrdinalIgnoreCase));
@@ -58,7 +58,11 @@ internal static class AppState
     public static async Task<LoadedCapture> ReanalyzeAsync(LoadedCapture current, BackgroundScanResult? background, bool keepBackground = true)
     {
         var scan = background ?? (keepBackground ? current.Background : null);
-        var updated = await Task.Run(() => current with { Result = Analyze(current.File, scan), Background = scan });
+        var updated = await Task.Run(() =>
+        {
+            var analyzed = Analyze(current.File, scan);
+            return current with { Result = analyzed.Result, Background = scan, SettingsNote = analyzed.Note, LiveConfig = analyzed.LiveConfig };
+        });
 
         var index = Loaded.IndexOf(current);
         if (index >= 0)
@@ -74,18 +78,30 @@ internal static class AppState
         return updated;
     }
 
-    private static AnalysisResult Analyze(CaptureFile file, BackgroundScanResult? background)
+    private sealed record Analyzed(AnalysisResult Result, string? Note, GameSettings? LiveConfig);
+
+    /// <summary>Saves settings for one capture, so later changes to the game's config never change this capture's analysis.</summary>
+    public static void SaveCaptureSettings(LoadedCapture capture, GameSettings settings) =>
+        AppServices.CaptureSettings.Save(CaptureSettingsResolver.KeyFor(capture.File.Info), CaptureSettingsSnapshot.From(settings));
+
+    private static Analyzed Analyze(CaptureFile file, BackgroundScanResult? background)
     {
         var info = file.Info;
-        var fromReader = GameConfigReaders.Find(info, AppServices.ConfigReaders)?.TryRead();
-        var profile = info.ProcessName.Length > 0 ? AppServices.Profiles.Load(info.ProcessName) : null;
-        var settings = GameSettingsMerger.Merge(fromReader, profile, info.Game);
+        var live = GameConfigReaders.Find(info, AppServices.ConfigReaders)?.TryRead();
+        var key = CaptureSettingsResolver.KeyFor(info);
+        var resolved = CaptureSettingsResolver.Resolve(info, live, AppServices.CaptureSettings.Load(key));
+        if (resolved is { SaveSnapshot: true, Settings: { } toKeep })
+        {
+            AppServices.CaptureSettings.Save(key, CaptureSettingsSnapshot.From(toKeep));
+        }
 
+        var profile = info.ProcessName.Length > 0 ? AppServices.Profiles.Load(info.ProcessName) : null;
         var installPath = !string.IsNullOrWhiteSpace(profile?.InstallPath)
             ? profile.InstallPath
             : GameLocator.FindSteamInstall(AppServices.Probe, info.Game);
         var system = SystemSettingsReader.Read(AppServices.Probe, AppServices.Setup.Load().Values, installPath, info.Gpu);
 
-        return CaptureAnalyzer.Analyze(file, 0, settings, system, background, AppServices.Settings.ShareBackgroundAppNames);
+        var result = CaptureAnalyzer.Analyze(file, 0, resolved.Settings, system, background, AppServices.Settings.ShareBackgroundAppNames);
+        return new Analyzed(result, resolved.Note, resolved.LiveConfig);
     }
 }
