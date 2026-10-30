@@ -21,6 +21,8 @@ internal static class AppServices
 
     public static CaptureSettingsStore CaptureSettings { get; } = new(CaptureSettingsStore.DefaultDirectory);
 
+    public static ExperimentStore Experiments { get; } = new(ExperimentStore.DefaultPath);
+
     public static UserSetupStore Setup { get; } = new(UserSetupStore.DefaultPath);
 
     public static ISystemProbe Probe { get; } = new WindowsSystemProbe();

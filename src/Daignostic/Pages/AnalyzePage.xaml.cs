@@ -20,6 +20,12 @@ public sealed partial class AnalyzePage : Page
         ViewModel.ChartChanged += OnChartChanged;
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         ViewModel.Ai.CheckRequested += OnCheckRequested;
+
+        // Quietly notice a newer capture of the game while this page is open.
+        var watcher = new Microsoft.UI.Xaml.DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        watcher.Tick += async (_, _) => await ViewModel.CheckForNewerAsync();
+        Loaded += (_, _) => watcher.Start();
+        Unloaded += (_, _) => watcher.Stop();
         TabFindings.Text = ViewModel.FindingsTabText;
         Loaded += async (_, _) =>
         {
@@ -80,6 +86,14 @@ public sealed partial class AnalyzePage : Page
         if (!_syncingTabs && sender.SelectedItem?.Tag is string tag && Enum.TryParse<AnalyzeTab>(tag, out var tab))
         {
             ViewModel.SelectedTab = tab;
+        }
+    }
+
+    private void TryStep_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string step })
+        {
+            ViewModel.StartTryCommand.Execute(step);
         }
     }
 

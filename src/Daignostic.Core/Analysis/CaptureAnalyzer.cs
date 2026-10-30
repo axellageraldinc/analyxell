@@ -81,7 +81,7 @@ public static class CaptureAnalyzer
         var extra = ExtraSignals.Compute(run);
         var trends = RunTrends.Compute(run, stutters, freezes);
 
-        var facts = BuildFacts(capture.Info, metrics, stutters, freezes, bottleneck, context, extra, settings, system, background, shareBackgroundNames, trends, frameGen);
+        var facts = BuildFacts(capture.Info, metrics, stutters, freezes, bottleneck, context, extra, settings, system, background, shareBackgroundNames, trends, frameGen, CaptureQuality.Assess(capture.Info, run, metrics, bottleneck));
         var findings = Rules.Evaluate(metrics, freezes, stutters, bottleneck, context, extra, settings, system, background, facts, capture.Info, trends, frameGen);
         var specs = PcSpecs.Build(capture.Info, run, extra, bottleneck, system);
 
@@ -103,7 +103,8 @@ public static class CaptureAnalyzer
         BackgroundScanResult? background,
         bool shareBackgroundNames,
         RunTrends trends,
-        FrameGenerationSignal frameGen)
+        FrameGenerationSignal frameGen,
+        IReadOnlyList<QualityIssue> quality)
     {
         var f = new Dictionary<string, string>();
         void Put(string key, string? value)
@@ -137,6 +138,10 @@ public static class CaptureAnalyzer
         PutNum("pc.memory_modules", memory.Modules, "0");
         PutNum("pc.memory_mts", memory.SpeedMTs, "0");
         PutNum("cpu.limited_pct", trends.CpuLimitedPct, "0");
+        if (quality.Count > 0)
+        {
+            Put("capture.quality_issues", CaptureQuality.ForFacts(quality));
+        }
         Put("framegen.detected", frameGen.Active ? "yes" : "no");
         if (frameGen.Active)
         {

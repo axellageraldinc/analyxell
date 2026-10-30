@@ -30,6 +30,10 @@ The page leads with a one-line **verdict** (healthy, worth fixing, serious probl
 | Freezes | Frames that took 200 ms or more: the game visibly hung. |
 | Limited by | Whether the GPU, CPU, heat or power limit holds performance back, and how confident that call is. |
 
+**Above the cards** you may see: a **capture quality** warning (too short, frame-capped, idle, windowed or no sensors); a note about a change you are trying; and "A newer capture was recorded" with an **Open it** button. **Copy summary to share** puts a short, anonymised summary on the clipboard.
+
+**Trying a change.** Under **What you can do**, press **I'll try this and check if it helped** on a step. Make the change, record the same route again, and open the new capture: daignostic compares it with the one you tried it on and says whether it helped. One change at a time makes the answer meaningful; differences of a few percent are normal run-to-run variation, and it says so.
+
 **Overview tab**
 
 - **Ask AI bar.** One line and a button. Pressing **Ask AI** jumps to the Ask AI tab so you can watch it work.

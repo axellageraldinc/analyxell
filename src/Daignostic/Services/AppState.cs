@@ -51,6 +51,21 @@ internal static class AppState
         return loaded;
     }
 
+    /// <summary>Opens the built-in made-up capture, so a new user can see what the app does before recording anything.</summary>
+    public static async Task<LoadedCapture> LoadSampleAsync()
+    {
+        var loaded = await Task.Run(() =>
+        {
+            var file = SampleCapture.Create();
+            var analyzed = Analyze(file, null);
+            return new LoadedCapture("Sample capture (made up)", "", file, analyzed.Result, null, analyzed.Note, analyzed.LiveConfig);
+        });
+
+        Loaded.Insert(0, loaded);
+        Selected = loaded;
+        return loaded;
+    }
+
     /// <summary>
     /// Re-runs the analysis for a loaded capture, for example after the user entered their setup or ran the
     /// background check. The capture file itself is not read again.

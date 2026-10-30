@@ -28,6 +28,12 @@
                         TextWrapping="Wrap"
                         Style="{StaticResource CaptionTextBlockStyle}"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <HyperlinkButton
+                        Content="I'll try this and check if it helped"
+                        Padding="0"
+                        Tag="{x:Bind Text, Mode=OneTime}"
+                        Visibility="{x:Bind CanTry, Mode=OneTime}"
+                        Click="TryStep_Click" />
                 </StackPanel>
             </Grid>
         </DataTemplate>
@@ -146,7 +152,12 @@
                         TextAlignment="Center"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         Text="daignostic reads capture files (.json) from CapFrameX, shows how your game ran, finds freezes, stutter and other problems, and tells you what to try. It only reads: nothing is changed on your PC." />
-                    <Button AutomationProperties.AutomationId="OpenCaptureButton2" Content="Open capture..." Command="{x:Bind ViewModel.OpenFileCommand, Mode=OneTime}" HorizontalAlignment="Center" Style="{StaticResource AccentButtonStyle}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                        <Button AutomationProperties.AutomationId="OpenCaptureButton2" Content="Open capture..." Command="{x:Bind ViewModel.OpenFileCommand, Mode=OneTime}" Style="{StaticResource AccentButtonStyle}" />
+                        <Button AutomationProperties.AutomationId="OpenLatestButton" Content="Open my newest capture" Command="{x:Bind ViewModel.OpenLatestCommand, Mode=OneTime}" />
+                        <Button AutomationProperties.AutomationId="TrySampleButton" Content="Try a sample" Command="{x:Bind ViewModel.TrySampleCommand, Mode=OneTime}" />
+                    </StackPanel>
+                    <TextBlock Text="{x:Bind ViewModel.EmptyStatus, Mode=OneWay}" TextWrapping="Wrap" TextAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <controls:CapFrameXCard ViewModel="{x:Bind ViewModel.CapFrameX, Mode=OneTime}" Margin="0,12,0,0" />
                 </StackPanel>
             </Border>
@@ -160,7 +171,53 @@
                     IsClosable="False"
                     Severity="{x:Bind ViewModel.VerdictSeverity, Mode=OneWay}"
                     Title="{x:Bind ViewModel.VerdictHeadline, Mode=OneWay}"
-                    Message="{x:Bind ViewModel.VerdictDetail, Mode=OneWay}" />
+                    Message="{x:Bind ViewModel.VerdictDetail, Mode=OneWay}">
+                    <InfoBar.ActionButton>
+                        <Button
+                            AutomationProperties.AutomationId="CopySummaryButton"
+                            Content="Copy summary to share"
+                            Command="{x:Bind ViewModel.CopySummaryCommand, Mode=OneTime}" />
+                    </InfoBar.ActionButton>
+                </InfoBar>
+
+                <InfoBar
+                    AutomationProperties.AutomationId="QualityBar"
+                    Visibility="{x:Bind ViewModel.HasQuality, Mode=OneWay}"
+                    Severity="Warning"
+                    Title="This capture may not show the whole picture"
+                    Message="{x:Bind ViewModel.QualityText, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.HasQuality, Mode=OneWay}"
+                    IsClosable="False" />
+
+                <InfoBar
+                    AutomationProperties.AutomationId="ExperimentBar"
+                    Visibility="{x:Bind ViewModel.HasExperiment, Mode=OneWay}"
+                    Severity="{x:Bind ViewModel.ExperimentSeverity, Mode=OneWay}"
+                    Title="{x:Bind ViewModel.ExperimentTitle, Mode=OneWay}"
+                    Message="{x:Bind ViewModel.ExperimentText, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.HasExperiment, Mode=OneWay}"
+                    IsClosable="True">
+                    <InfoBar.ActionButton>
+                        <Button
+                            AutomationProperties.AutomationId="CancelExperimentButton"
+                            Content="Stop tracking this"
+                            Visibility="{x:Bind ViewModel.ExperimentCanCancel, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.CancelExperimentCommand, Mode=OneTime}" />
+                    </InfoBar.ActionButton>
+                </InfoBar>
+
+                <InfoBar
+                    AutomationProperties.AutomationId="NewerCaptureBar"
+                    Visibility="{x:Bind ViewModel.HasNewerCapture, Mode=OneWay}"
+                    Severity="Informational"
+                    Title="A newer capture was recorded"
+                    Message="{x:Bind ViewModel.NewerCaptureName, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.HasNewerCapture, Mode=OneWay}"
+                    CloseButtonCommand="{x:Bind ViewModel.DismissNewerCommand, Mode=OneTime}">
+                    <InfoBar.ActionButton>
+                        <Button AutomationProperties.AutomationId="OpenNewerButton" Content="Open it" Command="{x:Bind ViewModel.OpenNewerCommand, Mode=OneTime}" />
+                    </InfoBar.ActionButton>
+                </InfoBar>
 
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Cards, Mode=OneTime}">
                     <ItemsRepeater.Layout>

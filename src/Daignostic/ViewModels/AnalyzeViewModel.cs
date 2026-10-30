@@ -1,11 +1,14 @@
 ﻿using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Net.Http;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Daignostic.Core.Ai;
 using Daignostic.Core.Analysis;
 using Daignostic.Core.Background;
+using Daignostic.Core.Capture;
+using Daignostic.Core.Config;
 using Daignostic.Core.Mcp;
 using Daignostic.Core.Reporting;
 using Daignostic.Core.SystemInfo;
@@ -22,7 +25,9 @@ public sealed record SettingRow(string Label, string Value, string Source);
 
 public sealed record SpecSectionView(string Title, string Lines);
 
-public sealed record NextStepItem(string Number, string Text, string Why);
+public sealed record NextStepItem(string Number, string Text, string Why, bool CanTry = false);
+
+public sealed record QualityView(string Text, string Fix);
 
 public sealed record ChartViewItem(ChartView View, string Label);
 
@@ -72,6 +77,43 @@ public sealed partial class AnalyzeViewModel : ObservableObject
     }
 
     public ObservableCollection<MetricItem> Cards { get; } = [];
+
+    public ObservableCollection<QualityView> QualityIssues { get; } = [];
+
+    public bool HasQuality => QualityIssues.Count > 0;
+
+    public string QualityText => string.Join(Environment.NewLine, QualityIssues.Select(q => "\u2022 " + q.Text + " " + q.Fix));
+
+    // The change the user said they would try, and what came of it.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasExperiment))]
+    public partial string ExperimentTitle { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string ExperimentText { get; set; } = "";
+
+    [ObservableProperty]
+    public partial InfoBarSeverity ExperimentSeverity { get; set; } = InfoBarSeverity.Informational;
+
+    [ObservableProperty]
+    public partial bool ExperimentCanCancel { get; set; }
+
+    public bool HasExperiment => ExperimentTitle.Length > 0;
+
+    private string _experimentId = "";
+
+    // A capture of the same game that is newer than the one on screen.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNewerCapture))]
+    public partial string NewerCaptureName { get; set; } = "";
+
+    public bool HasNewerCapture => NewerCaptureName.Length > 0;
+
+    private string _newerCapturePath = "";
+    private string _dismissedNewerPath = "";
+
+    [ObservableProperty]
+    public partial string EmptyStatus { get; set; } = "";
 
     public ObservableCollection<FindingItem> AttentionFindings { get; } = [];
 
@@ -437,7 +479,7 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         MoreSteps.Clear();
         foreach (var s in r.NextSteps)
         {
-            (TopSteps.Count < 3 ? TopSteps : MoreSteps).Add(new NextStepItem(s.Order.ToString(CultureInfo.InvariantCulture), s.Text, s.FindingTitle));
+            (TopSteps.Count < 3 ? TopSteps : MoreSteps).Add(new NextStepItem(s.Order.ToString(CultureInfo.InvariantCulture), s.Text, s.FindingTitle, CanTry: capture.ProcessName.Length > 0));
         }
 
         MoreStepsHeader = MoreSteps.Count == 1 ? "Show 1 more step" : $"Show {MoreSteps.Count} more steps";
@@ -524,7 +566,199 @@ public sealed partial class AnalyzeViewModel : ObservableObject
             Ai.Reset();
         }
 
+        UpdateQuality(r);
+        UpdateExperiment(capture);
         RaiseChart();
+    }
+
+    private void UpdateQuality(AnalysisResult r)
+    {
+        QualityIssues.Clear();
+        foreach (var issue in CaptureQuality.Assess(r.Info, r.Run, r.Metrics, r.Bottleneck))
+        {
+            QualityIssues.Add(new QualityView(issue.Text, issue.Fix));
+        }
+
+        OnPropertyChanged(nameof(HasQuality));
+        OnPropertyChanged(nameof(QualityText));
+    }
+
+    /// <summary>
+    /// If the user said they would try a change for this game: remind them while the capture on screen is the "before"
+    /// run, and judge the result when a later capture of the same game is opened.
+    /// </summary>
+    private void UpdateExperiment(LoadedCapture capture)
+    {
+        ExperimentTitle = "";
+        ExperimentText = "";
+        ExperimentCanCancel = false;
+        _experimentId = "";
+        var process = capture.ProcessName;
+        if (process.Length == 0 || AppServices.Experiments.WaitingFor(process) is not { } exp)
+        {
+            return;
+        }
+
+        var key = CaptureSettingsResolver.KeyFor(capture.File.Info);
+        _experimentId = exp.Id;
+        if (key == exp.Baseline.CaptureKey)
+        {
+            ExperimentTitle = "You are trying: " + exp.Step;
+            ExperimentText = "Make the change, then record the same route again. When you open the new capture here, daignostic will compare it with this one and tell you whether it helped.";
+            ExperimentSeverity = InfoBarSeverity.Informational;
+            ExperimentCanCancel = true;
+            return;
+        }
+
+        var later = !DateTime.TryParse(exp.Baseline.RecordedAtUtc, CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var before)
+            || !DateTime.TryParse(capture.File.Info.RecordedAtUtc, CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var now)
+            || now > before;
+        if (!later)
+        {
+            return;
+        }
+
+        var outcome = ExperimentJudge.Judge(exp.Baseline, capture.Result);
+        AppServices.Experiments.Finish(exp.Id, outcome);
+        ExperimentTitle = "You tried: " + exp.Step;
+        ExperimentText = outcome.Text;
+        ExperimentSeverity = outcome.Kind switch
+        {
+            ExperimentKind.Helped => InfoBarSeverity.Success,
+            ExperimentKind.Worse => InfoBarSeverity.Warning,
+            _ => InfoBarSeverity.Informational,
+        };
+    }
+
+    /// <summary>The user says they will try this step: remember the current run as the "before".</summary>
+    [RelayCommand]
+    private void StartTry(string step)
+    {
+        if (Current is not { } capture || capture.ProcessName.Length == 0 || string.IsNullOrWhiteSpace(step))
+        {
+            return;
+        }
+
+        var key = CaptureSettingsResolver.KeyFor(capture.File.Info);
+        AppServices.Experiments.Start(new Experiment
+        {
+            ProcessName = capture.ProcessName,
+            Game = capture.Result.Info.Game,
+            Step = step,
+            Baseline = ExperimentBaseline.From(capture.Result, key, capture.Name),
+        });
+        UpdateExperiment(capture);
+        StatusMessage = "Saved. Make the change, record the same route again, then open the new capture.";
+    }
+
+    [RelayCommand]
+    private void CancelExperiment()
+    {
+        if (_experimentId.Length > 0)
+        {
+            AppServices.Experiments.Cancel(_experimentId);
+        }
+
+        ExperimentTitle = "";
+        ExperimentText = "";
+        ExperimentCanCancel = false;
+    }
+
+    [RelayCommand]
+    private void DismissExperiment()
+    {
+        ExperimentTitle = "";
+        ExperimentText = "";
+    }
+
+    /// <summary>Checks whether CapFrameX has recorded something newer than what is on screen. Quiet when nothing is configured.</summary>
+    public async Task CheckForNewerAsync()
+    {
+        if (Current is null || IsLoading || (!AppServices.Settings.UseCapFrameXMcp && AppServices.Settings.CapturesFolder.Length == 0))
+        {
+            return;
+        }
+
+        try
+        {
+            var result = await CaptureCatalog.ListAsync(AppServices.Settings, AppServices.Http, CancellationToken.None);
+            var currentTime = DateTime.TryParse(Current.File.Info.RecordedAtUtc, CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var t) ? t.ToUniversalTime() : DateTime.MinValue;
+            var newest = result.Items.Where(i => i.RecordedAt is not null).OrderByDescending(i => i.RecordedAt).FirstOrDefault();
+            if (newest is not null && !string.Equals(newest.Id, Current.Path, StringComparison.OrdinalIgnoreCase) &&
+                newest.RecordedAt!.Value.UtcDateTime > currentTime.AddSeconds(5) && newest.Id != _dismissedNewerPath)
+            {
+                _newerCapturePath = newest.Id;
+                NewerCaptureName = newest.FileName;
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or JsonException)
+        {
+            // Looking for new captures is a convenience; failing quietly is right.
+        }
+    }
+
+    [RelayCommand]
+    private async Task OpenNewerAsync()
+    {
+        var path = _newerCapturePath;
+        NewerCaptureName = "";
+        if (path.Length > 0)
+        {
+            await LoadPathAsync(path);
+        }
+    }
+
+    [RelayCommand]
+    private void DismissNewer()
+    {
+        _dismissedNewerPath = _newerCapturePath;
+        NewerCaptureName = "";
+    }
+
+    /// <summary>Opens the most recent capture CapFrameX or the captures folder knows about.</summary>
+    [RelayCommand]
+    private async Task OpenLatestAsync()
+    {
+        EmptyStatus = "Looking for your newest capture...";
+        var result = await CaptureCatalog.ListAsync(AppServices.Settings, AppServices.Http, CancellationToken.None);
+        var newest = result.Items.OrderByDescending(i => i.RecordedAt ?? DateTimeOffset.MinValue).FirstOrDefault();
+        if (newest is null)
+        {
+            EmptyStatus = result.Warning ?? "No captures were found. Set where CapFrameX saves them in Settings, or choose a file with Open capture.";
+            return;
+        }
+
+        EmptyStatus = "";
+        await LoadPathAsync(newest.Id);
+    }
+
+    [RelayCommand]
+    private async Task TrySampleAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            Show(await AppState.LoadSampleAsync());
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>Puts a short, anonymised summary on the clipboard, ready to paste into a forum or chat.</summary>
+    [RelayCommand]
+    private void CopySummary()
+    {
+        if (Current is null)
+        {
+            return;
+        }
+
+        var package = new Windows.ApplicationModel.DataTransfer.DataPackage();
+        package.SetText(ShareSummary.Build(Current.Result));
+        Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(package);
+        StatusMessage = "Summary copied. Paste it into a forum or chat to ask for help. It has no file paths, computer name or keys.";
     }
 
     public void RaiseChart()

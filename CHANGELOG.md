@@ -6,6 +6,13 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ### Added
 
+- **Try it, then check it.** Each step under "What you can do" has "I'll try this and check if it helped". daignostic remembers the current run as the "before"; when you open a later capture of the same game it compares the two and says whether the change helped, made no clear difference, or made things worse.
+- **Capture quality check.** A warning appears when a capture may not show the whole picture: too short, pinned at a frame cap, apparently recorded in a menu, windowed, or without sensor data. The AI is told too.
+- **Less friction.** "Open my newest capture" and a quiet "A newer capture was recorded" banner while the page is open (when CapFrameX or a captures folder is set up), and "Try a sample" so a new user can see the app before recording anything.
+- **Copy summary to share.** A short, anonymised summary on the clipboard to paste into a forum or chat. It has no file paths, computer name, motherboard or keys.
+
+### Added
+
 - Ask the AI your own question (a box above the note, and another under its open questions). It answers it directly, separately from the analysis.
 - When you ask again, the AI gets a short digest of the last exchange (your question, its answer and main points), labelled as its own earlier output so it re-checks it against the facts instead of repeating it. It is shown in the preview; no transcript is sent.
 
