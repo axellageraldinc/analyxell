@@ -35,7 +35,8 @@ internal sealed class FakeProbe : ISystemProbe
     public string? ReadText(string path) => Files.TryGetValue(path, out var v) ? v : null;
 
     public IEnumerable<string> EnumerateFiles(string directory, string pattern) =>
-        Files.Keys.Where(k => k.StartsWith(directory, StringComparison.OrdinalIgnoreCase) && Path.GetFileName(k).StartsWith("appmanifest_", StringComparison.Ordinal));
+        Files.Keys.Where(k => k.StartsWith(directory, StringComparison.OrdinalIgnoreCase) &&
+            System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(k), "^" + System.Text.RegularExpressions.Regex.Escape(pattern).Replace("\\*", ".*") + "$"));
 
     public bool DirectoryExists(string path) => Dirs.ContainsKey(path) || Files.Keys.Any(k => k.StartsWith(path, StringComparison.OrdinalIgnoreCase));
 

@@ -6,6 +6,7 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ### Changed
 
+- The Game library finds installed games by asking Steam (every library folder, on any drive), Epic and GOG, and lists the ones you have not opened a capture of yet, with a button to add them. It reads only the launchers' small manifest files; it does not crawl your drives.
 - New Game library page: every game daignostic knows (built in, seen in a capture, or added by you), what is known about its settings, and a way to add a game by choosing its file and entering its settings. Settings you enter for a game are used for captures recorded after you saved them.
 - The game's own settings now matter: upscaling off while the GPU is the limit, frame generation on while motion or latency is off, low latency mode off while the GPU is the limit, and the game's VSync setting feed the findings, not only the AI.
 - The chart legend shows a hand cursor so it is clear you can press a name to hide or show a line.

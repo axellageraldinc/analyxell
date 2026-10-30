@@ -15,13 +15,26 @@ public sealed partial class LibraryPage : Page
         ViewModel = new LibraryViewModel();
         ViewModel.Refresh();
         InitializeComponent();
+        Loaded += async (_, _) => await ViewModel.ScanAsync();
     }
 
     public LibraryViewModel ViewModel { get; }
 
-    private async void AddGame_Click(object sender, RoutedEventArgs e)
+    private async void Rescan_Click(object sender, RoutedEventArgs e) => await ViewModel.ScanAsync();
+
+    private async void AddDetected_Click(object sender, RoutedEventArgs e)
     {
-        var nameBox = new TextBox { Header = "Game name", PlaceholderText = "For example: Cyberpunk 2077" };
+        if (sender is FrameworkElement { DataContext: LibraryRow row })
+        {
+            await AddGameAsync(row.Game, row.InstallFolder);
+        }
+    }
+
+    private async void AddGame_Click(object sender, RoutedEventArgs e) => await AddGameAsync("", "");
+
+    private async Task AddGameAsync(string suggestedName, string suggestedFolder)
+    {
+        var nameBox = new TextBox { Header = "Game name", Text = suggestedName, PlaceholderText = "For example: Cyberpunk 2077" };
         AutomationProperties.SetAutomationId(nameBox, "AddGameName");
         var exeBox = new TextBox { Header = "Game file (.exe)", PlaceholderText = "The program that runs the game", IsReadOnly = true };
         AutomationProperties.SetAutomationId(exeBox, "AddGameExe");
@@ -35,13 +48,13 @@ public sealed partial class LibraryPage : Page
             Text = "daignostic only reads the file's name and folder: the name matches captures to this game, and the folder tells it what kind of drive the game is on. Nothing is run or changed.",
         };
 
-        string process = "", folder = "";
+        string process = "", folder = suggestedFolder;
         browse.Click += async (_, _) =>
         {
             if (await Pickers.PickExecutableAsync() is { } path)
             {
                 process = Path.GetFileName(path);
-                folder = Path.GetDirectoryName(path) ?? "";
+                folder = suggestedFolder.Length > 0 ? suggestedFolder : Path.GetDirectoryName(path) ?? "";
                 exeBox.Text = path;
                 if (nameBox.Text.Trim().Length == 0)
                 {

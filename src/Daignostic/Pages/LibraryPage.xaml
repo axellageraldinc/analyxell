@@ -33,8 +33,14 @@
                 Severity="Informational"
                 IsOpen="True"
                 IsClosable="False"
-                Title="Games appear here when you open a capture of them."
+                Title="Games appear here when a launcher says they are installed, or when you open a capture of them."
                 Message="You can also add one yourself. Settings you add are used for captures recorded after you saved them; for an older capture, enter its settings on the Analyze page." />
+
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.IsScanning, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsScanning, Mode=OneWay}" />
+                <TextBlock AutomationProperties.AutomationId="LibraryScanStatus" Text="{x:Bind ViewModel.ScanStatus, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                <Button Content="Look again" Click="Rescan_Click" />
+            </StackPanel>
 
             <TextBlock
                 Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}"
@@ -70,6 +76,7 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
+                                <Button Content="Add to library..." Click="AddDetected_Click" Visibility="{x:Bind IsDetectedOnly, Mode=OneTime}" />
                                 <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind CanEdit, Mode=OneTime}">
                                     <Button Content="Edit settings..." Tag="{x:Bind ProcessName, Mode=OneTime}" Click="Edit_Click" />
                                     <Button Content="Set install folder..." Tag="{x:Bind ProcessName, Mode=OneTime}" Click="InstallFolder_Click" />

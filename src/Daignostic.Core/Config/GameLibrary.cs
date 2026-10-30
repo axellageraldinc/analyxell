@@ -1,5 +1,6 @@
 using System.Globalization;
 using Daignostic.Core.Capture;
+using Daignostic.Core.SystemInfo;
 
 namespace Daignostic.Core.Config;
 
@@ -13,6 +14,9 @@ public enum LibraryStatus
 
     /// <summary>Captures of this game can be diagnosed; no settings are known.</summary>
     CapturesOnly,
+
+    /// <summary>A launcher says it is installed, but no capture of it has been opened yet.</summary>
+    Detected,
 }
 
 /// <summary>One game in the Library.</summary>
@@ -32,8 +36,12 @@ public sealed record LibraryEntry(
 /// </summary>
 public static class GameLibrary
 {
-    public static IReadOnlyList<LibraryEntry> Build(IReadOnlyList<GameProfile> profiles, IReadOnlyList<IGameConfigReader> readers)
+    public static IReadOnlyList<LibraryEntry> Build(
+        IReadOnlyList<GameProfile> profiles,
+        IReadOnlyList<IGameConfigReader> readers,
+        IReadOnlyList<InstalledGame>? detected = null)
     {
+        detected ??= [];
         var entries = new List<LibraryEntry>();
         var used = new HashSet<IGameConfigReader>();
 
@@ -63,6 +71,30 @@ public static class GameLibrary
         foreach (var reader in readers.Where(r => !used.Contains(r)))
         {
             entries.Add(FromReader(reader, null));
+        }
+
+        // Fill in install folders the launchers know, and list installed games nobody has opened a capture of yet.
+        for (var i = 0; i < entries.Count; i++)
+        {
+            var match = detected.FirstOrDefault(d => InstalledGameFinder.Normalize(d.Name) == InstalledGameFinder.Normalize(entries[i].Game));
+            if (match is not null && entries[i].InstallPath.Length == 0)
+            {
+                entries[i] = entries[i] with { InstallPath = match.Folder };
+            }
+        }
+
+        var known = entries.Select(e => InstalledGameFinder.Normalize(e.Game)).ToHashSet();
+        foreach (var game in detected.Where(d => !known.Contains(InstalledGameFinder.Normalize(d.Name))))
+        {
+            entries.Add(new LibraryEntry(
+                game.Name,
+                "",
+                LibraryStatus.Detected,
+                $"Found on {(game.Drive.Length > 0 ? game.Drive : "this PC")} ({game.Launcher}). Not opened in a capture yet",
+                "Installed here. Record it with CapFrameX and open the capture to diagnose it. You can also add its file and settings now.",
+                game.Folder,
+                [],
+                IsUserAdded: false));
         }
 
         return entries

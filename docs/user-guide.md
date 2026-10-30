@@ -55,7 +55,8 @@ The page leads with a one-line **verdict** (healthy, worth fixing, serious probl
 
 **Game library** lists every game daignostic knows: the ones it can read by itself (Black Myth: Wukong today), every game you have opened a capture of, and games you add. Each shows whether its settings are read automatically, entered by you, or unknown ("diagnosable from captures, no settings yet"). Any game can be diagnosed from a capture; settings only make the findings and the AI more accurate.
 
-- **Add a game...** choose the game's `.exe` (daignostic only reads its name and folder), then type or paste its settings, or let your own AI pull them out of its config file.
+- **Found on this PC.** daignostic asks Steam (every library folder, on any drive), Epic Games and GOG what is installed, and lists those games too, marked "Not opened in a capture yet". It reads only the launchers' manifest files and never searches your drives. Games from elsewhere (other launchers, copied folders) are added by hand. Press **Look again** to re-check.
+- **Add a game...** (or **Add to library...** on a found game) choose the game's `.exe` (daignostic only reads its name and folder), then type or paste its settings, or let your own AI pull them out of its config file.
 - **Edit settings...** and **Set install folder...** change what is known; **Remove from library** forgets a game you added.
 - Settings saved here apply to captures recorded after you saved them. For an older capture, enter its settings on the Analyze page (PC and setup tab), where they are kept for that capture only.
 

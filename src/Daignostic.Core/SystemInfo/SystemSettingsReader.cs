@@ -172,17 +172,13 @@ public static class SystemSettingsReader
 /// <summary>Finds a game's install folder without asking the user, where a launcher records it.</summary>
 public static partial class GameLocator
 {
-    public static string? FindSteamInstall(ISystemProbe probe, string gameName)
+    /// <summary>Every Steam library folder, on every drive the user added one to.</summary>
+    internal static IReadOnlyList<string> SteamLibraries(ISystemProbe probe)
     {
-        if (string.IsNullOrWhiteSpace(gameName))
-        {
-            return null;
-        }
-
         var steam = probe.RegistryString("HKCU", @"Software\Valve\Steam", "SteamPath");
         if (string.IsNullOrWhiteSpace(steam))
         {
-            return null;
+            return [];
         }
 
         var libraries = new List<string> { steam.Replace('/', '\\') };
@@ -195,8 +191,18 @@ public static partial class GameLocator
             }
         }
 
+        return libraries.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    public static string? FindSteamInstall(ISystemProbe probe, string gameName)
+    {
+        if (string.IsNullOrWhiteSpace(gameName))
+        {
+            return null;
+        }
+
         var wanted = Normalize(gameName);
-        foreach (var library in libraries.Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var library in SteamLibraries(probe))
         {
             var apps = Path.Combine(library, "steamapps");
             foreach (var manifest in probe.EnumerateFiles(apps, "appmanifest_*.acf"))

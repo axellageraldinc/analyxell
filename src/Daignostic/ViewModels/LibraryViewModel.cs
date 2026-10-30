@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Daignostic.Core.Config;
+using Daignostic.Core.SystemInfo;
 using Daignostic.Services;
 
 namespace Daignostic.ViewModels;
@@ -15,7 +16,9 @@ public sealed record LibraryRow(
     IReadOnlyList<SettingRow> Settings,
     bool HasSettings,
     bool CanEdit,
-    bool IsUserAdded);
+    bool IsUserAdded,
+    bool IsDetectedOnly = false,
+    string InstallFolder = "");
 
 /// <summary>
 /// Lists every game daignostic knows, so a user can see that the game they want to diagnose is covered, what is known
@@ -31,9 +34,41 @@ public sealed partial class LibraryViewModel : ObservableObject
 
     public bool IsEmpty => Count == 0;
 
+    [ObservableProperty]
+    public partial bool IsScanning { get; set; }
+
+    [ObservableProperty]
+    public partial string ScanStatus { get; set; } = "";
+
+    private IReadOnlyList<InstalledGame> _detected = [];
+
+    /// <summary>Asks Steam, Epic and GOG which games are installed, on any drive. Reads only the launchers' manifest files.</summary>
+    public async Task ScanAsync()
+    {
+        if (IsScanning)
+        {
+            return;
+        }
+
+        IsScanning = true;
+        ScanStatus = "Looking for installed games (Steam, Epic, GOG)...";
+        try
+        {
+            _detected = await Task.Run(() => InstalledGameFinder.Find(AppServices.Probe));
+            ScanStatus = _detected.Count == 0
+                ? "No installed games were found through Steam, Epic or GOG. Add a game yourself if it comes from somewhere else."
+                : $"Found {_detected.Count} installed game(s) through the launchers, on any drive.";
+            Refresh();
+        }
+        finally
+        {
+            IsScanning = false;
+        }
+    }
+
     public void Refresh()
     {
-        var entries = GameLibrary.Build(AppServices.Profiles.List(), AppServices.ConfigReaders);
+        var entries = GameLibrary.Build(AppServices.Profiles.List(), AppServices.ConfigReaders, _detected);
         Games.Clear();
         foreach (var e in entries)
         {
@@ -46,7 +81,9 @@ public sealed partial class LibraryViewModel : ObservableObject
                 e.Settings.Select(s => new SettingRow(s.Label, s.Value, s.Source)).ToList(),
                 e.Settings.Count > 0,
                 CanEdit: e.ProcessName.Length > 0,
-                e.IsUserAdded));
+                e.IsUserAdded,
+                IsDetectedOnly: e.Status == LibraryStatus.Detected,
+                InstallFolder: e.InstallPath));
         }
 
         Count = Games.Count;
