@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using Daignostic.Core.Ai;
 using Daignostic.Core.Analysis;
 using Daignostic.Services;
+using Microsoft.UI.Xaml.Controls;
 
 namespace Daignostic.ViewModels;
 
@@ -71,6 +72,19 @@ public sealed partial class CompareViewModel : ObservableObject
     public bool HasError => Error.Length > 0;
 
     public bool HasRows => Rows.Count > 0;
+
+    /// <summary>What differed between the runs besides the PC, so a gain is not credited to the wrong thing.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasChangesNote))]
+    public partial string ChangesNote { get; set; } = "";
+
+    [ObservableProperty]
+    public partial string ChangesTitle { get; set; } = "";
+
+    [ObservableProperty]
+    public partial InfoBarSeverity ChangesSeverity { get; set; } = InfoBarSeverity.Informational;
+
+    public bool HasChangesNote => ChangesNote.Length > 0;
 
     partial void OnAChanged(LoadedCapture? value) => Recompute();
 
@@ -146,6 +160,8 @@ public sealed partial class CompareViewModel : ObservableObject
     {
         Rows.Clear();
         Comparison = null;
+        ChangesNote = "";
+        ChangesTitle = "";
         if (!CanCompare)
         {
             Summary = "Pick two different captures: a baseline (A) and a later run (B).";
@@ -169,6 +185,27 @@ public sealed partial class CompareViewModel : ObservableObject
                 row.HigherIsBetter is null
                     ? "Context"
                     : row.Improved switch { true => "\u25B2 Better", false => "\u25BC Worse", _ => "= Same" }));
+        }
+
+        if (cmp.Changes.Count > 0)
+        {
+            ChangesTitle = cmp.ChangesAffectFrameRate
+                ? "The runs used different settings, so part of the difference is the settings, not your PC"
+                : "The runs used different settings";
+            ChangesNote = string.Join(Environment.NewLine, cmp.Changes.Select(c => $"\u2022 {c.Label}: {c.A} \u2192 {c.B}"));
+            ChangesSeverity = cmp.ChangesAffectFrameRate ? InfoBarSeverity.Warning : InfoBarSeverity.Informational;
+        }
+        else if (cmp.SettingsUnknown)
+        {
+            ChangesTitle = "daignostic does not know the game settings of one or both runs";
+            ChangesNote = "If you changed a setting between the runs (for example DLSS, frame generation or ray tracing), say so in the note for the AI, or enter the settings for each capture on the Analyze page.";
+            ChangesSeverity = InfoBarSeverity.Informational;
+        }
+        else
+        {
+            ChangesTitle = "The game settings are the same in both runs";
+            ChangesNote = "Any difference below comes from something other than these settings.";
+            ChangesSeverity = InfoBarSeverity.Success;
         }
 
         Summary = cmp.WorsenedCount == 0 && cmp.ImprovedCount > 0

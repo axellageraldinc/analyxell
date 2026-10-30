@@ -6,6 +6,10 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ### Changed
 
+- With frame generation, FPS and lows are now measured on the frames the screen displays, not on the generated frames presented under a millisecond after each real one (which read as 1,600 fps frames). A "Rendered" card shows what your PC really draws, and the finding warns when that base rate is low.
+- Frame generation no longer reads as stutter: the capture is checked for generated frames (labelled frames, a steady long-short frame-time pattern, or a display changing twice as often as the game presents) and stutter is judged on groups of frames when they are present. Chart markers use the same judgement.
+- Compare now lists the game settings that differ between the two runs (DLSS, frame generation, ray tracing, resolution...), warns when they change the frame rate itself, and tells the AI.
+- Importing game settings with your AI shows the same progress (time, what it is doing, Cancel) and the same failure messages as Ask AI.
 - The Game library finds installed games by asking Steam (every library folder, on any drive), Epic and GOG, and lists the ones you have not opened a capture of yet, with a button to add them. It reads only the launchers' small manifest files; it does not crawl your drives.
 - New Game library page: every game daignostic knows (built in, seen in a capture, or added by you), what is known about its settings, and a way to add a game by choosing its file and entering its settings. Settings you enter for a game are used for captures recorded after you saved them.
 - The game's own settings now matter: upscaling off while the GPU is the limit, frame generation on while motion or latency is off, low latency mode off while the GPU is the limit, and the game's VSync setting feed the findings, not only the AI.

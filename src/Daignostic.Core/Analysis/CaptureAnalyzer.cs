@@ -67,16 +67,22 @@ public static class CaptureAnalyzer
     {
         var run = capture.Runs[Math.Clamp(runIndex, 0, capture.Runs.Count - 1)];
         system ??= SystemContext.Empty;
-        var metrics = FrameMetrics.Compute(run.FrameMs);
-        var stutters = Detectors.FindStutters(run.TimeSec, run.FrameMs);
-        var freezes = Detectors.FindFreezes(run.TimeSec, run.FrameMs, FreezeThresholdMs);
+        var frameGen = FrameGenerationSignal.Compute(run);
+
+        // With generated frames in the present stream, smoothness is judged on what the screen shows. If the capture has
+        // no display times, groups of presents are used so the long/short alternation is not counted as stutter.
+        var series = FrameGenerationSignal.SeriesFor(run, frameGen);
+        var metrics = FrameMetrics.Compute(series.Ms);
+        var (stutterTimes, stutterMs) = series.FromDisplay ? (series.Times, series.Ms) : frameGen.Merge(series.Times, series.Ms);
+        var stutters = Detectors.FindStutters(stutterTimes, stutterMs);
+        var freezes = Detectors.FindFreezes(series.Times, series.Ms, FreezeThresholdMs);
         var bottleneck = BottleneckAnalyzer.Analyze(run);
         var context = FreezeContextBuilder.Build(run, freezes);
         var extra = ExtraSignals.Compute(run);
         var trends = RunTrends.Compute(run, stutters, freezes);
 
-        var facts = BuildFacts(capture.Info, metrics, stutters, freezes, bottleneck, context, extra, settings, system, background, shareBackgroundNames, trends);
-        var findings = Rules.Evaluate(metrics, freezes, stutters, bottleneck, context, extra, settings, system, background, facts, capture.Info, trends);
+        var facts = BuildFacts(capture.Info, metrics, stutters, freezes, bottleneck, context, extra, settings, system, background, shareBackgroundNames, trends, frameGen);
+        var findings = Rules.Evaluate(metrics, freezes, stutters, bottleneck, context, extra, settings, system, background, facts, capture.Info, trends, frameGen);
         var specs = PcSpecs.Build(capture.Info, run, extra, bottleneck, system);
 
         return new AnalysisResult(
@@ -96,7 +102,8 @@ public static class CaptureAnalyzer
         SystemContext system,
         BackgroundScanResult? background,
         bool shareBackgroundNames,
-        RunTrends trends)
+        RunTrends trends,
+        FrameGenerationSignal frameGen)
     {
         var f = new Dictionary<string, string>();
         void Put(string key, string? value)
@@ -130,6 +137,16 @@ public static class CaptureAnalyzer
         PutNum("pc.memory_modules", memory.Modules, "0");
         PutNum("pc.memory_mts", memory.SpeedMTs, "0");
         PutNum("cpu.limited_pct", trends.CpuLimitedPct, "0");
+        Put("framegen.detected", frameGen.Active ? "yes" : "no");
+        if (frameGen.Active)
+        {
+            PutNum("framegen.display_to_present_ratio", frameGen.DisplayToPresentRatio, "0.0");
+            PutNum("framegen.generated_frames_pct", frameGen.GeneratedFramesPct, "0");
+            PutNum("framegen.rendered_fps", frameGen.RenderedFps, "0.#");
+            PutNum("framegen.displayed_fps", frameGen.DisplayedFps, "0.#");
+            Put("stutter.method", "judged on the frames the screen shows, because frame generation fills the present stream with generated frames");
+        }
+
         PutNum("trend.fps_first_quarter", trends.FpsFirstQuarter);
         PutNum("trend.fps_last_quarter", trends.FpsLastQuarter);
         PutNum("trend.events_first_third", trends.DurationSec >= 60 ? trends.EventsFirstThird : null, "0");

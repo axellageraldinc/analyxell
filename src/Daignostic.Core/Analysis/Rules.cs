@@ -28,7 +28,8 @@ internal static class Rules
         BackgroundScanResult? background,
         IReadOnlyDictionary<string, string> facts,
         CaptureInfo info,
-        RunTrends trends)
+        RunTrends trends,
+        FrameGenerationSignal frameGen)
     {
         var list = new List<Finding>();
 
@@ -303,7 +304,7 @@ internal static class Rules
         }
 
         // 5b. Causes that need several signals: CPU limits, change over time, memory setup, Windows options.
-        DeepRules.Evaluate(Add, metrics, freezes, stutters, bottleneck, trends, info, system, settings, extra);
+        DeepRules.Evaluate(Add, metrics, freezes, stutters, bottleneck, trends, info, system, settings, extra, frameGen);
 
         // 6. Programs competing with the game.
         if (background is not null)

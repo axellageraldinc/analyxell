@@ -55,13 +55,25 @@ $mockLog = Join-Path $work 'mock.log'
 $mock = Start-Job -ScriptBlock { param($s, $p, $l) & $s -Port $p -LogPath $l } -ArgumentList (Join-Path $PSScriptRoot 'Start-MockAiServer.ps1'), $MockPort, $mockLog
 Start-Sleep 2
 
-# The app keeps its settings (and the encrypted AI key) under the package folder. Set the real ones aside so this
-# run starts clean and can never overwrite or delete them; they are put back at the end.
-$appData = Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Packages') -Filter 'axellageraldinc.Daignostic_*' -Directory -ErrorAction SilentlyContinue |
-    ForEach-Object { Join-Path $_.FullName 'LocalCache\Local\Daignostic' } | Select-Object -First 1
-$appDataBackup = Join-Path $env:TEMP 'daignostic-appdata-backup'
-Remove-Item $appDataBackup -Recurse -Force -ErrorAction SilentlyContinue
-if ($appData -and (Test-Path $appData)) { Copy-Item $appData $appDataBackup -Recurse -Force }
+# The app keeps its settings (and the encrypted AI key) in two places: the package's own folder, and the plain
+# %LOCALAPPDATA%\Daignostic folder that the portable build uses (a packaged app reads through to it when its own
+# folder is empty). Set both aside so this run starts clean and can never overwrite or delete the real ones;
+# they are put back at the end.
+$dataDirs = @(
+    (Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Packages') -Filter 'axellageraldinc.Daignostic_*' -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object { Join-Path $_.FullName 'LocalCache\Local\Daignostic' } | Select-Object -First 1),
+    (Join-Path $env:LOCALAPPDATA 'Daignostic')
+) | Where-Object { $_ }
+$backupRoot = Join-Path $env:TEMP 'daignostic-appdata-backup'
+Remove-Item $backupRoot -Recurse -Force -ErrorAction SilentlyContinue
+Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep 1
+for ($i = 0; $i -lt $dataDirs.Count; $i++) {
+    if (Test-Path $dataDirs[$i]) {
+        Copy-Item $dataDirs[$i] (Join-Path $backupRoot $i) -Recurse -Force
+        Remove-Item $dataDirs[$i] -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
 
 Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force
 Write-Host 'Building and launching the app'
@@ -204,10 +216,12 @@ try {
 finally {
     # Remove what the test saved, then put the user's own settings back.
     Get-Process Daignostic -ErrorAction SilentlyContinue | Stop-Process -Force
-    if ($appData) {
-        Remove-Item $appData -Recurse -Force -ErrorAction SilentlyContinue
-        if (Test-Path $appDataBackup) { New-Item -ItemType Directory -Force (Split-Path $appData) | Out-Null; Copy-Item $appDataBackup $appData -Recurse -Force; Remove-Item $appDataBackup -Recurse -Force }
+    for ($i = 0; $i -lt $dataDirs.Count; $i++) {
+        Remove-Item $dataDirs[$i] -Recurse -Force -ErrorAction SilentlyContinue
+        $saved = Join-Path $backupRoot $i
+        if (Test-Path $saved) { New-Item -ItemType Directory -Force (Split-Path $dataDirs[$i]) | Out-Null; Copy-Item $saved $dataDirs[$i] -Recurse -Force }
     }
+    Remove-Item $backupRoot -Recurse -Force -ErrorAction SilentlyContinue
     Stop-Job $mock -ErrorAction SilentlyContinue
     Remove-Job $mock -Force -ErrorAction SilentlyContinue
 }

@@ -401,7 +401,13 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         };
 
         Cards.Clear();
-        Cards.Add(new MetricItem("Average", F(m.AverageFps), "fps"));
+        var fgOn = r.Facts.TryGetValue("framegen.rendered_fps", out var renderedText) && r.Facts.GetValueOrDefault("framegen.detected") == "yes";
+        Cards.Add(new MetricItem("Average", F(m.AverageFps), fgOn ? "fps on screen, generated frames included" : "fps"));
+        if (fgOn)
+        {
+            Cards.Add(new MetricItem("Rendered", renderedText!, "fps your PC actually draws"));
+        }
+
         Cards.Add(new MetricItem("1% low", F(m.Low1AverageFps), "fps, slowest 1%"));
         Cards.Add(new MetricItem("0.1% low", F(m.Low01AverageFps), "fps, slowest 0.1%"));
         Cards.Add(new MetricItem("Stutters", r.Stutters.Count.ToString(CultureInfo.InvariantCulture), "spikes over 2x median"));

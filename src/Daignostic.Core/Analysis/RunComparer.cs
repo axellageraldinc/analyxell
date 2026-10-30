@@ -30,12 +30,26 @@ public sealed record ComparisonRow(string Key, string Label, double A, double B,
     }
 }
 
+/// <summary>A game setting (or frame generation state) that differs between the two runs.</summary>
+public sealed record SettingChange(string Key, string Label, string A, string B);
+
 public sealed record ComparisonResult(
     string LabelA,
     string LabelB,
     IReadOnlyList<ComparisonRow> Rows,
     IReadOnlyDictionary<string, string> Facts)
 {
+    /// <summary>What was different between the runs besides the PC: graphics settings and frame generation.</summary>
+    public IReadOnlyList<SettingChange> Changes { get; init; } = [];
+
+    /// <summary>True when either run's game settings are unknown, so differences in them cannot be listed.</summary>
+    public bool SettingsUnknown { get; init; }
+
+    /// <summary>True when the differences are ones that change the frame rate itself (resolution, upscaling, frame generation, ray tracing, preset).</summary>
+    public bool ChangesAffectFrameRate => Changes.Any(c => FrameRateKeys.Contains(c.Key));
+
+    private static readonly HashSet<string> FrameRateKeys = ["dlss", "frame_generation", "ray_tracing", "ray_tracing_level", "render_scale", "resolution", "quality_preset", "vsync", "frame_cap", "framegen.detected"];
+
     public int ComparedCount => Rows.Count(r => r.HigherIsBetter is not null);
 
     public int ImprovedCount => Rows.Count(r => r.Improved == true);
@@ -82,6 +96,40 @@ public static class RunComparer
 
         facts["a.bottleneck.verdict"] = a.Bottleneck.Verdict.ToString();
         facts["b.bottleneck.verdict"] = b.Bottleneck.Verdict.ToString();
-        return new ComparisonResult(labelA, labelB, rows, facts);
+
+        var changes = new List<SettingChange>();
+        if (a.Settings is not null && b.Settings is not null)
+        {
+            var keys = a.Settings.Items.Select(i => i.Key).Concat(b.Settings.Items.Select(i => i.Key)).Distinct(StringComparer.OrdinalIgnoreCase);
+            foreach (var key in keys)
+            {
+                var va = a.Settings.Get(key);
+                var vb = b.Settings.Get(key);
+                if (!string.Equals(va, vb, StringComparison.OrdinalIgnoreCase))
+                {
+                    var label = a.Settings.Items.Concat(b.Settings.Items).First(i => i.Key.Equals(key, StringComparison.OrdinalIgnoreCase)).Label;
+                    changes.Add(new SettingChange(key, label, va ?? "not set", vb ?? "not set"));
+                }
+            }
+        }
+
+        var fgA = a.Facts.GetValueOrDefault("framegen.detected") == "yes";
+        var fgB = b.Facts.GetValueOrDefault("framegen.detected") == "yes";
+        if (fgA != fgB)
+        {
+            changes.Add(new SettingChange("framegen.detected", "Frame generation seen in the capture", fgA ? "yes" : "no", fgB ? "yes" : "no"));
+        }
+
+        foreach (var c in changes)
+        {
+            facts[$"setting_changed.{c.Key}"] = $"A: {c.A}, B: {c.B}";
+        }
+
+        facts["settings_known_for_both_runs"] = a.Settings is not null && b.Settings is not null ? "yes" : "no";
+        return new ComparisonResult(labelA, labelB, rows, facts)
+        {
+            Changes = changes,
+            SettingsUnknown = a.Settings is null || b.Settings is null,
+        };
     }
 }

@@ -53,18 +53,20 @@ public static class ChartDataBuilder
         {
             case ChartView.FrameTime:
             {
-                var (t, v) = Smoothing.BinAverage(run.TimeSec, run.FrameMs);
-                return Spec(view, "Frame time", "ms", "Lower is smoother. White line: 1 s average.",
-                    [new("Frame time", run.TimeSec, run.FrameMs, 0, 1.2, 0.6), new("1 s average", t, v, 5, 2.0)],
+                var series = FrameGenerationSignal.SeriesFor(run);
+                var (t, v) = Smoothing.BinAverage(series.Times, series.Ms);
+                return Spec(view, "Frame time", "ms", "Lower is smoother. White line: 1 s average." + (series.FromDisplay ? " Shows the frames the screen displays (generated ones included)." : ""),
+                    [new("Frame time", series.Times, series.Ms, 0, 1.2, 0.6), new("1 s average", t, v, 5, 2.0)],
                     [new(1000.0 / 60, "60 fps"), new(1000.0 / 30, "30 fps")], null, zeroBased: true, clip: true);
             }
 
             case ChartView.Fps:
             {
-                var fps = run.FrameMs.Select(ms => ms > 0 && double.IsFinite(ms) ? 1000.0 / ms : double.NaN).ToArray();
-                var (t, v) = Smoothing.BinAverage(run.TimeSec, fps);
-                return Spec(view, "FPS", "fps", "Higher is better. Dips are slow frames. White line: 1 s average.",
-                    [new("FPS", run.TimeSec, fps, 0, 1.2, 0.6), new("1 s average", t, v, 5, 2.0)],
+                var series = FrameGenerationSignal.SeriesFor(run);
+                var fps = series.Ms.Select(ms => ms > 0 && double.IsFinite(ms) ? 1000.0 / ms : double.NaN).ToArray();
+                var (t, v) = Smoothing.BinAverage(series.Times, fps);
+                return Spec(view, "FPS", "fps", "Higher is better. Dips are slow frames. White line: 1 s average." + (series.FromDisplay ? " Shows the frames the screen displays (generated ones included)." : ""),
+                    [new("FPS", series.Times, fps, 0, 1.2, 0.6), new("1 s average", t, v, 5, 2.0)],
                     [new(60, "60"), new(30, "30")], null, zeroBased: true, clip: true);
             }
 
@@ -132,22 +134,27 @@ public static class ChartDataBuilder
             case ChartView.Fps:
             case ChartView.Latency:
             {
-                double[] Values(CaptureRun r) => view switch
+                var sa = FrameGenerationSignal.SeriesFor(a);
+                var sb = FrameGenerationSignal.SeriesFor(b);
+                double[] Values(CaptureRun r, FrameGenerationSignal.FrameSeries s) => view switch
                 {
-                    ChartView.Fps => r.FrameMs.Select(ms => ms > 0 && double.IsFinite(ms) ? 1000.0 / ms : double.NaN).ToArray(),
+                    ChartView.Fps => s.Ms.Select(ms => ms > 0 && double.IsFinite(ms) ? 1000.0 / ms : double.NaN).ToArray(),
                     ChartView.Latency => r.PcLatencyMs,
-                    _ => r.FrameMs,
+                    _ => s.Ms,
                 };
 
-                var va = Values(a);
-                var vb = Values(b);
+                var va = Values(a, sa);
+                var vb = Values(b, sb);
+                double[] TimesOf(CaptureRun r, FrameGenerationSignal.FrameSeries s) => view == ChartView.Latency ? r.TimeSec : s.Times;
+                var timesA = TimesOf(a, sa);
+                var timesB = TimesOf(b, sb);
                 if (view == ChartView.Latency && (va.Length != a.TimeSec.Length || vb.Length != b.TimeSec.Length || va.All(v => !double.IsFinite(v) || v <= 0) || vb.All(v => !double.IsFinite(v) || v <= 0)))
                 {
                     return Spec(view, "Latency", "ms", "", [], [], null, true, true);
                 }
 
-                var (ta, avgA) = Smoothing.BinAverage(a.TimeSec, va);
-                var (tb, avgB) = Smoothing.BinAverage(b.TimeSec, vb);
+                var (ta, avgA) = Smoothing.BinAverage(timesA, va);
+                var (tb, avgB) = Smoothing.BinAverage(timesB, vb);
                 var label = view == ChartView.Fps ? "FPS" : view == ChartView.Latency ? "Latency" : "Frame time";
                 var unit = view == ChartView.Fps ? "fps" : "ms";
                 var refs = view == ChartView.FrameTime ? [new ChartReference(1000.0 / 60, "60 fps"), new ChartReference(1000.0 / 30, "30 fps")]
@@ -155,8 +162,8 @@ public static class ChartDataBuilder
                     : Array.Empty<ChartReference>();
                 return Spec(view, label, unit, $"Bold lines are one-second averages; faint lines are every frame. {(view == ChartView.Fps ? "Higher" : "Lower")} is better.",
                     [
-                        new(labelA + " (all frames)", a.TimeSec, va, PaletteA, 1.0, 0.3, false),
-                        new(labelB + " (all frames)", b.TimeSec, vb, PaletteB, 1.0, 0.3, false),
+                        new(labelA + " (all frames)", timesA, va, PaletteA, 1.0, 0.3, false),
+                        new(labelB + " (all frames)", timesB, vb, PaletteB, 1.0, 0.3, false),
                         new(labelA, ta, avgA, PaletteA, 2.6),
                         new(labelB, tb, avgB, PaletteB, 2.6),
                     ],

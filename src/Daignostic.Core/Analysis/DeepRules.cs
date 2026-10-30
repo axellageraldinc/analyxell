@@ -22,7 +22,8 @@ internal static class DeepRules
         CaptureInfo info,
         SystemContext system,
         GameSettings? settings,
-        ExtraSignals extra)
+        ExtraSignals extra,
+        FrameGenerationSignal frameGen)
     {
         var hitches = freezes.Count > 0 || stutters.Count > 20 || metrics.Low1AverageFps < metrics.AverageFps * 0.6;
         var cpuBound = bottleneck.Verdict == BottleneckVerdict.CpuBound;
@@ -32,6 +33,8 @@ internal static class DeepRules
         Memory(add, info, cpuBound, hitches);
         WindowsAndDriver(add, info, system, hitches, cpuBound);
         GameOptions(add, settings, metrics, bottleneck, extra, hitches);
+        FrameGeneration(add, frameGen, settings);
+        UpscalingShiftsLimit(add, settings, bottleneck);
     }
 
     private static void CpuLimits(Rules.AddFinding add, BottleneckResult b, RunTrends t, FrameMetrics m, bool cpuBound)
@@ -193,6 +196,53 @@ internal static class DeepRules
             add("MEMORY_INTEGRITY_ON", Severity.Info, "Windows Memory integrity is on",
                 "Memory integrity (virtualization-based security) protects Windows from some attacks and can cost a few percent in CPU-limited games. Many people keep it on for the protection; this is only mentioned because your game is CPU-limited or hitching.",
                 ["system.memory_integrity"],
+                []);
+        }
+    }
+
+    private static void FrameGeneration(Rules.AddFinding add, FrameGenerationSignal fg, GameSettings? settings)
+    {
+        if (!fg.Active)
+        {
+            return;
+        }
+
+        var numbers = fg.RenderedFps > 0 && fg.DisplayedFps > 0
+            ? $" Your PC draws about {fg.RenderedFps:0} fps; the screen shows about {fg.DisplayedFps:0} fps. The frame rate in this app is the displayed one."
+            : "";
+        var how = fg.Reason switch
+        {
+            "labelled" => $"{fg.GeneratedFramesPct:0}% of the frames are labelled as not coming from the game",
+            "alternating" => "the frame times alternate long and short in a steady pattern",
+            _ => $"the display showed about {fg.DisplayToPresentRatio:0.0}x as many frames as the game presented",
+        };
+        var stutterNote = fg.FramesPerRendered >= 2
+            ? "The gaps between frames alternate on purpose, so daignostic judges stutter on groups of frames instead of single frames, to avoid counting that pattern as stutter."
+            : "The frames the game presented are evenly spaced, so stutter is judged as usual.";
+        var fpsNote = fg.Reason == "display"
+            ? "The frame rate shown counts only the frames the game presented, so your display is showing more than the number says."
+            : "The frame rate shown counts the frames that were presented, generated ones included, so it can look better than what your PC renders.";
+        add("FRAME_GENERATION_DETECTED", fg.RenderedFps is > 0 and < 45 ? Severity.Low : Severity.Info,
+            "This capture contains generated frames",
+            $"{char.ToUpperInvariant(how[0])}{how[1..]}, which is how frame generation looks in a capture.{numbers} {stutterNote} {fpsNote} Latency is higher than the frame rate suggests.",
+            ["framegen.detected", "framegen.rendered_fps", "framegen.displayed_fps", "framegen.display_to_present_ratio", "framegen.generated_frames_pct", "stutter.count", "fps.average"],
+            [
+                fg.RenderedFps is > 0 and < 45
+                    ? $"Frame generation is working from only about {fg.RenderedFps:0} fps of real frames. That adds noticeable latency and artefacts: lower settings or use stronger upscaling until the real frame rate is about 60 fps or more."
+                    : "Frame generation works best from a base frame rate of about 60 fps; below that it adds latency and visible artefacts.",
+                "To judge what your PC really renders, record the same route with frame generation off and use Compare.",
+            ]);
+    }
+
+    /// <summary>Upscaling makes the GPU render fewer pixels, so the CPU becomes the limit sooner. That is normal, not a fault.</summary>
+    private static void UpscalingShiftsLimit(Rules.AddFinding add, GameSettings? settings, BottleneckResult b)
+    {
+        if (settings?.Get("dlss") == "On" && b.Verdict == BottleneckVerdict.CpuBound)
+        {
+            add("UPSCALING_SHIFTS_LIMIT", Severity.Info,
+                "Upscaling is on, so the CPU became the limit",
+                "DLSS makes the GPU render fewer pixels, which lets it run faster until the CPU cannot keep up. That is expected, and it means more upscaling or lower resolution will not raise the frame rate any further.",
+                ["settings.dlss", "bottleneck.verdict"],
                 []);
         }
     }

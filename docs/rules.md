@@ -77,6 +77,8 @@ Tearing: a capture cannot show tearing itself, only the conditions for it, and t
 | `BACKGROUND_CAPTURE_ON` | Windows background recording is on and the game hitches | Low |
 | `MEMORY_INTEGRITY_ON` | Memory integrity is on and the game is CPU-bound or hitching. Information only; no advice to turn it off | Info |
 | `UPSCALING_OFF_GPU_BOUND` | the game's settings show DLSS off, the GPU is the limit and the average is under 60 fps | Medium |
+| `FRAME_GENERATION_DETECTED` | the capture shows frame generation: 15%+ of frames labelled as not from the game, frame times that alternate long-short (lag-1 correlation of -0.4 or lower), or a display that changes 1.6x as often as the game presents. Stutter is then judged on groups of frames so the alternation is not counted as stutter | Info |
+| `UPSCALING_SHIFTS_LIMIT` | DLSS is on in the game's settings and the CPU is the limit: expected, not a fault | Info |
 | `FRAME_GENERATION_ON` | frame generation is on and the game hitches, pacing is uneven (99th percentile animation error 8 ms+) or latency averages 50 ms+. A hypothesis to test | Low |
 | `REFLEX_OFF` | low latency mode is off, the GPU is the limit and latency averages 40 ms+ | Low |
 | `RAY_TRACING_WITH_HITCHES` | the game's settings show ray tracing on and the capture hitches | Medium (a hypothesis to test) |

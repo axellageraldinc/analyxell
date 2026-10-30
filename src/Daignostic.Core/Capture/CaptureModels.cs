@@ -37,6 +37,9 @@ public sealed class CaptureRun
     public double[] CpuActiveMs { get; init; } = [];
     public bool[] Dropped { get; init; } = [];
 
+    /// <summary>What the capture tool says each frame is ("Application" for the game's own frames). Empty when not recorded.</summary>
+    public string[] FrameTypes { get; init; } = [];
+
     /// <summary>1 when the frame was presented with tearing allowed (typically VSync off). One value per frame.</summary>
     public double[] AllowsTearing { get; init; } = [];
 

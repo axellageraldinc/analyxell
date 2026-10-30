@@ -113,6 +113,7 @@ public static class CaptureReader
             GpuActiveMs = Doubles(data, "GpuActive"),
             CpuActiveMs = Doubles(data, "CpuActive"),
             Dropped = Bools(data, "Dropped"),
+            FrameTypes = Texts(data, "FrameType"),
             AllowsTearing = Doubles(data, "AllowsTearing"),
             SyncInterval = Doubles(data, "SyncInterval"),
             PcLatencyMs = Doubles(data, "PcLatency"),
@@ -137,6 +138,23 @@ public static class CaptureReader
         foreach (var item in arr.EnumerateArray())
         {
             result[i++] = item.ValueKind == JsonValueKind.Number ? item.GetDouble() : double.NaN;
+        }
+
+        return result;
+    }
+
+    private static string[] Texts(JsonElement el, string name)
+    {
+        if (!el.TryGetProperty(name, out var arr) || arr.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var result = new string[arr.GetArrayLength()];
+        var i = 0;
+        foreach (var item in arr.EnumerateArray())
+        {
+            result[i++] = item.ValueKind == JsonValueKind.String ? item.GetString() ?? "" : "";
         }
 
         return result;

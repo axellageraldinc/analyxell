@@ -36,8 +36,8 @@ public static class ChartEventBuilder
     {
         var layers = new List<EventLayer>
         {
-            Freezes(Detectors.FindFreezes(run.TimeSec, run.FrameMs).Select(f => f.TimeSec)),
-            Stutters(Detectors.FindStutters(run.TimeSec, run.FrameMs).Select(s => s.TimeSec)),
+            Freezes(Detectors.FindFreezes(FrameGenerationSignal.SeriesFor(run).Times, FrameGenerationSignal.SeriesFor(run).Ms).Select(f => f.TimeSec)),
+            Stutters(StutterTimes(run)),
             FpsDrops(run),
         };
 
@@ -64,6 +64,15 @@ public static class ChartEventBuilder
         return layers;
     }
 
+    /// <summary>Stutters judged the same way as in the analysis, so the chart marks exactly what is counted.</summary>
+    private static IEnumerable<double> StutterTimes(CaptureRun run)
+    {
+        var fg = FrameGenerationSignal.Compute(run);
+        var series = FrameGenerationSignal.SeriesFor(run, fg);
+        var (times, ms) = series.FromDisplay ? (series.Times, series.Ms) : fg.Merge(series.Times, series.Ms);
+        return Detectors.FindStutters(times, ms).Select(s => s.TimeSec);
+    }
+
     public static EventLayer Freezes(IEnumerable<double> times) => new(
         EventKind.Freezes, "Freezes", "Frames of 200 ms or more: the game visibly hung.",
         times.Select(t => new ChartEvent(t, t)).ToList());
@@ -74,8 +83,9 @@ public static class ChartEventBuilder
 
     public static EventLayer FpsDrops(CaptureRun run)
     {
-        var fps = run.FrameMs.Select(ms => ms > 0 && double.IsFinite(ms) ? 1000.0 / ms : double.NaN).ToArray();
-        var (times, values) = Smoothing.BinAverage(run.TimeSec, fps);
+        var series = FrameGenerationSignal.SeriesFor(run);
+        var fps = series.Ms.Select(ms => ms > 0 && double.IsFinite(ms) ? 1000.0 / ms : double.NaN).ToArray();
+        var (times, values) = Smoothing.BinAverage(series.Times, fps);
         var spans = new List<ChartEvent>();
         if (values.Length >= 4)
         {

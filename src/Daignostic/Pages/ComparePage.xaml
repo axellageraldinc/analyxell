@@ -62,6 +62,14 @@
                 IsClosable="False"
                 Title="{x:Bind ViewModel.Summary, Mode=OneWay}" />
 
+            <InfoBar
+                AutomationProperties.AutomationId="CompareChanges"
+                Severity="{x:Bind ViewModel.ChangesSeverity, Mode=OneWay}"
+                Title="{x:Bind ViewModel.ChangesTitle, Mode=OneWay}"
+                Message="{x:Bind ViewModel.ChangesNote, Mode=OneWay}"
+                IsOpen="{x:Bind ViewModel.HasChangesNote, Mode=OneWay}"
+                IsClosable="False" />
+
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.HasRows, Mode=OneWay}">
                 <Border
                     Padding="16,12"

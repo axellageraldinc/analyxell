@@ -41,6 +41,7 @@ Sources: [PC stutter guides](https://techfuelhq.com/articles/pc-stuttering-in-ga
 | **Game on a hard disk** | Drive type read from Windows | `GAME_ON_HDD` | Move to an SSD |
 | **Drive nearly full** | Under 10% free | `DRIVE_NEARLY_FULL` | Free space |
 | **Resizable BAR off** | Capture lists it as disabled | `RESIZABLE_BAR_OFF` | Enable in BIOS if supported |
+| **Frame generation (DLSS, FSR, Intel) skewing the numbers** | Frames labelled as not from the game, a steady long-short frame-time pattern (a real frame, then a generated one presented under a millisecond later), or a display changing twice as often as the game presents | `FRAME_GENERATION_DETECTED` | Smoothness is judged on the frames the screen shows, never on the 0.6 ms gaps; the real draw rate is shown as "Rendered"; below about 45 real fps it suggests lowering settings first |
 
 ### Things that change over time
 

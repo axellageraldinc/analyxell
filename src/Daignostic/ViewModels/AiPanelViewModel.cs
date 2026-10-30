@@ -376,16 +376,9 @@ public sealed partial class AiPanelViewModel : ObservableObject
     private void ShowError(AiException ex)
     {
         ErrorRaw = ex.RawReply is { Length: > 0 } raw ? (raw.Length > 4000 ? raw[..4000] + "\n[cut]" : raw) : "";
-        ErrorNeedsSettings = ex.Kind is AiErrorKind.Endpoint or AiErrorKind.Key or AiErrorKind.Model;
-        (ErrorTitle, ErrorAdvice) = ex.Kind switch
-        {
-            AiErrorKind.Endpoint => ("Could not reach the AI", "Check that the service is running and that the address in Settings is right. A local gateway has to be started first."),
-            AiErrorKind.Key => ("The AI did not accept your API key", "Open Settings and re-enter the key. Check that it is for this service and has not expired."),
-            AiErrorKind.Model => ("The AI did not accept the address or the model name", "In Settings, press List models and pick a name from the list. The address works with or without /v1."),
-            AiErrorKind.Timeout => ("The AI took too long", "Try again, or choose a faster model in Settings. Very long answers from large models can exceed the limit."),
-            AiErrorKind.Reply => ("The AI answered, but not in a form daignostic can read", "The model did not follow the required format. Try again, or use a stronger model. You can read exactly what it said below."),
-            _ => ("The AI request failed", "Try again. If it keeps happening, check Settings."),
-        };
+        ErrorNeedsSettings = AiErrorText.Describe(ex).NeedsSettings;
+        var described = AiErrorText.Describe(ex);
+        (ErrorTitle, ErrorAdvice) = (described.Title, described.Advice + (ErrorRaw.Length > 0 ? " You can read exactly what it said below." : ""));
         ErrorMessage = ex.Message;
     }
 

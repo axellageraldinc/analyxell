@@ -92,6 +92,16 @@ internal static class GameSettingsDialog
         var send = new Button { Content = "Send this to my AI and extract the settings", IsEnabled = false };
         AutomationProperties.SetAutomationId(send, "GameSettingsAiButton");
         var choose = new Button { Content = "Choose the game's config file..." };
+
+        // Progress for the AI request: what it is doing, how long, and a way out.
+        var ring = new ProgressRing { Width = 22, Height = 22, IsActive = false };
+        var waiting = new TextBlock { TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+        var cancel = new Button { Content = "Cancel" };
+        AutomationProperties.SetAutomationId(cancel, "GameSettingsAiCancel");
+        AutomationProperties.SetAutomationId(waiting, "GameSettingsAiProgress");
+        var progress = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Visibility = Visibility.Collapsed, Children = { ring, waiting, cancel } };
+        CancellationTokenSource? importCts = null;
+        cancel.Click += (_, _) => importCts?.Cancel();
         var aiOk = AppServices.Settings.AiConfigured;
         var aiNote = new TextBlock
         {
@@ -138,10 +148,34 @@ internal static class GameSettingsDialog
             }
 
             send.IsEnabled = false;
-            status.Text = "Asking your AI...";
+            status.Text = "";
+            importCts = new CancellationTokenSource();
+            var cts = importCts;
+            var started = DateTime.UtcNow;
+            ring.IsActive = true;
+            progress.Visibility = Visibility.Visible;
+            var model = AppServices.Settings.AiModel;
+            waiting.Text = AiErrorText.Waiting(TimeSpan.Zero, model);
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    while (!cts.IsCancellationRequested)
+                    {
+                        await Task.Delay(500, cts.Token);
+                        var text = AiErrorText.Waiting(DateTime.UtcNow - started, model);
+                        dialog.DispatcherQueue.TryEnqueue(() => waiting.Text = text);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Finished or cancelled: stop updating.
+                }
+            });
+
             try
             {
-                var result = await AiSettingsImporter.ImportAsync(AppServices.CreateOpenAiClient(), gameName, redacted, CancellationToken.None);
+                var result = await AiSettingsImporter.ImportAsync(AppServices.CreateOpenAiClient(), gameName, redacted, cts.Token);
                 if (result.Accepted.Count > 0)
                 {
                     items = result.Accepted.ToList();
@@ -153,14 +187,22 @@ internal static class GameSettingsDialog
             }
             catch (AiException ex)
             {
-                status.Text = ex.Message;
+                var described = AiErrorText.Describe(ex);
+                status.Text = $"{described.Title}. {ex.Message} {described.Advice}";
+            }
+            catch (OperationCanceledException)
+            {
+                status.Text = "You cancelled the request. Nothing was changed.";
             }
             finally
             {
+                cts.Cancel();
+                ring.IsActive = false;
+                progress.Visibility = Visibility.Collapsed;
                 send.IsEnabled = true;
             }
         };
-        var importTab = new StackPanel { Spacing = 8, Margin = new Thickness(0, 8, 0, 0), Children = { aiNote, choose, preview, send } };
+        var importTab = new StackPanel { Spacing = 8, Margin = new Thickness(0, 8, 0, 0), Children = { aiNote, choose, preview, send, progress } };
 
         var pivot = new Pivot { Height = 330 };
         pivot.Items.Add(new PivotItem { Header = "Type or paste", Content = pasteTab });
