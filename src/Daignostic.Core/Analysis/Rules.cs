@@ -341,7 +341,10 @@ internal static class Rules
                 "The capture shows the game asking for no sync, but you said VSync is on in the driver. The driver applies it after the game, where a capture cannot see it. "
                 + (vrr ? "Together with variable refresh this is the recommended setup: no tearing, and low latency as long as the frame rate stays inside the display's range." : "Without variable refresh, VSync removes tearing but can add some latency and halve the frame rate when the game cannot keep up with the refresh rate."),
                 ["present.tearing_allowed_pct", "present.sync_interval_zero_pct", "setup.vsync", "display.vrr_evidence"],
-                vrr ? ["Keep the frame rate a few fps below the monitor's maximum (a cap such as 141 on a 144 Hz monitor) so VSync never has to wait."] : []);
+                // Only worth saying when the game actually runs at or above the display's maximum.
+                vrr && ((x.FramesAboveRefreshPct ?? 0) >= 5 || (x.RefreshMaxHz is { } max && metrics.AverageFps >= max - 3))
+                    ? ["Keep the frame rate a few fps below the monitor's maximum (a cap such as 141 on a 144 Hz monitor) so VSync never has to wait."]
+                    : []);
             return;
         }
 
