@@ -18,7 +18,7 @@ namespace Daignostic.Controls;
 /// </summary>
 public sealed partial class FrameTimeChart : UserControl
 {
-    private const double Left = 52, Right = 12, Top = 10, Bottom = 24;
+    private const double Left = 52, Right = 12, Top = 30, Bottom = 24;
 
     // Theme resource keys; the UI picks colours that follow light and dark mode.
     private static readonly string[] Palette =
@@ -252,7 +252,7 @@ public sealed partial class FrameTimeChart : UserControl
         _ => "SystemFillColorAttentionBrush",
     };
 
-    /// <summary>Stretches of the run (FPS drops, tearing possible) are shaded behind the lines.</summary>
+    /// <summary>FPS drops are shaded behind the lines; tearing possible is a solid bar along the bottom so it stays visible even when it covers the whole run.</summary>
     private void DrawBands()
     {
         foreach (var layer in _layers.Where(l => l.IsSpan))
@@ -261,8 +261,14 @@ public sealed partial class FrameTimeChart : UserControl
             {
                 var x1 = X(Math.Min(e.StartSec, _tMax));
                 var x2 = Math.Max(x1 + 2, X(Math.Min(e.EndSec, _tMax)));
-                var band = new Rectangle { Width = x2 - x1, Height = _plot.Height, Fill = Brush(EventBrush(layer.Kind)), Opacity = layer.Kind == EventKind.FpsDrops ? 0.18 : 0.10 };
-                Plot.Children.Add(band.At(x1, _plot.Y));
+                if (layer.Kind == EventKind.TearingPossible)
+                {
+                    Plot.Children.Add(new Rectangle { Width = x2 - x1, Height = 5, Fill = Brush(EventBrush(layer.Kind)) }.At(x1, _plot.Y + _plot.Height - 5));
+                }
+                else
+                {
+                    Plot.Children.Add(new Rectangle { Width = x2 - x1, Height = _plot.Height, Fill = Brush(EventBrush(layer.Kind)), Opacity = 0.18 }.At(x1, _plot.Y));
+                }
             }
         }
     }
@@ -288,7 +294,7 @@ public sealed partial class FrameTimeChart : UserControl
                 else
                 {
                     var tall = layer.Kind == EventKind.Stutters ? 12 : 7;
-                    AddLine(x, _plot.Y + _plot.Height - tall, x, _plot.Y + _plot.Height, key, 1.5, null);
+                    AddLine(x, _plot.Y + _plot.Height - 8 - tall, x, _plot.Y + _plot.Height - 8, key, 1.5, null);
                 }
             }
         }
@@ -304,8 +310,8 @@ public sealed partial class FrameTimeChart : UserControl
         var x = _plot.X + 10;
         foreach (var line in _spec.Lines.Where(l => l.Legend))
         {
-            Plot.Children.Add(new Rectangle { Width = 10, Height = 3, Fill = Brush(Palette[line.Palette % Palette.Length]) }.At(x, _plot.Y + 4));
-            AddText(line.Name, x + 14, _plot.Y - 2, "TextFillColorSecondaryBrush");
+            Plot.Children.Add(new Rectangle { Width = 10, Height = 3, Fill = Brush(Palette[line.Palette % Palette.Length]) }.At(x, 11));
+            AddText(line.Name, x + 14, 4, "TextFillColorSecondaryBrush");
             x += 24 + line.Name.Length * 6.2;
         }
 

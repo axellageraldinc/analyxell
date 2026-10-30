@@ -31,7 +31,7 @@ public sealed partial class EventToggle(EventLayer layer, bool isOn, Action chan
 {
     public EventLayer Layer { get; } = layer;
 
-    public string Text => $"{Layer.Label} ({Layer.Count})";
+    public string Text => $"{Layer.Label} ({Layer.CountText})";
 
     [ObservableProperty]
     public partial bool IsOn { get; set; } = isOn;

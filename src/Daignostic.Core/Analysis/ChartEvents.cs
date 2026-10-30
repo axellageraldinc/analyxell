@@ -16,9 +16,12 @@ public enum EventKind
 public sealed record ChartEvent(double StartSec, double EndSec);
 
 /// <summary>All the moments of one kind, with the words the UI shows for them.</summary>
-public sealed record EventLayer(EventKind Kind, string Label, string Meaning, IReadOnlyList<ChartEvent> Events)
+public sealed record EventLayer(EventKind Kind, string Label, string Meaning, IReadOnlyList<ChartEvent> Events, string? Detail = null)
 {
     public int Count => Events.Count;
+
+    /// <summary>What follows the label on its switch: how many moments, or how much of the run for whole-run conditions.</summary>
+    public string CountText => Detail ?? Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     public bool IsSpan => Kind is EventKind.FpsDrops or EventKind.TearingPossible;
 }
@@ -48,8 +51,14 @@ public static class ChartEventBuilder
         var tearing = Tearing(run);
         if (tearing.Count > 0)
         {
+            var total = run.TimeSec.Length > 0 ? run.TimeSec[^1] : 0;
+            var covered = total > 0 ? Math.Min(100, tearing.Sum(t => t.EndSec - t.StartSec) / total * 100) : 0;
             layers.Add(new EventLayer(EventKind.TearingPossible, "Tearing possible",
-                "Frames sent to the screen with tearing allowed (VSync off). A capture cannot see tearing itself, only whether it could happen.", tearing));
+                (covered >= 90
+                    ? "Tearing was allowed for almost the whole run (VSync off or unsynchronised), shown as a bar along the bottom."
+                    : "Stretches where frames were sent to the screen with tearing allowed (VSync off), shown as a bar along the bottom.")
+                + " A capture cannot see tearing itself, only whether it could happen.",
+                tearing, $"{covered:0}% of the run"));
         }
 
         return layers;
