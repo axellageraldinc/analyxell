@@ -46,3 +46,6 @@ tool-results/
 # Claude Code local state
 .claude/settings.local.json
 .claude/projects/
+
+# Scratch folder for logo drafts from design tools
+assets/new logos/

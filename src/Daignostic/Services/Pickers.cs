@@ -25,6 +25,14 @@ internal static class Pickers
         return (await picker.PickSingleFileAsync())?.Path;
     }
 
+    public static async Task<string?> PickExecutableAsync()
+    {
+        var picker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.ComputerFolder };
+        picker.FileTypeFilter.Add(".exe");
+        InitializeWithWindow.Initialize(picker, App.WindowHandle);
+        return (await picker.PickSingleFileAsync())?.Path;
+    }
+
     public static async Task<string?> PickFolderAsync()
     {
         var picker = new FolderPicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary };

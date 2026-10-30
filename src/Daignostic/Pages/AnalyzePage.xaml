@@ -61,6 +61,15 @@
                         </DropDownButton.Flyout>
                     </DropDownButton>
                     <Button
+                        AutomationProperties.AutomationId="PcSetupHeaderButton"
+                        Content="PC setup..."
+                        Click="Setup_Click"
+                        IsEnabled="{x:Bind ViewModel.HasCapture, Mode=OneWay}" />
+                    <Button
+                        AutomationProperties.AutomationId="CapFrameXHeaderButton"
+                        Content="{x:Bind ViewModel.CapFrameX.HeaderButtonText, Mode=OneWay}"
+                        Command="{x:Bind ViewModel.CapFrameX.OpenOrGetCommand, Mode=OneTime}" />
+                    <Button
                         AutomationProperties.AutomationId="ExportReportButton"
                         Content="Export report..."
                         Command="{x:Bind ViewModel.ExportCommand, Mode=OneTime}"
@@ -94,6 +103,7 @@
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         Text="daignostic reads capture files (.json) from CapFrameX, shows how your game ran, finds freezes, stutter and other problems, and tells you what to try. It only reads: nothing is changed on your PC." />
                     <Button AutomationProperties.AutomationId="OpenCaptureButton2" Content="Open capture..." Command="{x:Bind ViewModel.OpenFileCommand, Mode=OneTime}" HorizontalAlignment="Center" Style="{StaticResource AccentButtonStyle}" />
+                    <controls:CapFrameXCard ViewModel="{x:Bind ViewModel.CapFrameX, Mode=OneTime}" Margin="0,12,0,0" />
                 </StackPanel>
             </Border>
 
@@ -107,6 +117,13 @@
                             <TextBlock Text="{x:Bind ViewModel.SpecSummary, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource BodyStrongTextBlockStyle}" />
                         </StackPanel>
                     </Expander.Header>
+                    <StackPanel Spacing="12">
+                    <TextBlock
+                        TextWrapping="Wrap"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Something missing or wrong, such as G-SYNC, the monitor or where the game is installed? Add it in PC setup." />
+                    <Button AutomationProperties.AutomationId="PcSetupInSpecsButton" Content="Edit PC setup..." Click="Setup_Click" />
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.SpecSections, Mode=OneWay}">
                         <ItemsRepeater.Layout>
                             <UniformGridLayout MinItemWidth="330" MinColumnSpacing="24" MinRowSpacing="16" ItemsStretch="Fill" />
@@ -120,6 +137,7 @@
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>
+                    </StackPanel>
                 </Expander>
 
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Cards, Mode=OneTime}">

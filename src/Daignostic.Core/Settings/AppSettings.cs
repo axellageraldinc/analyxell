@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Daignostic.Core.Mcp;
 
 namespace Daignostic.Core.Settings;
@@ -22,9 +22,14 @@ public sealed class AppSettings
     /// <summary>Include the names of background programs in AI messages. Off by default; categories are sent instead.</summary>
     public bool ShareBackgroundAppNames { get; set; }
 
+    /// <summary>Where the user told us CapFrameX.exe is (needed for the portable version).</summary>
+    public string CapFrameXPath { get; set; } = "";
+
     public bool UseCapFrameXMcp { get; set; } = true;
 
     public string CapFrameXMcpUrl { get; set; } = CapFrameXMcpClient.DefaultEndpoint.ToString();
+
+    public AppSettings Clone() => (AppSettings)MemberwiseClone();
 
     public bool AiConfigured =>
         AiEnabled &&

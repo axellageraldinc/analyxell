@@ -10,6 +10,10 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace Daignostic.ViewModels;
 
+/// <summary>
+/// Every problem is reported next to the field it is about (see the *Msg properties), never in one banner at the
+/// top of the page. That way the user sees exactly what to fix and where.
+/// </summary>
 public sealed partial class SettingsViewModel : ObservableObject
 {
     public SettingsViewModel()
@@ -25,12 +29,29 @@ public sealed partial class SettingsViewModel : ObservableObject
         ShareBackgroundNames = s.ShareBackgroundAppNames;
         HasSavedKey = AppServices.HasStoredKey;
         NewApiKey = "";
-        Message = "";
-        McpStatus = "";
         KeyStoredInfo = "";
+        CapFrameX = new CapFrameXViewModel();
     }
 
+    public CapFrameXViewModel CapFrameX { get; }
+
     public ObservableCollection<string> Models { get; } = [];
+
+    public FieldMessage FolderMsg { get; } = new();
+
+    public FieldMessage McpUrlMsg { get; } = new();
+
+    public FieldMessage McpStatusMsg { get; } = new();
+
+    public FieldMessage EndpointMsg { get; } = new();
+
+    public FieldMessage ModelMsg { get; } = new();
+
+    public FieldMessage KeyMsg { get; } = new();
+
+    public FieldMessage AiTestMsg { get; } = new();
+
+    public FieldMessage SaveMsg { get; } = new();
 
     [ObservableProperty]
     public partial string CapturesFolder { get; set; }
@@ -40,13 +61,6 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     public partial string McpUrl { get; set; }
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasMcpStatus))]
-    public partial string McpStatus { get; set; }
-
-    [ObservableProperty]
-    public partial InfoBarSeverity McpSeverity { get; set; }
 
     [ObservableProperty]
     public partial bool AiEnabled { get; set; }
@@ -77,20 +91,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     public partial string KeyStoredInfo { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasMessage))]
-    public partial string Message { get; set; }
-
-    [ObservableProperty]
-    public partial InfoBarSeverity MessageSeverity { get; set; }
-
-    [ObservableProperty]
     public partial bool IsTesting { get; set; }
 
-    public bool HasMessage => Message.Length > 0;
-
     public bool HasModels => Models.Count > 0;
-
-    public bool HasMcpStatus => McpStatus.Length > 0;
 
     public bool HasKeyInfo => KeyStoredInfo.Length > 0;
 
@@ -99,6 +102,16 @@ public sealed partial class SettingsViewModel : ObservableObject
         : SaveApiKey
             ? "No API key saved. Local gateways without authentication work without one."
             : "The key will be kept in memory for this session only and never written to disk.";
+
+    partial void OnCapturesFolderChanged(string value) => FolderMsg.Clear();
+
+    partial void OnMcpUrlChanged(string value) => McpUrlMsg.Clear();
+
+    partial void OnAiEndpointChanged(string value) => EndpointMsg.Clear();
+
+    partial void OnAiModelChanged(string value) => ModelMsg.Clear();
+
+    partial void OnNewApiKeyChanged(string value) => KeyMsg.Clear();
 
     [RelayCommand]
     private async Task BrowseAsync()
@@ -113,38 +126,65 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void Save()
     {
+        ClearAll();
+        var problems = 0;
+
+        if (!string.IsNullOrWhiteSpace(CapturesFolder) && !Directory.Exists(CapturesFolder.Trim()))
+        {
+            FolderMsg.Error("This folder does not exist. Pick an existing folder, or leave it empty.");
+            problems++;
+        }
+
+        if (UseMcp)
+        {
+            if (!Uri.TryCreate(McpUrl.Trim(), UriKind.Absolute, out var mcp))
+            {
+                McpUrlMsg.Error("This is not a valid address. The usual one is http://localhost:1337/mcp.");
+                problems++;
+            }
+            else if (mcp.Scheme is not ("http" or "https"))
+            {
+                McpUrlMsg.Error("The address must start with http:// or https://.");
+                problems++;
+            }
+        }
+
         if (AiEnabled)
         {
-            if (!Uri.TryCreate(AiEndpoint.Trim(), UriKind.Absolute, out var ai) || (ai.Scheme != Uri.UriSchemeHttp && ai.Scheme != Uri.UriSchemeHttps))
+            if (string.IsNullOrWhiteSpace(AiEndpoint))
             {
-                Show("The AI endpoint must be an http or https address, for example http://127.0.0.1:8480.", InfoBarSeverity.Error);
-                return;
+                EndpointMsg.Error("Enter the address of your AI service, for example http://127.0.0.1:8480 or https://api.example.com.");
+                problems++;
+            }
+            else if (!Uri.TryCreate(AiEndpoint.Trim(), UriKind.Absolute, out var ai) || (ai.Scheme != Uri.UriSchemeHttp && ai.Scheme != Uri.UriSchemeHttps))
+            {
+                EndpointMsg.Error("This is not a valid address. It must start with http:// or https://.");
+                problems++;
             }
 
             if (string.IsNullOrWhiteSpace(AiModel))
             {
-                Show("Enter a model name, or press List models to pick one from your endpoint.", InfoBarSeverity.Error);
-                return;
+                ModelMsg.Error("Enter a model name, or press List models to pick one from your endpoint.");
+                problems++;
             }
         }
 
-        if (UseMcp && !Uri.TryCreate(McpUrl, UriKind.Absolute, out _))
+        if (problems > 0)
         {
-            Show("The CapFrameX MCP address is not valid.", InfoBarSeverity.Error);
+            SaveMsg.Warning(problems == 1 ? "Not saved yet: one field above needs attention." : $"Not saved yet: {problems} fields above need attention.");
             return;
         }
 
-        AppServices.Save(new AppSettings
-        {
-            CapturesFolder = CapturesFolder.Trim(),
-            UseCapFrameXMcp = UseMcp,
-            CapFrameXMcpUrl = McpUrl.Trim(),
-            AiEnabled = AiEnabled,
-            AiEndpoint = AiEndpoint.Trim().TrimEnd('/'),
-            AiModel = AiModel.Trim(),
-            SaveApiKey = SaveApiKey,
-            ShareBackgroundAppNames = ShareBackgroundNames,
-        });
+        var settings = AppServices.Settings.Clone();
+        settings.CapturesFolder = CapturesFolder.Trim();
+        settings.UseCapFrameXMcp = UseMcp;
+        settings.CapFrameXMcpUrl = McpUrl.Trim();
+        settings.AiEnabled = AiEnabled;
+        settings.AiEndpoint = AiEndpoint.Trim().TrimEnd('/');
+        settings.AiModel = AiModel.Trim();
+        settings.SaveApiKey = SaveApiKey;
+        settings.ShareBackgroundAppNames = ShareBackgroundNames;
+        AppServices.Save(settings);
 
         if (!string.IsNullOrWhiteSpace(NewApiKey))
         {
@@ -168,7 +208,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
 
         HasSavedKey = AppServices.HasStoredKey;
-        Show("Settings saved.", InfoBarSeverity.Success);
+        SaveMsg.Success("Settings saved.");
     }
 
     [RelayCommand]
@@ -178,7 +218,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         AppServices.SessionApiKey = null;
         HasSavedKey = false;
         KeyStoredInfo = "";
-        Show("The API key was deleted from this PC.", InfoBarSeverity.Success);
+        KeyMsg.Success("The API key was deleted from this PC.");
     }
 
     /// <summary>Lets the user see for themselves that the stored key is encrypted, not readable text.</summary>
@@ -204,7 +244,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         var folder = Directory.Exists(Path.Combine(root, "Configuration")) ? Path.Combine(root, "Configuration") : root;
         if (!Directory.Exists(folder))
         {
-            Show("CapFrameX's settings folder was not found. If you use the portable version, open the Configuration folder next to CapFrameX.exe.", InfoBarSeverity.Informational);
+            McpStatusMsg.Info("CapFrameX's settings folder was not found. If you use the portable version, open the Configuration folder next to CapFrameX.exe.");
             return;
         }
 
@@ -215,18 +255,24 @@ public sealed partial class SettingsViewModel : ObservableObject
     private async Task TestMcpAsync()
     {
         IsTesting = true;
+        McpStatusMsg.Clear();
         try
         {
-            if (!Uri.TryCreate(McpUrl, UriKind.Absolute, out var url))
+            if (!Uri.TryCreate(McpUrl.Trim(), UriKind.Absolute, out var url))
             {
-                McpSeverity = InfoBarSeverity.Error;
-                McpStatus = "That is not a valid address. The default is http://localhost:1337/mcp.";
+                McpUrlMsg.Error("This is not a valid address. The usual one is http://localhost:1337/mcp.");
                 return;
             }
 
             var diagnosis = await new CapFrameXMcpClient(AppServices.Http, url).DiagnoseAsync(CancellationToken.None);
-            McpSeverity = diagnosis.Status == Core.Mcp.McpStatus.Connected ? InfoBarSeverity.Success : InfoBarSeverity.Warning;
-            McpStatus = diagnosis.Message;
+            if (diagnosis.Status == Core.Mcp.McpStatus.Connected)
+            {
+                McpStatusMsg.Success(diagnosis.Message);
+            }
+            else
+            {
+                McpStatusMsg.Warning(diagnosis.Message);
+            }
         }
         finally
         {
@@ -238,11 +284,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     private async Task ListModelsAsync()
     {
         IsTesting = true;
+        ModelMsg.Clear();
+        EndpointMsg.Clear();
+        KeyMsg.Clear();
         try
         {
-            var key = string.IsNullOrWhiteSpace(NewApiKey) ? AppServices.GetApiKey() : NewApiKey.Trim();
-            var client = new OpenAiCompatibleClient(AppServices.Http, new AiOptions(AiEndpoint.Trim(), AiModel.Trim()), () => key);
-            var models = await client.ListModelsAsync(CancellationToken.None);
+            var models = await Client().ListModelsAsync(CancellationToken.None);
             Models.Clear();
             foreach (var m in models)
             {
@@ -250,11 +297,18 @@ public sealed partial class SettingsViewModel : ObservableObject
             }
 
             OnPropertyChanged(nameof(HasModels));
-            Show(models.Count == 0 ? "The endpoint answered but lists no models. Type the model name yourself." : $"{models.Count} model(s) found. Pick one from the list.", models.Count == 0 ? InfoBarSeverity.Warning : InfoBarSeverity.Success);
+            if (models.Count == 0)
+            {
+                ModelMsg.Warning("The endpoint answered but lists no models. Type the model name yourself.");
+            }
+            else
+            {
+                ModelMsg.Success($"{models.Count} model(s) found. Pick one below, or type a name.");
+            }
         }
         catch (AiException ex)
         {
-            Show(ex.Message + " You can still type a model name yourself.", InfoBarSeverity.Warning);
+            Report(ex, " You can still type a model name yourself.");
         }
         finally
         {
@@ -266,16 +320,18 @@ public sealed partial class SettingsViewModel : ObservableObject
     private async Task TestAiAsync()
     {
         IsTesting = true;
+        AiTestMsg.Clear();
+        EndpointMsg.Clear();
+        ModelMsg.Clear();
+        KeyMsg.Clear();
         try
         {
-            var key = string.IsNullOrWhiteSpace(NewApiKey) ? AppServices.GetApiKey() : NewApiKey.Trim();
-            var client = new OpenAiCompatibleClient(AppServices.Http, new AiOptions(AiEndpoint.Trim(), AiModel.Trim()), () => key);
-            var reply = await client.CompleteAsync("Reply with the single word: ok", "ping", CancellationToken.None);
-            Show("The AI endpoint answered: " + (reply.Length > 60 ? reply[..60] + "..." : reply), InfoBarSeverity.Success);
+            var reply = await Client().CompleteAsync("Reply with the single word: ok", "ping", CancellationToken.None);
+            AiTestMsg.Success("The AI endpoint answered: " + (reply.Length > 60 ? reply[..60] + "..." : reply));
         }
         catch (AiException ex)
         {
-            Show(ex.Message, InfoBarSeverity.Warning);
+            Report(ex, "");
         }
         finally
         {
@@ -283,9 +339,43 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
-    private void Show(string message, InfoBarSeverity severity)
+    private OpenAiCompatibleClient Client()
     {
-        Message = message;
-        MessageSeverity = severity;
+        var key = string.IsNullOrWhiteSpace(NewApiKey) ? AppServices.GetApiKey() : NewApiKey.Trim();
+        return new OpenAiCompatibleClient(AppServices.Http, new AiOptions(AiEndpoint.Trim(), AiModel.Trim()), () => key);
+    }
+
+    /// <summary>Puts an AI problem under the field it points at, and a short pointer under the button that was pressed.</summary>
+    private void Report(AiException ex, string suffix)
+    {
+        var text = ex.Message + suffix;
+        switch (ex.Kind)
+        {
+            case AiErrorKind.Endpoint:
+                EndpointMsg.Error(text);
+                break;
+            case AiErrorKind.Key:
+                KeyMsg.Error(text);
+                break;
+            case AiErrorKind.Model:
+                ModelMsg.Error(text);
+                break;
+            default:
+                AiTestMsg.Error(text);
+                return;
+        }
+
+        AiTestMsg.Warning("It did not work. See the message under the field it is about.");
+    }
+
+    private void ClearAll()
+    {
+        FolderMsg.Clear();
+        McpUrlMsg.Clear();
+        EndpointMsg.Clear();
+        ModelMsg.Clear();
+        KeyMsg.Clear();
+        AiTestMsg.Clear();
+        SaveMsg.Clear();
     }
 }

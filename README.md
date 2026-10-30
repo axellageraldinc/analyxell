@@ -18,6 +18,7 @@ You played a game and it stuttered. A capture tells you *that* it did; daignosti
 - **Analyze a capture.** Average FPS, 1% and 0.1% lows, stutters, freezes, and whether the GPU or CPU is the limit. Charts for frame time, FPS, load, temperatures, clocks, memory, power and latency, with every freeze marked.
 - **Tell you what to do.** Findings cite the exact measurements behind them and come with concrete things to try, ranked in a "What you can do" list. It covers freezes, low FPS, heat, memory and VRAM pressure, tearing conditions, latency, pacing, and more ([the rules](docs/rules.md)). No AI needed.
 - **Look beyond the capture.** The PC's specs, which drive the game is on (SSD or HDD, NVMe or SATA, how full), Windows gaming settings, the GPU shader cache, and which other programs are competing for CPU, disk and GPU.
+- **Open or get CapFrameX.** It detects whether CapFrameX is installed, opens it for you, or sends you to the official download page.
 - **Compare two runs.** Changed a setting? See, measure by measure, whether it helped.
 - **Ask an AI, safely, or not at all.** Optionally have an AI explain it and rank the fixes for your data, or export one file and give it to any AI yourself. You see the exact message first, the AI has no tools and never asks questions back, and any claim that cites no evidence is thrown away.
 - **Know your game's settings.** Built in for Black Myth: Wukong. For any other game, type or paste them, or let your own AI pull them out of the config file, with every value checked against the file.

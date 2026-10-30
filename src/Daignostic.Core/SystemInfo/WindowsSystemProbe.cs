@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
@@ -146,6 +146,33 @@ public sealed partial class WindowsSystemProbe : ISystemProbe
     }
 
     public bool DirectoryExists(string path) => Directory.Exists(path);
+
+    public bool FileExists(string path) => File.Exists(path);
+
+    public IEnumerable<string> RegistrySubKeyNames(string hive, string subKey)
+    {
+        try
+        {
+            using var key = Open(hive, subKey);
+            return key?.GetSubKeyNames() ?? [];
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+        {
+            return [];
+        }
+    }
+
+    public bool IsProcessRunning(string processName)
+    {
+        var processes = Process.GetProcessesByName(processName);
+        var running = processes.Length > 0;
+        foreach (var p in processes)
+        {
+            p.Dispose();
+        }
+
+        return running;
+    }
 
     private static RegistryKey? Open(string hive, string subKey) => hive.ToUpperInvariant() switch
     {

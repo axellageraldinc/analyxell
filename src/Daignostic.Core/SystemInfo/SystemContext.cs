@@ -1,4 +1,4 @@
-namespace Daignostic.Core.SystemInfo;
+﻿namespace Daignostic.Core.SystemInfo;
 
 public enum SettingSource
 {
@@ -59,4 +59,10 @@ public interface ISystemProbe
     IEnumerable<string> EnumerateFiles(string directory, string pattern);
 
     bool DirectoryExists(string path);
+
+    bool FileExists(string path);
+
+    IEnumerable<string> RegistrySubKeyNames(string hive, string subKey);
+
+    bool IsProcessRunning(string processName);
 }

@@ -6,6 +6,11 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ### Added
 
+- CapFrameX detection with Open CapFrameX / Get CapFrameX (official GitHub releases) and a way to point at the portable version.
+- The AI endpoint can be given with or without /v1 (providers document both), and 404/405 errors now say what to check.
+- Settings problems are shown under the field they are about instead of at the top of the page.
+- PC setup is reachable from the page header and from the PC details.
+- New logo.
 - Findings now come with concrete suggestions and a ranked "What you can do" list (deterministic, no AI needed).
 - More diagnoses: low FPS, GPU/CPU/VRAM heat, system memory pressure, tearing conditions and display sync, input latency, motion pacing, game on a hard disk, nearly full drive, small shader cache, Power saver plan, display below its maximum refresh.
 - Chart views for frame time, FPS, GPU and CPU load, temperatures, clocks, memory, power and latency.

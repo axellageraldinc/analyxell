@@ -1,4 +1,6 @@
-# Logo brief
+﻿# Logo brief
+
+> **Status: done.** The final files are `assets/logo.svg` (the icon), `assets/logo-mark.svg` and `assets/logo-mark-light.svg`. A wordmark was also drafted but not adopted: its letters were hand-drawn paths with a malformed "s" and a "c" cut off by the canvas. If you want a wordmark, ask for text converted to outlines from a real font. The rest of this page is the brief that was used.
 
 Give the prompt below to an image or logo generation AI. Ask for several concepts, pick one, then ask for the deliverables listed after the prompt.
 

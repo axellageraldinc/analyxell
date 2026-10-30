@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   End-to-end UI smoke test. Builds and launches the app, then drives it with UI Automation (winapp ui).
 
@@ -72,6 +72,8 @@ try {
     Check 'device name is not displayed' (-not (HasText 'SAMPLE-DEVICE-NAME'))
     Check 'AI is the highlighted feature' (HasText 'Ask an AI what is wrong')
     Check 'AI is optional: set-up and export-for-own-AI are offered' ((HasText 'AI is optional') -and (Ui @('search', 'ExportPackButton')) -match 'Found [1-9]')
+    Check 'CapFrameX can be opened or fetched from the header' ((Ui @('search', 'CapFrameXHeaderButton')) -match 'Found [1-9]')
+    Check 'PC setup is easy to find in the header' ((Ui @('search', 'PcSetupHeaderButton')) -match 'Found [1-9]')
     Check 'a chart view picker is offered' ((Ui @('search', 'ChartViewCombo')) -match 'Found [1-9]')
     Check 'missing game settings are called out with a way to add them' ((HasText 'no built-in reader') -and (Ui @('search', 'GameSettingsButton')) -match 'Found [1-9]')
     Shot '1-analyze'
@@ -98,10 +100,21 @@ try {
     Ui @('invoke', 'SettingsItem') | Out-Null; Start-Sleep 2
     Check 'AI is off by default and the user is told it is optional' (HasText 'Everything else works without AI')
     Check 'the MCP tutorial is there' (HasText 'How to turn on CapFrameX')
+    Shot '3b-capframex-card'
+    Check 'CapFrameX status is shown (installed or not found, with a way forward)' ((HasText 'CapFrameX is installed') -or (HasText 'CapFrameX was not found') -or (HasText 'daignostic could not find where it is installed'))
     Ui @('invoke', 'AiEnabledSwitch') | Out-Null; Start-Sleep 1
     Check 'the API key assurance is shown' (HasText 'Your key stays on this PC')
     Check 'the field is called Model name, not Preset' ((HasText 'Model name') -and -not (HasText 'Preset'))
-    Ui @('set-value', 'EndpointBox', "http://127.0.0.1:$MockPort") | Out-Null
+    # A bad address and a missing model must be reported next to those fields, and nothing must be saved.
+    Ui @('set-value', 'EndpointBox', 'not a url') | Out-Null
+    Ui @('invoke', 'SaveSettingsButton') | Out-Null; Start-Sleep 1
+    Check 'a bad endpoint is explained under the endpoint field' ((Ui @('search', 'EndpointMessage')) -match 'Found [1-9]' -and (HasText 'not a valid address'))
+    Check 'a missing model name is explained under the model field' ((Ui @('search', 'ModelMessage')) -match 'Found [1-9]' -and (HasText 'Enter a model name'))
+    Check 'saving is refused and says why' (HasText 'Not saved yet')
+    Ui @('scroll-into-view', 'ApiKeyBox') | Out-Null; Start-Sleep 1
+    Shot '4a-inline-errors'
+    # Providers document their address both with and without /v1; both must work.
+    Ui @('set-value', 'EndpointBox', "http://127.0.0.1:$MockPort/v1") | Out-Null
     Ui @('invoke', 'ListModelsButton') | Out-Null
     Check 'models can be listed from the endpoint' (WaitFor '2 model(s) found' 10)
     Ui @('set-value', 'ModelBox', 'test-model') | Out-Null

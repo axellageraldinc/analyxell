@@ -65,6 +65,8 @@ public sealed partial class AnalyzeViewModel : ObservableObject
 
     public AiPanelViewModel Ai { get; }
 
+    public CapFrameXViewModel CapFrameX { get; }
+
     /// <summary>Raised when the chart should be redrawn. The spec is null when nothing is loaded.</summary>
     public event Action<ChartSpec?, IReadOnlyList<double>>? ChartChanged;
 

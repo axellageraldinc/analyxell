@@ -1,10 +1,14 @@
-# User guide
+﻿# User guide
 
 ## Before you start
 
 daignostic does not record gameplay. Use [CapFrameX](https://github.com/CXWorld/CapFrameX) to capture a session; it saves a `.json` file. For the best diagnosis, turn on CapFrameX's sensor logging (CPU, GPU, memory and drive sensors). Without sensors you still get frame-time results, but not the "why" (GPU busy, disk activity, temperatures).
 
 Tip: record 5 to 10 minutes that include the moments that bother you.
+
+## CapFrameX
+
+daignostic checks whether CapFrameX is installed. The **CapFrameX** button in the Analyze header (and the card in Settings) says **Open CapFrameX** when it is found, and **Get CapFrameX** when it is not, which opens the official page: https://github.com/CXWorld/CapFrameX/releases. If you use the portable version, choose its `CapFrameX.exe` once. Opening CapFrameX is the only thing daignostic ever starts, and only when you press the button.
 
 ## Opening a capture
 
@@ -39,7 +43,7 @@ Tip: record 5 to 10 minutes that include the moments that bother you.
 **Help daignostic know more.** Things a capture cannot show. All optional, all kept on this PC:
 
 - **Add game settings...** For games daignostic cannot read by itself: type or paste them (JSON, `key=value` or `key: value` lines), or let your own AI pull the graphics settings out of the game's config file. For the AI route, likely secrets and your user name are removed first, you see exactly what is sent, and the app keeps only settings whose names and values really appear in the file. Settings are shown as the game's own raw values, never guessed into friendly names.
-- **Edit PC setup...** Tell daignostic what it cannot read: G-SYNC/FreeSync state, VSync, Reflex or low-latency mode, frame cap, driver shader cache size, GPU power mode, your monitor, and where the game is installed. The install folder lets it find out whether the game is on an SSD or a hard disk, NVMe or SATA, and how full the drive is. Answers are used as given and never verified.
+- **Edit PC setup...** (also the **PC setup...** button in the page header, and inside **This PC**.) Tell daignostic what it cannot read: G-SYNC/FreeSync state, VSync, Reflex or low-latency mode, frame cap, driver shader cache size, GPU power mode, your monitor, and where the game is installed. The install folder lets it find out whether the game is on an SSD or a hard disk, NVMe or SATA, and how full the drive is. Answers are used as given and never verified.
 
 ## Asking an AI (optional)
 
@@ -64,6 +68,8 @@ Pick the earlier run as **A** and the later one as **B** (load captures with the
 **Export report...** saves a Markdown summary (metrics, findings with suggestions, game settings and any AI analysis). You choose where it goes. It contains no file paths or computer name.
 
 ## Settings
+
+Problems are shown directly under the field they are about (for example a wrong endpoint address appears under the endpoint box), never in a banner at the top.
 
 | Setting | Purpose |
 |---|---|

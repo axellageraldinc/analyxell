@@ -1,10 +1,22 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
 namespace Daignostic.Core.Ai;
 
-public sealed class AiException(string message, Exception? inner = null) : Exception(message, inner);
+/// <summary>Which setting an AI problem points at, so the UI can show the message next to that field.</summary>
+public enum AiErrorKind
+{
+    Other,
+    Endpoint,
+    Key,
+    Model,
+}
+
+public sealed class AiException(string message, Exception? inner = null, AiErrorKind kind = AiErrorKind.Other) : Exception(message, inner)
+{
+    public AiErrorKind Kind { get; } = kind;
+}
 
 /// <summary>Sends a system and user message to a language model and returns its text reply.</summary>
 public interface IAiClient
@@ -25,10 +37,10 @@ public sealed class OpenAiCompatibleClient(HttpClient http, AiOptions options, F
     {
         if (string.IsNullOrWhiteSpace(options.Model))
         {
-            throw new AiException("No model name is set. Enter one in Settings (use List models to see what your endpoint offers).");
+            throw new AiException("No model name is set. Enter one in Settings (use List models to see what your endpoint offers).", kind: AiErrorKind.Model);
         }
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, BuildUri("/v1/chat/completions"))
+        using var request = new HttpRequestMessage(HttpMethod.Post, BuildUri("chat/completions"))
         {
             Content = new StringContent(BuildBody(systemPrompt, userMessage), Encoding.UTF8, "application/json"),
         };
@@ -40,7 +52,7 @@ public sealed class OpenAiCompatibleClient(HttpClient http, AiOptions options, F
     /// <summary>Asks the endpoint which models it offers (GET /v1/models). Works with most OpenAI-compatible servers.</summary>
     public async Task<IReadOnlyList<string>> ListModelsAsync(CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, BuildUri("/v1/models"));
+        using var request = new HttpRequestMessage(HttpMethod.Get, BuildUri("models"));
         var body = await SendAsync(request, cancellationToken).ConfigureAwait(false);
         return ParseModelIds(body);
     }
@@ -76,16 +88,23 @@ public sealed class OpenAiCompatibleClient(HttpClient http, AiOptions options, F
         }
     }
 
-    private Uri BuildUri(string path)
+    /// <summary>
+    /// Builds an API address from the user's endpoint. Providers document their base address both with and without
+    /// "/v1" (for example http://host:8480 and http://host:8480/v1), so both are accepted and "/v1" is never doubled.
+    /// </summary>
+    internal static Uri BuildUri(string endpoint, string resource)
     {
-        if (!Uri.TryCreate(options.Endpoint.Trim().TrimEnd('/') + path, UriKind.Absolute, out var uri) ||
-            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        var trimmed = endpoint.Trim().TrimEnd('/');
+        var full = trimmed.EndsWith("/v1", StringComparison.OrdinalIgnoreCase) ? $"{trimmed}/{resource}" : $"{trimmed}/v1/{resource}";
+        if (!Uri.TryCreate(full, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
-            throw new AiException("The AI endpoint is not a valid http(s) address. Check Settings.");
+            throw new AiException("The AI endpoint is not a valid http(s) address. Check Settings.", kind: AiErrorKind.Endpoint);
         }
 
         return uri;
     }
+
+    private Uri BuildUri(string resource) => BuildUri(options.Endpoint, resource);
 
     private async Task<string> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -102,11 +121,11 @@ public sealed class OpenAiCompatibleClient(HttpClient http, AiOptions options, F
         }
         catch (HttpRequestException ex)
         {
-            throw new AiException($"Could not reach the AI endpoint at {options.Endpoint}. Is it running?", ex);
+            throw new AiException($"Could not reach the AI endpoint at {options.Endpoint}. Is it running?", ex, AiErrorKind.Endpoint);
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new AiException("The AI request timed out.", ex);
+            throw new AiException("The AI request timed out.", ex, AiErrorKind.Endpoint);
         }
 
         using (response)
@@ -117,10 +136,16 @@ public sealed class OpenAiCompatibleClient(HttpClient http, AiOptions options, F
                 var hint = response.StatusCode switch
                 {
                     System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden => " Check the API key in Settings.",
-                    System.Net.HttpStatusCode.NotFound => " Check the endpoint address and the model name.",
+                    System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.MethodNotAllowed => " Check the endpoint address and the model name. The address can be given with or without /v1.",
                     _ => "",
                 };
-                throw new AiException($"The AI endpoint returned {(int)response.StatusCode} {response.ReasonPhrase}.{hint}");
+                var kind = response.StatusCode switch
+                {
+                    System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden => AiErrorKind.Key,
+                    System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.MethodNotAllowed => AiErrorKind.Model,
+                    _ => AiErrorKind.Other,
+                };
+                throw new AiException($"The AI endpoint returned {(int)response.StatusCode} {response.ReasonPhrase}.{hint}", kind: kind);
             }
 
             return body;

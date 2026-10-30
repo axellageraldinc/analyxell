@@ -38,6 +38,18 @@ internal sealed class FakeProbe : ISystemProbe
         Files.Keys.Where(k => k.StartsWith(directory, StringComparison.OrdinalIgnoreCase) && Path.GetFileName(k).StartsWith("appmanifest_", StringComparison.Ordinal));
 
     public bool DirectoryExists(string path) => Dirs.ContainsKey(path) || Files.Keys.Any(k => k.StartsWith(path, StringComparison.OrdinalIgnoreCase));
+
+    public HashSet<string> ExistingFiles { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public Dictionary<string, string[]> SubKeys { get; } = [];
+
+    public bool Running { get; set; }
+
+    public bool FileExists(string path) => ExistingFiles.Contains(path) || Files.ContainsKey(path);
+
+    public IEnumerable<string> RegistrySubKeyNames(string hive, string subKey) => SubKeys.TryGetValue($"{hive}|{subKey}", out var v) ? v : [];
+
+    public bool IsProcessRunning(string processName) => Running;
 }
 
 public class ExtraSignalTests

@@ -1,4 +1,4 @@
-# Privacy
+﻿# Privacy
 
 daignostic is local-first. This page lists everything it reads, stores and can send. It has no server, no account, no telemetry and no auto-update ping.
 
@@ -9,6 +9,7 @@ daignostic is local-first. This page lists everything it reads, stores and can s
 | CapFrameX capture files you open | Analysis | Read-only. The computer's name is never read. The motherboard name is shown to you but never sent or exported. |
 | A game's config file | Show settings next to results | Read-only. Built in for Black Myth: Wukong; for other games only when you pick a file. |
 | A few Windows settings | Explain performance | Read from the registry, read-only: Game Mode, hardware GPU scheduling, variable refresh for windowed games, active power plan. Also the primary display's resolution and refresh rate, and the number of monitors. |
+| Where CapFrameX is installed | Offer to open it, or to download it if missing | Checks the usual install folders and Windows' list of installed apps (read-only), whether a CapFrameX process is running, and a path you may choose. daignostic starts CapFrameX only when you press **Open CapFrameX**. |
 | The game's drive | Find out if it is on an SSD or HDD, NVMe or SATA, and how full it is | Two read-only storage queries on the volume, no file access. The game's folder comes from you, or from Steam's own library files if it is a Steam game. |
 | The GPU shader cache folders | An empty cache means shaders compile during play | Only their total size and file count are read, never the contents. |
 | Running programs (only when you press the background check) | Find programs competing with the game | For 10 seconds: each process's name, CPU time, disk I/O counters, memory and GPU use. Query-only: nothing is closed or changed. |

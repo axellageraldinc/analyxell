@@ -3,32 +3,36 @@
     x:Class="Daignostic.Pages.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Daignostic.Controls"
     NavigationCacheMode="Disabled">
 
     <ScrollViewer>
         <StackPanel Padding="32,8,32,32" Spacing="24" MaxWidth="860" HorizontalAlignment="Left">
             <TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}" />
 
-            <InfoBar
-                Severity="{x:Bind ViewModel.MessageSeverity, Mode=OneWay}"
-                Message="{x:Bind ViewModel.Message, Mode=OneWay}"
-                IsOpen="{x:Bind ViewModel.HasMessage, Mode=OneWay}"
-                IsClosable="True" />
-
-            <!-- Captures and CapFrameX -->
+            <!-- CapFrameX and captures. Every message sits right under the field it is about. -->
             <StackPanel Spacing="12">
-                <TextBlock Text="Captures" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock Text="CapFrameX and captures" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <controls:CapFrameXCard ViewModel="{x:Bind ViewModel.CapFrameX, Mode=OneTime}" />
+
                 <Grid ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBox
+                        AutomationProperties.AutomationId="CapturesFolderBox"
                         Header="Captures folder"
                         PlaceholderText="Where CapFrameX saves captures"
                         Text="{x:Bind ViewModel.CapturesFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <Button Grid.Column="1" VerticalAlignment="Bottom" Content="Browse..." Command="{x:Bind ViewModel.BrowseCommand, Mode=OneTime}" />
                 </Grid>
+                <InfoBar
+                    AutomationProperties.AutomationId="FolderMessage"
+                    Severity="{x:Bind ViewModel.FolderMsg.Severity, Mode=OneWay}"
+                    Message="{x:Bind ViewModel.FolderMsg.Text, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.FolderMsg.IsOpen, Mode=OneWay}"
+                    IsClosable="False" />
 
                 <ToggleSwitch
                     Header="Find captures through CapFrameX (optional)"
@@ -44,9 +48,16 @@
                     <Button AutomationProperties.AutomationId="TestMcpButton" Grid.Column="1" VerticalAlignment="Bottom" Content="Test connection" Command="{x:Bind ViewModel.TestMcpCommand, Mode=OneTime}" />
                 </Grid>
                 <InfoBar
-                    Severity="{x:Bind ViewModel.McpSeverity, Mode=OneWay}"
-                    Message="{x:Bind ViewModel.McpStatus, Mode=OneWay}"
-                    IsOpen="{x:Bind ViewModel.HasMcpStatus, Mode=OneWay}"
+                    AutomationProperties.AutomationId="McpUrlMessage"
+                    Severity="{x:Bind ViewModel.McpUrlMsg.Severity, Mode=OneWay}"
+                    Message="{x:Bind ViewModel.McpUrlMsg.Text, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.McpUrlMsg.IsOpen, Mode=OneWay}"
+                    IsClosable="False" />
+                <InfoBar
+                    AutomationProperties.AutomationId="McpStatusMessage"
+                    Severity="{x:Bind ViewModel.McpStatusMsg.Severity, Mode=OneWay}"
+                    Message="{x:Bind ViewModel.McpStatusMsg.Text, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.McpStatusMsg.IsOpen, Mode=OneWay}"
                     IsClosable="False" />
 
                 <Expander Header="How to turn on CapFrameX's MCP server (step by step)" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" AutomationProperties.AutomationId="McpTutorial">
@@ -87,11 +98,18 @@
                 <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.AiEnabled, Mode=OneWay}">
                     <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                Text="Any OpenAI-compatible endpoint works: a hosted service, or a gateway or model on your own PC (the best choice for privacy)." />
+
                     <TextBox
                         AutomationProperties.AutomationId="EndpointBox"
                         Header="Endpoint address"
-                        PlaceholderText="For example http://127.0.0.1:8480 or https://api.example.com"
+                        PlaceholderText="For example http://127.0.0.1:8480 or https://api.example.com (with or without /v1)"
                         Text="{x:Bind ViewModel.AiEndpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <InfoBar
+                        AutomationProperties.AutomationId="EndpointMessage"
+                        Severity="{x:Bind ViewModel.EndpointMsg.Severity, Mode=OneWay}"
+                        Message="{x:Bind ViewModel.EndpointMsg.Text, Mode=OneWay}"
+                        IsOpen="{x:Bind ViewModel.EndpointMsg.IsOpen, Mode=OneWay}"
+                        IsClosable="False" />
 
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
@@ -105,6 +123,12 @@
                             Text="{x:Bind ViewModel.AiModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         <Button AutomationProperties.AutomationId="ListModelsButton" Grid.Column="1" VerticalAlignment="Bottom" Content="List models" Command="{x:Bind ViewModel.ListModelsCommand, Mode=OneTime}" />
                     </Grid>
+                    <InfoBar
+                        AutomationProperties.AutomationId="ModelMessage"
+                        Severity="{x:Bind ViewModel.ModelMsg.Severity, Mode=OneWay}"
+                        Message="{x:Bind ViewModel.ModelMsg.Text, Mode=OneWay}"
+                        IsOpen="{x:Bind ViewModel.ModelMsg.IsOpen, Mode=OneWay}"
+                        IsClosable="False" />
                     <ComboBox
                         x:Name="ModelPick"
                         AutomationProperties.AutomationId="ModelPick"
@@ -122,6 +146,12 @@
                         Header="API key"
                         PlaceholderText="Leave empty to keep the saved key"
                         PasswordChanged="KeyBox_PasswordChanged" />
+                    <InfoBar
+                        AutomationProperties.AutomationId="KeyMessage"
+                        Severity="{x:Bind ViewModel.KeyMsg.Severity, Mode=OneWay}"
+                        Message="{x:Bind ViewModel.KeyMsg.Text, Mode=OneWay}"
+                        IsOpen="{x:Bind ViewModel.KeyMsg.IsOpen, Mode=OneWay}"
+                        IsClosable="False" />
                     <ToggleSwitch
                         AutomationProperties.AutomationId="SaveKeySwitch"
                         Header="Remember the key on this PC"
@@ -170,17 +200,31 @@
                         <Button AutomationProperties.AutomationId="TestAiButton" Content="Test AI connection" Command="{x:Bind ViewModel.TestAiCommand, Mode=OneTime}" />
                         <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.IsTesting, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsTesting, Mode=OneWay}" />
                     </StackPanel>
+                    <InfoBar
+                        AutomationProperties.AutomationId="AiTestMessage"
+                        Severity="{x:Bind ViewModel.AiTestMsg.Severity, Mode=OneWay}"
+                        Message="{x:Bind ViewModel.AiTestMsg.Text, Mode=OneWay}"
+                        IsOpen="{x:Bind ViewModel.AiTestMsg.IsOpen, Mode=OneWay}"
+                        IsClosable="False" />
                 </StackPanel>
             </StackPanel>
 
-            <Button AutomationProperties.AutomationId="SaveSettingsButton" Content="Save settings" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.SaveCommand, Mode=OneTime}" />
+            <StackPanel Spacing="8">
+                <Button AutomationProperties.AutomationId="SaveSettingsButton" Content="Save settings" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.SaveCommand, Mode=OneTime}" />
+                <InfoBar
+                    AutomationProperties.AutomationId="SaveMessage"
+                    Severity="{x:Bind ViewModel.SaveMsg.Severity, Mode=OneWay}"
+                    Message="{x:Bind ViewModel.SaveMsg.Text, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.SaveMsg.IsOpen, Mode=OneWay}"
+                    IsClosable="False" />
+            </StackPanel>
 
             <StackPanel Spacing="8">
                 <TextBlock Text="Read-only by design" Style="{StaticResource SubtitleTextBlockStyle}" />
                 <TextBlock
                     TextWrapping="Wrap"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="daignostic reads capture files, game config files you point it to, and a few Windows settings. It never edits game settings, starts captures, closes programs or runs commands. An AI receives text only and has no tools, so it cannot look at or change anything on your PC. The only things daignostic writes are its own settings, the setup and game settings you enter, and reports or export files at a location you choose." />
+                    Text="daignostic reads capture files, game config files you point it to, and a few Windows settings. It never edits game settings, starts captures, closes programs or runs commands. The only program it starts is CapFrameX, and only when you press Open CapFrameX. An AI receives text only and has no tools, so it cannot look at or change anything on your PC. The only things daignostic writes are its own settings, the setup and game settings you enter, and reports or export files at a location you choose." />
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

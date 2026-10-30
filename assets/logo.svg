@@ -1,27 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="t">
-  <title id="t">daignostic logo: a frame-time graph with one spike marked by an AI sparkle</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#15294a"/>
-      <stop offset="1" stop-color="#0a1424"/>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#15294A" />
+      <stop offset="100%" stop-color="#0A1424" />
     </linearGradient>
-    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#2dd4bf"/>
-      <stop offset="1" stop-color="#38bdf8"/>
+    <linearGradient id="wave-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2DD4BF" />
+      <stop offset="100%" stop-color="#38BDF8" />
     </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#fbbf24" stop-opacity="0.5"/>
-      <stop offset="1" stop-color="#fbbf24" stop-opacity="0"/>
+    <radialGradient id="glow-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(251, 191, 36, 0.4)" />
+      <stop offset="100%" stop-color="rgba(251, 191, 36, 0)" />
     </radialGradient>
   </defs>
-  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#bg)"/>
-  <rect x="8.75" y="8.75" width="238.5" height="238.5" rx="55.25" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.5"/>
-  <line x1="36" y1="192" x2="220" y2="192" stroke="#ffffff" stroke-opacity="0.14" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round"/>
-  <path d="M32 172 L58 166 L80 176 L102 164 L124 174 L142 168 L160 168" fill="none" stroke="url(#wave)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M160 168 L176 92 L192 168" fill="none" stroke="#fbbf24" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M192 168 L208 162 L224 170" fill="none" stroke="#38bdf8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="176" cy="84" r="40" fill="url(#glow)"/>
-  <path d="M176 46 Q179 76 208 84 Q179 92 176 122 Q173 92 144 84 Q173 76 176 46 Z" fill="#fff7e0" transform="translate(0 -6) rotate(0)"/>
-  <path d="M212 40 Q213 49 222 51 Q213 53 212 62 Q211 53 202 51 Q211 49 212 40 Z" fill="#fde68a"/>
-  <path d="M60 76 Q61 82 67 84 Q61 86 60 92 Q59 86 53 84 Q59 82 60 76 Z" fill="#fde68a" fill-opacity="0.55"/>
+  
+  <rect width="256" height="256" rx="56" fill="url(#bg-grad)" />
+  <line x1="32" y1="180" x2="224" y2="180" stroke="rgba(255,255,255,0.12)" stroke-width="4" stroke-dasharray="4 8" stroke-linecap="round" />
+  <circle cx="152" cy="45" r="40" fill="url(#glow-grad)" />
+  
+  <path d="M 32 156 Q 64 116, 96 156 Q 112 176, 128 156" fill="none" stroke="url(#wave-grad)" stroke-width="16" stroke-linecap="round" />
+  <path d="M 176 156 Q 200 186, 224 146" fill="none" stroke="url(#wave-grad)" stroke-width="16" stroke-linecap="round" />
+  <path d="M 128 156 L 152 70 L 176 156" fill="none" stroke="#FBBF24" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M 152 20 Q 152 45, 132 45 Q 152 45, 152 70 Q 152 45, 172 45 Q 152 45, 152 20 Z" fill="#FFF7E0" />
 </svg>
