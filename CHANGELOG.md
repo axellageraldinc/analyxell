@@ -4,6 +4,8 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-30
+
 ### Changed
 
 - You can answer what the AI says it could not tell: each item has a box, and "Ask again with my answers" sends them with the next question (the AI is told to use them as given and not ask again).
