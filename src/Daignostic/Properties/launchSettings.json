@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Daignostic (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Daignostic (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
