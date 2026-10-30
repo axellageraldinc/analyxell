@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks commits that contain secrets or personal data. Enable once per clone with:
+#   git config core.hooksPath .githooks
+exec powershell -NoProfile -ExecutionPolicy Bypass -File "$(git rev-parse --show-toplevel)/scripts/check-secrets.ps1"
