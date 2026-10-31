@@ -482,7 +482,6 @@ public sealed partial class AnalyzeViewModel : ObservableObject
 
         var minutes = Math.Max(m.DurationSec / 60, 0.1);
         Cards.Add(new MetricItem("1% low", F(m.Low1AverageFps), $"fps, {Share(m.Low1AverageFps, m.AverageFps)}", LowLevel(m.Low1AverageFps, m.AverageFps, 30, 45, 0.4, 0.6)));
-        Cards.Add(new MetricItem("0.1% low", F(m.Low01AverageFps), $"fps, {Share(m.Low01AverageFps, m.AverageFps)}", LowLevel(m.Low01AverageFps, m.AverageFps, 15, 25, 0.2, 0.4)));
         Cards.Add(new MetricItem("Stutters", r.Stutters.Count.ToString(CultureInfo.InvariantCulture), "spikes over 2x", r.Stutters.Count == 0 ? MetricLevel.Good : r.Stutters.Count / minutes > 30 ? MetricLevel.Bad : MetricLevel.Warning));
         Cards.Add(new MetricItem("Freezes", r.Freezes.Count.ToString(CultureInfo.InvariantCulture), "frames of 200 ms+", r.Freezes.Count == 0 ? MetricLevel.Good : r.Freezes.Count < 3 ? MetricLevel.Warning : MetricLevel.Bad));
         Cards.Add(new MetricItem("Limited by", Verdict(r.Bottleneck.Verdict), $"{r.Bottleneck.Confidence} confidence", MetricLevel.Focus));
@@ -510,7 +509,7 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         MoreSteps.Clear();
         foreach (var s in r.NextSteps)
         {
-            (TopSteps.Count < 3 ? TopSteps : MoreSteps).Add(new NextStepItem(s.Order.ToString(CultureInfo.InvariantCulture), s.Text, s.FindingTitle, CanTry: capture.ProcessName.Length > 0));
+            (TopSteps.Count < 1 ? TopSteps : MoreSteps).Add(new NextStepItem(s.Order.ToString(CultureInfo.InvariantCulture), s.Text, s.FindingTitle, CanTry: capture.ProcessName.Length > 0));
         }
 
         MoreStepsHeader = MoreSteps.Count == 1 ? "Show 1 more step" : $"Show {MoreSteps.Count} more steps";

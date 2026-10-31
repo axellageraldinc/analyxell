@@ -63,15 +63,27 @@
                                 Foreground="{x:Bind svc:LevelBrushes.Label(Level), Mode=OneTime}" />
                         </StackPanel>
                         <TextBlock Text="{x:Bind Detail, Mode=OneTime}" TextWrapping="Wrap" />
-                        <StackPanel Spacing="2" Visibility="{x:Bind HasSuggestions, Mode=OneTime}">
-                            <TextBlock Text="What you can try" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
-                            <TextBlock Text="{x:Bind Suggestions, Mode=OneTime}" TextWrapping="Wrap" />
-                        </StackPanel>
-                        <TextBlock
-                            Text="{x:Bind Evidence, Mode=OneTime}"
-                            TextWrapping="Wrap"
-                            Style="{StaticResource CaptionTextBlockStyle}"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <Border
+                            Visibility="{x:Bind HasSuggestions, Mode=OneTime}"
+                            Padding="12,8"
+                            CornerRadius="6"
+                            Background="{ThemeResource ControlFillColorSecondaryBrush}">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Try this" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <TextBlock Text="{x:Bind Suggestions, Mode=OneTime}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                        <Expander
+                            Header="Why we think this"
+                            Padding="12,6"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch">
+                            <TextBlock
+                                Text="{x:Bind Evidence, Mode=OneTime}"
+                                TextWrapping="Wrap"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </Expander>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -293,8 +305,8 @@
                 <SelectorBar x:Name="Tabs" AutomationProperties.AutomationId="AnalyzeTabs" SelectionChanged="Tabs_SelectionChanged">
                     <SelectorBarItem x:Name="TabOverview" AutomationProperties.AutomationId="TabOverview" Text="Overview" Tag="Overview" IsSelected="True" />
                     <SelectorBarItem x:Name="TabFindings" AutomationProperties.AutomationId="TabFindings" Text="Findings" Tag="Findings" />
-                    <SelectorBarItem x:Name="TabPc" AutomationProperties.AutomationId="TabPc" Text="PC and setup" Tag="Pc" />
-                    <SelectorBarItem x:Name="TabBackground" AutomationProperties.AutomationId="TabBackground" Text="Background programs" Tag="Background" />
+                    <SelectorBarItem x:Name="TabPc" AutomationProperties.AutomationId="TabPc" Text="Your PC" Tag="Pc" />
+                    <SelectorBarItem x:Name="TabBackground" AutomationProperties.AutomationId="TabBackground" Text="Background" Tag="Background" />
                     <SelectorBarItem x:Name="TabAi" AutomationProperties.AutomationId="TabAi" Text="Ask AI" Tag="Ai" />
                 </SelectorBar>
 
@@ -310,12 +322,12 @@
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="What you can do" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock Text="Start here" Style="{StaticResource SubtitleTextBlockStyle}" />
                             <TextBlock
                                 TextWrapping="Wrap"
                                 Style="{StaticResource CaptionTextBlockStyle}"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="Most important first. Try one at a time, record the same route again, then use Compare." />
+                                Text="The most useful thing to try first. Then record the same route again and use Compare." />
                             <ItemsControl ItemsSource="{x:Bind ViewModel.TopSteps, Mode=OneWay}" ItemTemplate="{StaticResource NextStepTemplate}" />
                             <Expander
                                 AutomationProperties.AutomationId="MoreStepsExpander"

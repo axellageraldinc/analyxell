@@ -10,7 +10,7 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace Analyxell.ViewModels;
 
-public sealed record CompareRowItem(string Label, string A, string B, string Delta, string Glyph, string Verdict);
+public sealed record CompareRowItem(string Label, string A, string B, string Delta, string Glyph, string Verdict, MetricLevel Level);
 
 public sealed partial class CompareViewModel : ObservableObject
 {
@@ -181,10 +181,13 @@ public sealed partial class CompareViewModel : ObservableObject
                 Fmt(row.A, row.Unit),
                 Fmt(row.B, row.Unit),
                 DeltaText(row),
-                string.Empty,
+                row.HigherIsBetter is null ? "" : row.Improved switch { true => "", false => "", _ => "" },
                 row.HigherIsBetter is null
-                    ? "Context"
-                    : row.Improved switch { true => "\u25B2 Better", false => "\u25BC Worse", _ => "= Same" }));
+                    ? "For reference"
+                    : row.Improved switch { true => "Better", false => "Worse", _ => "Same" },
+                row.HigherIsBetter is null
+                    ? MetricLevel.Neutral
+                    : row.Improved switch { true => MetricLevel.Good, false => MetricLevel.Bad, _ => MetricLevel.Neutral }));
         }
 
         if (cmp.Changes.Count > 0)

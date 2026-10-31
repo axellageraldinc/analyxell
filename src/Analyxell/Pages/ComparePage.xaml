@@ -84,7 +84,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="1.4*" />
-                                <ColumnDefinition Width="Auto" MinWidth="90" />
+                                <ColumnDefinition Width="Auto" MinWidth="120" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Measure" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                             <TextBlock Grid.Column="1" Text="A" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
@@ -101,13 +101,16 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="1.4*" />
-                                            <ColumnDefinition Width="Auto" MinWidth="90" />
+                                            <ColumnDefinition Width="Auto" MinWidth="120" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="{x:Bind Label, Mode=OneTime}" />
                                         <TextBlock Grid.Column="1" Text="{x:Bind A, Mode=OneTime}" />
                                         <TextBlock Grid.Column="2" Text="{x:Bind B, Mode=OneTime}" />
                                         <TextBlock Grid.Column="3" Text="{x:Bind Delta, Mode=OneTime}" />
-                                        <TextBlock Grid.Column="4" Text="{x:Bind Verdict, Mode=OneTime}" />
+                                        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <FontIcon Glyph="{x:Bind Glyph, Mode=OneTime}" FontSize="14" Foreground="{x:Bind svc:LevelBrushes.Label(Level), Mode=OneTime}" />
+                                            <TextBlock Text="{x:Bind Verdict, Mode=OneTime}" FontWeight="SemiBold" Foreground="{x:Bind svc:LevelBrushes.Label(Level), Mode=OneTime}" />
+                                        </StackPanel>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

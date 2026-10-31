@@ -9,14 +9,14 @@
   Open a <a href="https://github.com/CXWorld/CapFrameX">CapFrameX</a> capture, see what happened, and get a plain-language explanation you can trust.
 </p>
 
-> **Status: 1.0.0.** The app works and is tested, but it has not been tried on many PCs yet, so please report what breaks.
+> **Status: 1.1.0.** The app works and is tested, but it has not been tried on many PCs yet, so please report what breaks.
 
 ## What it does
 
 You played a game and it stuttered. A capture tells you *that* it did; analyxell helps you work out *why*.
 
 - **Analyze a capture.** Average FPS, 1% and 0.1% lows, stutters, freezes, and whether the GPU or CPU is the limit. Charts for frame time, FPS, load, temperatures, clocks, memory, power and latency, with every freeze marked.
-- **Tell you what to do.** Findings cite the exact measurements behind them and come with concrete things to try, ranked in a "What you can do" list. It covers freezes, low FPS, heat, memory and VRAM pressure, tearing conditions, latency, pacing, and more ([the rules](docs/rules.md)). No AI needed.
+- **Tell you what to do.** Findings cite the exact measurements behind them and come with concrete things to try, starting with a single "Start here" step. It covers freezes, low FPS, heat, memory and VRAM pressure, tearing conditions, latency, pacing, and more ([the rules](docs/rules.md)). No AI needed.
 - **Look beyond the capture.** The PC's specs, which drive the game is on (SSD or HDD, NVMe or SATA, how full), Windows gaming settings, the GPU shader cache, and which other programs are competing for CPU, disk and GPU.
 - **Open or get CapFrameX.** It detects whether CapFrameX is installed, opens it for you, or sends you to the official download page.
 - **Compare two runs.** Changed a setting? See, measure by measure, whether it helped.
@@ -52,7 +52,7 @@ Requires Windows 10 (1809) or newer, x64. Nothing else needs to be installed.
 
 1. Record a gameplay session with CapFrameX (it saves a `.json` capture).
 2. Start analyxell and drop the capture on the window, or choose **Open capture...**.
-3. Read the verdict at the top, then **What you can do**. For an AI explanation open the **Ask AI** tab, check **Preview exactly what will be sent**, then press **Ask AI**.
+3. Read the verdict at the top, then **Start here**. For an AI explanation open the **Ask AI** tab, check **Preview exactly what will be sent**, then press **Ask AI**.
 4. Change one setting in the game, record again, and use **Compare** to see if it helped.
 
 More in the [user guide](docs/user-guide.md).

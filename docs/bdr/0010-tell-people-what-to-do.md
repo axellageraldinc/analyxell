@@ -9,7 +9,7 @@ A list of problems leaves a non-expert stuck. The most valuable thing a diagnosi
 
 ## Decision
 
-Every finding above Info comes with concrete suggestions, and the page leads with a ranked "What you can do" list. Suggestions are limited to in-game settings and simple, reversible checks, are phrased as things to try, and always point back to the verification loop: change one thing, record again, Compare. The app also looks for causes outside the capture (drive type, Windows settings, background programs, display setup) because many real fixes live there.
+Every finding above Info comes with concrete suggestions, and the page leads with a ranked "Start here" step. Suggestions are limited to in-game settings and simple, reversible checks, are phrased as things to try, and always point back to the verification loop: change one thing, record again, Compare. The app also looks for causes outside the capture (drive type, Windows settings, background programs, display setup) because many real fixes live there.
 
 ## Consequences
 

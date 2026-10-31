@@ -4,6 +4,18 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-31
+
+A calmer Analyze page, and a clearer Compare result.
+
+### Changed
+
+- **Overview shows one step, not three.** The card is now "Start here" with the single most important step; the rest are behind "Show more steps".
+- **Fewer numbers up top.** The 0.1% low card is gone from the Analyze page (it is still in Compare and in reports).
+- **Findings are easier to scan.** Each finding is a headline, an explanation and a highlighted "Try this" box. The measurements behind it are folded into "Why we think this".
+- **Shorter tab names:** "Your PC" and "Background".
+- **Compare results are colour-coded.** The Result column has icons and colours: green Better, red Worse. Rows that are not scored say "For reference" instead of "Context".
+
 ## [1.0.0] - 2026-10-31
 
 First stable release. Same features as 0.3.1; the repository is now public.

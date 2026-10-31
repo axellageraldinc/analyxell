@@ -32,26 +32,26 @@ The page leads with a one-line **verdict** (healthy, worth fixing, serious probl
 
 **Above the cards** you may see: a **capture quality** warning (too short, frame-capped, idle, windowed or no sensors); a note about a change you are trying; and "A newer capture was recorded" with an **Open it** button. **Copy summary to share** puts a short, anonymised summary on the clipboard.
 
-**Trying a change.** Under **What you can do**, press **I'll try this and check if it helped** on a step. Make the change, record the same route again, and open the new capture: analyxell compares it with the one you tried it on and says whether it helped. One change at a time makes the answer meaningful; differences of a few percent are normal run-to-run variation, and it says so.
+**Trying a change.** Under **Start here**, press **I'll try this and check if it helped** on a step. Make the change, record the same route again, and open the new capture: analyxell compares it with the one you tried it on and says whether it helped. One change at a time makes the answer meaningful; differences of a few percent are normal run-to-run variation, and it says so.
 
 **Overview tab**
 
 - **Ask AI bar.** One line and a button. Pressing **Ask AI** jumps to the Ask AI tab so you can watch it work.
 - **The chart.** Pick a view: frame time, FPS, GPU and CPU load, temperatures, clock speeds, memory, power or latency (only the views your capture has data for). Under the chart, switch markers on or off (freezes, stutters, FPS drops, dropped frames, tearing possible). Press a line's name in the legend to hide or show it. Hover to read exact values. For frame time and FPS the white line is a one-second average, and extreme spikes are clipped so one huge freeze does not flatten everything else.
-- **What you can do.** The three most valuable things to try, most important first; **Show more steps** has the rest. Try one at a time, record the same route again, and use **Compare**.
+- **Start here.** The single most valuable thing to try; **Show more steps** has the rest, most important first. Try one at a time, record the same route again, and use **Compare**.
 
 **Ask AI tab.** The full AI panel; see below.
 
-**Findings tab.** What needs attention comes first, each with the measurements behind it ("Based on: ...") and **What you can try**. Blue is information, yellow is worth a look, red is serious. Lower-priority notes are folded into **other notes** (opened for you when nothing else needs attention). The tab title shows how many things need a look. These come from fixed rules, not an AI; see [Diagnostic rules](rules.md).
+**Findings tab.** What needs attention comes first, each with a plain explanation and a **Try this** box. **Why we think this** opens the measurements behind it. Blue is information, yellow is worth a look, red is serious. Lower-priority notes are folded into **other notes** (opened for you when nothing else needs attention). The tab title shows how many things need a look. These come from fixed rules, not an AI; see [Diagnostic rules](rules.md).
 
-**PC and setup tab.**
+**Your PC tab.**
 
 - **This PC.** Your GPU, CPU, memory and resolution, then the full picture: graphics (driver, video memory, clocks, power, temperatures, Resizable BAR), processor (cores, boost clock), memory, display (refresh range, variable refresh), motherboard and Windows settings, and the drive the game is installed on. The motherboard is shown here only; it is never sent to an AI.
 - **Game settings** (when analyxell can read them) and **Help analyxell know more**: things a capture cannot show. All optional, all kept on this PC:
   - **Add game settings...** For games analyxell cannot read by itself: type or paste them (JSON, `key=value` or `key: value` lines), or let your own AI pull the graphics settings out of the game's config file. For the AI route, likely secrets and your user name are removed first, you see exactly what is sent, and the app keeps only settings whose names and values really appear in the file. Settings are shown as the game's own raw values, never guessed into friendly names. Settings belong to the capture they were entered or read for: if the game's config file was saved after a capture was recorded, analyxell does not assume it matches, and asks you.
   - **Edit PC setup...** (also the **PC setup...** button in the page header.) Tell analyxell what it cannot read: G-SYNC/FreeSync state, VSync, Reflex or low-latency mode, frame cap, driver shader cache size, GPU power mode, your monitor, and where the game is installed. The install folder lets it find out whether the game is on an SSD or a hard disk, NVMe or SATA, and how full the drive is. Answers are used as given and never verified.
 
-**Background programs tab.** A capture cannot show which other programs were running. Press **Check background programs (10 s)** to sample your PC right now: which programs use CPU, disk and GPU, and which well-known troublemakers are open (overlays, recorders, browsers, launchers, cloud sync, security scans, vendor software, virtual machines). For the best result start the game, idle in a menu, switch back and run it. It only reads. The result reflects that moment, not necessarily the captured session.
+**Background tab.** A capture cannot show which other programs were running. Press **Check background programs (10 s)** to sample your PC right now: which programs use CPU, disk and GPU, and which well-known troublemakers are open (overlays, recorders, browsers, launchers, cloud sync, security scans, vendor software, virtual machines). For the best result start the game, idle in a menu, switch back and run it. It only reads. The result reflects that moment, not necessarily the captured session.
 
 **Header buttons.** **Open capture...**, **Recent captures**, **PC setup...**, **Open CapFrameX** (or **Get CapFrameX** if it is not installed) and **Export report...**.
 
@@ -59,7 +59,7 @@ The page leads with a one-line **verdict** (healthy, worth fixing, serious probl
 
 **Game library** lists the games analyxell knows, in two plain groups: **Your games** (built in, opened in a capture, or added by you) and **Installed on this PC** (found through Steam, Epic Games and GOG on any drive, with no capture opened yet). It reads only those launchers' manifest files and never searches your drives. Any game can be diagnosed from a capture; setting a game up only makes the findings and the AI more accurate for it.
 
-Nothing needs adding. Every game has one button, **Set up...**, which opens the same three optional steps wherever you start it (the library, or **Set up this game...** on the Analyze page's PC and setup tab):
+Nothing needs adding. Every game has one button, **Set up...**, which opens the same three optional steps wherever you start it (the library, or **Set up this game...** on the Analyze page's Your PC tab):
 
 1. **Where the game is installed.** Found automatically for Steam games; choose a folder if not. It tells analyxell what kind of drive the game runs from.
 2. **What the game offers.** An online lookup on PCGamingWiki that you start: it sends only the game's name, and shows you what it found (where the settings file is, and which upscaling, frame generation and VSync options the game has) before you press **Use this**.
@@ -83,7 +83,7 @@ The answer ranks the likely causes for your data, with confidence, things to try
 
 ## Comparing two runs
 
-Pick the earlier run as **A** and the later one as **B** (load captures with the buttons, or from the Analyze page). The table shows each measure, the change, and whether B is better. The chart overlays both runs: A in yellow, B in blue, with bold one-second averages over faint per-frame lines. Use the picker to switch between frame time, FPS and (when both captures have them) GPU load, temperature, clock, video memory, power and latency. *Context* rows (GPU load, VRAM, temperature) are shown for information and are not scored. Change **one thing per run** so the result means something. The AI panel works here too.
+Pick the earlier run as **A** and the later one as **B** (load captures with the buttons, or from the Analyze page). The table shows each measure, the change, and whether B is better. The chart overlays both runs: A in yellow, B in blue, with bold one-second averages over faint per-frame lines. Use the picker to switch between frame time, FPS and (when both captures have them) GPU load, temperature, clock, video memory, power and latency. The **Result** column is colour-coded: green ↑ **Better**, red ↓ **Worse**. Rows marked **For reference** (GPU load, VRAM, temperature) are shown for information and are not scored. Change **one thing per run** so the result means something. The AI panel works here too.
 
 ## Exporting a report
 

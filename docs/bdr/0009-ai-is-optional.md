@@ -9,7 +9,7 @@ AI is the headline feature, but not everyone wants to connect one: some distrust
 
 ## Decision
 
-- AI is **off until the user turns it on** and configures an endpoint and a model. Without it, the app is fully useful: analysis, findings with suggestions, a ranked "What you can do" list, comparison, system and background checks.
+- AI is **off until the user turns it on** and configures an endpoint and a model. Without it, the app is fully useful: analysis, findings with suggestions, a ranked "Start here" list, comparison, system and background checks.
 - The AI panel stays the most prominent part of the page, and says plainly that AI is optional. It offers two routes: **connect an AI** (Set up AI) or **export an analysis pack** for the user's own AI.
 - The export pack is a single file: instructions, the exact measured data, and how to check the answer. It contains the same facts the built-in AI would see and nothing else.
 - Settings explain the API key honestly, including its limits, and offer "memory only" so no key is ever written to disk.

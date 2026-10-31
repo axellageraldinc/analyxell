@@ -87,7 +87,7 @@ try {
     Check 'capture opens from the command line' (WaitFor 'Sample Game' 30)
     Check 'metric cards are shown' ((HasText 'Average') -and (HasText 'Freezes'))
     Check 'device name is not displayed' (-not (HasText 'SAMPLE-DEVICE-NAME'))
-    Check 'a one-line verdict leads the page' ((Ui @('search', 'VerdictBar')) -match 'Found [1-9]' -and (HasText 'This run looks healthy'))
+    Check 'a one-line verdict leads the page' ((Ui @('search', 'VerdictBar')) -match 'Found [1-9]' -and (HasText 'fps on average'))
     Check 'the page is split into tabs' (((Ui @('search', 'TabOverview')) -match 'Found [1-9]') -and ((Ui @('search', 'TabAi')) -match 'Found [1-9]') -and ((Ui @('search', 'TabFindings')) -match 'Found [1-9]') -and ((Ui @('search', 'TabPc')) -match 'Found [1-9]') -and ((Ui @('search', 'TabBackground')) -match 'Found [1-9]'))
     Check 'the verdict offers Ask AI, and the overview does not hold the whole AI panel' (((Ui @('search', 'AskAiBarButton')) -match 'Found [1-9]') -and -not (HasText 'Anything the AI should know'))
     Check 'the header keeps Open and Recent visible and tucks the rest into More actions' (((Ui @('search', 'MoreActionsButton')) -match 'Found [1-9]') -and ((Ui @('search', 'RecentCapturesButton')) -match 'Found [1-9]'))
@@ -122,7 +122,7 @@ try {
     Check 'comparison summary is shown' (WaitFor 'B is better on' 10)
     Check 'a metric picker is offered and both runs are named in the legend' (((Ui @('search', 'CompareViewCombo')) -match 'Found [1-9]') -and (HasText 'baseline'))
     Check 'freezes are compared between the runs' (HasText 'Freezes (200 ms or more)')
-    Check 'context rows are not counted as better or worse' (HasText 'Context')
+    Check 'context rows are not counted as better or worse' (HasText 'For reference')
     Shot '3-compare'
 
     Write-Host 'Game library'
