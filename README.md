@@ -52,6 +52,21 @@ Requires Windows 10 (1809) or newer, x64. Nothing else needs to be installed.
 
 **Updating:** in **Settings > Updates**, press **Check for updates**. If a newer version exists, **Download update** gets the right file for how you installed it (the installer or the portable zip). Nothing is checked until you press the button.
 
+### Verify your download
+
+Every release includes a `SHA256SUMS.txt` file. To check that your download is exactly what was published, run this in PowerShell from the folder containing the file:
+
+```powershell
+Get-FileHash .\analyxell-<version>-portable-win-x64.zip -Algorithm SHA256
+```
+
+The hash must match the line for that file in `SHA256SUMS.txt`. You can also scan the file with Windows Security (right-click > **Scan with Microsoft Defender**) or paste its hash on [virustotal.com](https://www.virustotal.com) to see what other scanners say. The source is fully open, so you can also build it yourself.
+
+VirusTotal scan reports for the latest release (1.4.0), both with 0 detections:
+
+- [analyxell-1.4.0-portable-win-x64.zip](https://www.virustotal.com/gui/file/0cc3d154ef1ede6293a1ad39a67d83073a4a024660dd2e38112254d3b578d776)
+- [analyxell-1.4.0-win-x64.msix](https://www.virustotal.com/gui/file/167e59ebeb38e1c4cc169375f623c8cd0c7f96dabc271ade647008a25725ef33)
+
 ## Quick start
 
 1. Record a gameplay session with CapFrameX (it saves a `.json` capture).
