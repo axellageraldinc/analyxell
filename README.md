@@ -9,6 +9,14 @@
   Open a <a href="https://github.com/CXWorld/CapFrameX">CapFrameX</a> capture, see what happened, and get a plain-language explanation you can trust.
 </p>
 
+<p align="center">
+  <a href="../../actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/axellageraldinc/analyxell/ci.yml?branch=main&label=CI" alt="CI status"></a>
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/axellageraldinc/analyxell" alt="Latest release"></a>
+  <a href="https://www.virustotal.com/gui/file/0cc3d154ef1ede6293a1ad39a67d83073a4a024660dd2e38112254d3b578d776"><img src="https://img.shields.io/badge/VirusTotal-0%20detections-brightgreen" alt="VirusTotal: 0 detections"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/platform-Windows%2010%2B-0078D6" alt="Windows 10 or newer">
+</p>
+
 > **Status: 1.4.0.** The app works and is tested, but it has not been tried on many PCs yet, so please report what breaks.
 
 https://github.com/user-attachments/assets/385479e1-dacd-4d12-bb48-9569cb61646c
