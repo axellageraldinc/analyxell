@@ -9,7 +9,7 @@
   Open a <a href="https://github.com/CXWorld/CapFrameX">CapFrameX</a> capture, see what happened, and get a plain-language explanation you can trust.
 </p>
 
-> **Status: pre-release (0.3.1).** The app works and is tested, but it has not been tried on many PCs yet.
+> **Status: 1.0.0.** The app works and is tested, but it has not been tried on many PCs yet, so please report what breaks.
 
 ## What it does
 
@@ -39,7 +39,7 @@ Details: [docs/privacy.md](docs/privacy.md) and [ADR 0006](docs/adr/0006-read-on
 
 ## Install
 
-Pre-built downloads will appear on the [Releases](../../releases) page once the first version is published:
+Pre-built downloads are on the [Releases](../../releases) page:
 
 | Download | Use it when |
 |---|---|

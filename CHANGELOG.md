@@ -4,6 +4,15 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-31
+
+First stable release. Same features as 0.3.1; the repository is now public.
+
+### Changed
+
+- Version number is 1.0.0; the project is no longer marked pre-release.
+
+
 ## [0.3.1] - 2026-10-31
 
 ### Fixed
