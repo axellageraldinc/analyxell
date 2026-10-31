@@ -17,6 +17,7 @@ public sealed partial class AnalyzePage : Page
     {
         ViewModel = new AnalyzeViewModel();
         InitializeComponent();
+        PageLayout.Constrain(Scroller, PageContent, 1240);
         ViewModel.ChartChanged += OnChartChanged;
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         ViewModel.Ai.CheckRequested += OnCheckRequested;

@@ -15,6 +15,7 @@ public sealed partial class LibraryPage : Page
         ViewModel = new LibraryViewModel();
         ViewModel.Refresh();
         InitializeComponent();
+        PageLayout.Constrain(Scroller, PageContent, 1240);
         Loaded += async (_, _) => await ViewModel.ScanAsync();
     }
 

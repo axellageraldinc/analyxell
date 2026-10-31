@@ -1,3 +1,4 @@
+using Analyxell.Services;
 using Analyxell.Core.Analysis;
 using Analyxell.ViewModels;
 using Microsoft.UI.Xaml.Controls;
@@ -11,6 +12,7 @@ public sealed partial class ComparePage : Page
     {
         ViewModel = new CompareViewModel();
         InitializeComponent();
+        PageLayout.Constrain(Scroller, PageContent, 1240);
         ViewModel.ChartChanged += OnChartChanged;
         Loaded += (_, _) => ViewModel.RaiseChart();
     }

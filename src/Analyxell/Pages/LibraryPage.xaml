@@ -6,8 +6,8 @@
     xmlns:vm="using:Analyxell.ViewModels"
     NavigationCacheMode="Disabled">
 
-    <ScrollViewer>
-        <StackPanel Padding="32,8,32,32" Spacing="16" MaxWidth="1240" HorizontalAlignment="Stretch">
+    <ScrollViewer x:Name="Scroller">
+        <StackPanel x:Name="PageContent" Padding="32,8,32,32" Spacing="16">
             <Grid ColumnSpacing="16">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

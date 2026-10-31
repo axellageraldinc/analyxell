@@ -90,8 +90,8 @@
         </DataTemplate>
     </Page.Resources>
 
-    <ScrollViewer>
-        <StackPanel Padding="32,8,32,32" Spacing="16" MaxWidth="1240" HorizontalAlignment="Stretch">
+    <ScrollViewer x:Name="Scroller">
+        <StackPanel x:Name="PageContent" Padding="32,8,32,32" Spacing="16">
 
             <!-- Header -->
             <Grid ColumnSpacing="16">
