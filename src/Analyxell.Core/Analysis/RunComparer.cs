@@ -83,7 +83,35 @@ public static class RunComparer
         Optional("vram.used_max_gb", "Peak VRAM use", a.Bottleneck.VramUsedMaxGb, b.Bottleneck.VramUsedMaxGb, null, "GB");
         Optional("gpu.temp_max_c", "Peak GPU temperature", a.Bottleneck.GpuTempMax, b.Bottleneck.GpuTempMax, null, "\u00B0C");
 
+        // Drive activity: the busiest moment of each drive in both runs, and what it did around the freezes.
+        var drivesA = a.Run.FindSensors("Drive Total Activity", "Load").GroupBy(d => FreezeContextBuilder.HardwareOf(d.Id), StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        foreach (var driveB in b.Run.FindSensors("Drive Total Activity", "Load"))
+        {
+            var hw = FreezeContextBuilder.HardwareOf(driveB.Id);
+            if (drivesA.TryGetValue(hw, out var driveA))
+            {
+                var peakA = driveA.Values.Where(double.IsFinite).DefaultIfEmpty(double.NaN).Max();
+                var peakB = driveB.Values.Where(double.IsFinite).DefaultIfEmpty(double.NaN).Max();
+                if (double.IsFinite(peakA) && double.IsFinite(peakB))
+                {
+                    var kind = hw.StartsWith("nvme", StringComparison.OrdinalIgnoreCase) ? "NVMe drive" : "SATA or other drive";
+                    var number = hw.Contains('/') ? hw[(hw.IndexOf('/') + 1)..] : hw;
+                    rows.Add(new ComparisonRow("drive.peak_activity." + CaptureAnalyzer.Slug(hw), $"{kind} {number} peak activity", peakA, peakB, null, "%"));
+                }
+            }
+        }
+
         var facts = new Dictionary<string, string>();
+        foreach (var (prefix, result) in new[] { ("a.", a), ("b.", b) })
+        {
+            foreach (var drive in result.FreezeContext?.Drives ?? [])
+            {
+                var key = prefix + "freeze_ctx." + CaptureAnalyzer.Slug(drive.Label);
+                facts[key + ".at_freeze_max"] = drive.AtFreezeMax.ToString("0.#", CultureInfo.InvariantCulture);
+                facts[key + ".overall_avg"] = drive.OverallAverage.ToString("0.#", CultureInfo.InvariantCulture);
+            }
+        }
+
         foreach (var row in rows)
         {
             facts[$"a.{row.Key}"] = row.A.ToString("0.#", CultureInfo.InvariantCulture);

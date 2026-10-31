@@ -4,6 +4,12 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-31
+
+### Added
+
+- **Drive activity in Compare.** Compare now shows each drive's peak activity in both runs, and the AI gets the drive activity around freezes for both runs. It no longer tells you to record drive activity when the captures already have it.
+
 ## [1.1.2] - 2026-10-31
 
 ### Fixed

@@ -96,7 +96,7 @@ public static class FreezeContextBuilder
     }
 
     /// <summary>"/nvme/1/load/33" becomes "nvme/1".</summary>
-    private static string HardwareOf(string id)
+    public static string HardwareOf(string id)
     {
         var parts = id.Trim('/').Split('/');
         return parts.Length >= 2 ? $"{parts[0]}/{parts[1]}" : id;
