@@ -4,6 +4,8 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-31
+
 ### Added
 
 - **Ryzen and NVIDIA findings that work for any game and any model.** A hitch-rhythm check (`PERIODIC_HITCHES`, with the fTPM hint on Ryzen); two-chiplet X3D games running on the cores without the extra cache; CPUs that never reach their rated boost, or boost past it (PBO or an overclock); a missing AMD chipset or V-Cache driver; DDR5 above Ryzen's sweet spot; GPU clocks dropping at light load; a GPU overclock, lowered power limit or probable undervolt; frame generation with hardware GPU scheduling off; and games that ship DLSS on a GPU-limited RTX card.

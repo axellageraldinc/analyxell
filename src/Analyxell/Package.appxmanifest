@@ -11,7 +11,7 @@
   <Identity
     Name="axellageraldinc.Analyxell"
     Publisher="CN=axellageraldinc"
-    Version="1.0.2.0" />
+    Version="1.0.3.0" />
 
   <mp:PhoneIdentity PhoneProductId="2990645D-7119-44E7-82CD-8CC43226F710" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
