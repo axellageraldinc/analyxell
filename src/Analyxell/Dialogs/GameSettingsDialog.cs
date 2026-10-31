@@ -112,7 +112,7 @@ internal static class GameSettingsDialog
         // Tab 2: import from a config file with the user's AI.
         RedactedText? redacted = null;
         string fileName = "";
-        var preview = new TextBox { IsReadOnly = true, AcceptsReturn = true, Height = 130, FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"), FontSize = 12, TextWrapping = TextWrapping.NoWrap };
+        var preview = new TextBox { IsReadOnly = true, AcceptsReturn = true, Height = 110, FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"), FontSize = 12, TextWrapping = TextWrapping.NoWrap };
         var send = new Button { Content = "Send this to my AI and extract the settings", IsEnabled = false };
         AutomationProperties.SetAutomationId(send, "GameSettingsAiButton");
         var choose = new Button { Content = "Choose the game's config file..." };
@@ -252,7 +252,7 @@ internal static class GameSettingsDialog
         importTab.Children.Add(send);
         importTab.Children.Add(progress);
 
-        var pivot = new Pivot { Height = 330 };
+        var pivot = new Pivot { Height = 420 };
         pivot.Items.Add(new PivotItem { Header = "Type or paste", Content = pasteTab });
         pivot.Items.Add(new PivotItem { Header = "Import with my AI", Content = importTab });
 

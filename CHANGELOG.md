@@ -4,6 +4,12 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-10-31
+
+### Fixed
+
+- **Game settings dialog no longer cuts off buttons.** On the "Import with my AI" tab the "Send this to my AI" button was clipped below the file preview. The tab is now tall enough to show everything.
+
 ## [1.1.1] - 2026-10-31
 
 ### Fixed
