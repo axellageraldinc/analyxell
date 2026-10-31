@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using Analyxell.Core.Analysis;
+using Analyxell.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -259,16 +260,6 @@ public sealed partial class FrameTimeChart : UserControl
         });
     }
 
-    // Colours per kind of moment; theme resource keys so they follow light and dark mode.
-    private static string EventBrush(EventKind kind) => kind switch
-    {
-        EventKind.Freezes => "SystemFillColorCriticalBrush",
-        EventKind.Stutters => "SystemFillColorCautionBrush",
-        EventKind.FpsDrops => "SystemFillColorCautionBrush",
-        EventKind.DroppedFrames => "TextFillColorSecondaryBrush",
-        _ => "SystemFillColorAttentionBrush",
-    };
-
     /// <summary>FPS drops are shaded behind the lines; tearing possible is a solid bar along the bottom so it stays visible even when it covers the whole run.</summary>
     private void DrawBands()
     {
@@ -278,13 +269,21 @@ public sealed partial class FrameTimeChart : UserControl
             {
                 var x1 = X(Math.Min(e.StartSec, _tMax));
                 var x2 = Math.Max(x1 + 2, X(Math.Min(e.EndSec, _tMax)));
+                var brush = EventStyles.Brush(layer.Kind);
                 if (layer.Kind == EventKind.TearingPossible)
                 {
-                    Plot.Children.Add(new Rectangle { Width = x2 - x1, Height = 5, Fill = Brush(EventBrush(layer.Kind)) }.At(x1, _plot.Y + _plot.Height - 5));
+                    // A solid bar with taller end caps along the bottom.
+                    Plot.Children.Add(new Rectangle { Width = x2 - x1, Height = 6, Fill = brush }.At(x1, _plot.Y + _plot.Height - 6));
+                    Plot.Children.Add(new Rectangle { Width = 3, Height = 14, Fill = brush }.At(x1, _plot.Y + _plot.Height - 14));
+                    Plot.Children.Add(new Rectangle { Width = 3, Height = 14, Fill = brush }.At(Math.Max(x1, x2 - 3), _plot.Y + _plot.Height - 14));
                 }
                 else
                 {
-                    Plot.Children.Add(new Rectangle { Width = x2 - x1, Height = _plot.Height, Fill = Brush(EventBrush(layer.Kind)), Opacity = 0.18 }.At(x1, _plot.Y));
+                    // A shaded stretch with a solid strip along the top and a line at each edge.
+                    Plot.Children.Add(new Rectangle { Width = x2 - x1, Height = _plot.Height, Fill = brush, Opacity = 0.22 }.At(x1, _plot.Y));
+                    Plot.Children.Add(new Rectangle { Width = x2 - x1, Height = 5, Fill = brush }.At(x1, _plot.Y));
+                    Plot.Children.Add(new Rectangle { Width = 2, Height = _plot.Height, Fill = brush, Opacity = 0.8 }.At(x1, _plot.Y));
+                    Plot.Children.Add(new Rectangle { Width = 2, Height = _plot.Height, Fill = brush, Opacity = 0.8 }.At(Math.Max(x1, x2 - 2), _plot.Y));
                 }
             }
         }
@@ -295,23 +294,45 @@ public sealed partial class FrameTimeChart : UserControl
     {
         foreach (var layer in _layers.Where(l => !l.IsSpan))
         {
-            var key = EventBrush(layer.Kind);
+            var brush = EventStyles.Brush(layer.Kind);
+            var top = _plot.Y;
+            var bottom = _plot.Y + _plot.Height;
             foreach (var e in layer.Events)
             {
                 var x = X(e.StartSec);
-                if (layer.Kind == EventKind.Freezes)
+
+                // Every kind has its own colour (none used by a data line) and its own shape, and a line through
+                // the whole plot so the moment can be traced down to the curve.
+                void Guide(double opacity, double[]? dashes)
                 {
-                    AddLine(x, _plot.Y, x, _plot.Y + _plot.Height, key, 1, [2, 3]);
-                    Plot.Children.Add(new Polygon
+                    var line = new Line { X1 = x, Y1 = top, X2 = x, Y2 = bottom, Stroke = brush, StrokeThickness = 1, Opacity = opacity };
+                    if (dashes is not null)
                     {
-                        Points = [new Point(x - 4, _plot.Y), new Point(x + 4, _plot.Y), new Point(x, _plot.Y + 7)],
-                        Fill = Brush(key),
-                    });
+                        line.StrokeDashArray = [.. dashes];
+                    }
+
+                    Plot.Children.Add(line);
                 }
-                else
+
+                switch (layer.Kind)
                 {
-                    var tall = layer.Kind == EventKind.Stutters ? 12 : 7;
-                    AddLine(x, _plot.Y + _plot.Height - 8 - tall, x, _plot.Y + _plot.Height - 8, key, 1.5, null);
+                    case EventKind.Freezes:
+                        // Dashed line, large downward triangle on top.
+                        Guide(0.75, [3, 3]);
+                        Plot.Children.Add(new Polygon { Points = [new Point(x - 6, top), new Point(x + 6, top), new Point(x, top + 11)], Fill = brush });
+                        break;
+                    case EventKind.Stutters:
+                        // Solid faint line, pentagon flag on top, thick tick at the bottom.
+                        Guide(0.4, null);
+                        Plot.Children.Add(new Polygon { Points = [new Point(x - 4, top), new Point(x + 4, top), new Point(x + 4, top + 8), new Point(x, top + 12), new Point(x - 4, top + 8)], Fill = brush });
+                        Plot.Children.Add(new Rectangle { Width = 3, Height = 12, Fill = brush }.At(x - 1.5, bottom - 12));
+                        break;
+                    default:
+                        // Dropped frames: dotted line, diamond on top and at the bottom.
+                        Guide(0.55, [1, 3]);
+                        Plot.Children.Add(new Polygon { Points = [new Point(x, top), new Point(x + 5, top + 5), new Point(x, top + 10), new Point(x - 5, top + 5)], Fill = brush });
+                        Plot.Children.Add(new Polygon { Points = [new Point(x, bottom - 10), new Point(x + 5, bottom - 5), new Point(x, bottom), new Point(x - 5, bottom - 5)], Fill = brush });
+                        break;
                 }
             }
         }

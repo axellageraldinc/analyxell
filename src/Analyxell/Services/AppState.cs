@@ -93,6 +93,50 @@ internal static class AppState
         return updated;
     }
 
+    /// <summary>
+    /// Re-reads every loaded capture that came from a file, so changes on disk show up. Entries whose file is gone
+    /// or unreadable are left as they were. Returns how many were reloaded.
+    /// </summary>
+    public static async Task<int> RefreshLoadedAsync()
+    {
+        var count = 0;
+        foreach (var current in Loaded.ToList())
+        {
+            if (current.Path.Length == 0 || !File.Exists(current.Path))
+            {
+                continue;
+            }
+
+            try
+            {
+                var updated = await Task.Run(() =>
+                {
+                    var file = CaptureReader.Load(current.Path);
+                    var analyzed = Analyze(file, current.Background);
+                    return current with { Name = file.DisplayName, File = file, Result = analyzed.Result, SettingsNote = analyzed.Note, LiveConfig = analyzed.LiveConfig };
+                });
+
+                var index = Loaded.IndexOf(current);
+                if (index >= 0)
+                {
+                    Loaded[index] = updated;
+                }
+
+                if (ReferenceEquals(Selected, current))
+                {
+                    Selected = updated;
+                }
+
+                count++;
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException or UnauthorizedAccessException)
+            {
+            }
+        }
+
+        return count;
+    }
+
     private sealed record Analyzed(AnalysisResult Result, string? Note, GameSettings? LiveConfig);
 
     /// <summary>Saves settings for one capture, so later changes to the game's config never change this capture's analysis.</summary>

@@ -65,6 +65,9 @@ public sealed partial class EventToggle(EventLayer layer, bool isOn, Action chan
 
     public string Text => $"{Layer.Label} ({Layer.CountText})";
 
+    /// <summary>The colour this kind of moment has on the chart, so the switch doubles as the key.</summary>
+    public Microsoft.UI.Xaml.Media.Brush Swatch { get; } = Analyxell.Services.EventStyles.Brush(layer.Kind);
+
     [ObservableProperty]
     public partial bool IsOn { get; set; } = isOn;
 
@@ -388,6 +391,27 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         }
     }
 
+    /// <summary>Re-reads the loaded capture files from disk and refreshes the recent-captures list.</summary>
+    [RelayCommand]
+    private async Task RefreshAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            await AppState.RefreshLoadedAsync();
+            if (AppState.Selected is { } selected)
+            {
+                Show(selected, keepView: true);
+            }
+
+            await RefreshCatalogAsync();
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
     [RelayCommand]
     private async Task RefreshCatalogAsync()
     {
@@ -500,8 +524,8 @@ public sealed partial class AnalyzeViewModel : ObservableObject
             (f.Severity >= Severity.Medium ? AttentionFindings : NoteFindings).Add(item);
         }
 
-        var attention = r.Findings.Count(f => f.Severity >= Severity.Low);
-        FindingsTabText = attention > 0 ? $"Findings ({attention})" : "Findings";
+        var shown = AttentionFindings.Count + NoteFindings.Count;
+        FindingsTabText = shown > 0 ? $"Findings ({shown})" : "Findings";
         NotesHeader = NoteFindings.Count == 1 ? "1 other note" : $"{NoteFindings.Count} other notes";
         NotesExpanded = AttentionFindings.Count == 0;
 

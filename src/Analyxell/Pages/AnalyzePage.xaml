@@ -108,6 +108,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <Button AutomationProperties.AutomationId="OpenCaptureButton" Content="Open capture..." Command="{x:Bind ViewModel.OpenFileCommand, Mode=OneTime}" Style="{StaticResource AccentButtonStyle}" />
+                    <Button AutomationProperties.AutomationId="RefreshButton" Content="Refresh" Command="{x:Bind ViewModel.RefreshCommand, Mode=OneTime}" />
                     <DropDownButton x:Name="RecentButton" AutomationProperties.AutomationId="RecentCapturesButton" Content="Recent captures" Click="RecentButton_Click">
                         <DropDownButton.Flyout>
                             <Flyout Placement="BottomEdgeAlignedRight">
@@ -380,11 +381,14 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="vm:EventToggle">
-                                            <CheckBox
-                                                Content="{x:Bind Text, Mode=OneTime}"
-                                                IsChecked="{x:Bind IsOn, Mode=TwoWay}"
-                                                AutomationProperties.AutomationId="{x:Bind Text, Mode=OneTime}"
-                                                MinWidth="0" />
+                                            <StackPanel Orientation="Horizontal" Spacing="2">
+                                                <CheckBox
+                                                    Content="{x:Bind Text, Mode=OneTime}"
+                                                    IsChecked="{x:Bind IsOn, Mode=TwoWay}"
+                                                    AutomationProperties.AutomationId="{x:Bind Text, Mode=OneTime}"
+                                                    MinWidth="0" />
+                                                <Rectangle Width="4" Height="16" RadiusX="2" RadiusY="2" Fill="{x:Bind Swatch, Mode=OneTime}" VerticalAlignment="Center" />
+                                            </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>

@@ -10,13 +10,25 @@
 
     <ScrollViewer x:Name="Scroller">
         <StackPanel x:Name="PageContent" Padding="32,8,32,32" Spacing="16">
-            <StackPanel Spacing="2">
-                <TextBlock Text="Compare two runs" Style="{StaticResource TitleTextBlockStyle}" />
-                <TextBlock
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    TextWrapping="Wrap"
-                    Text="Use it to check whether a change helped, for example turning a setting off. Pick the earlier run as A and the later run as B." />
-            </StackPanel>
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Compare two runs" Style="{StaticResource TitleTextBlockStyle}" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        TextWrapping="Wrap"
+                        Text="Use it to check whether a change helped, for example turning a setting off. Pick the earlier run as A and the later run as B." />
+                </StackPanel>
+                <Button
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="RefreshButton"
+                    Content="Refresh"
+                    Command="{x:Bind ViewModel.RefreshCommand, Mode=OneTime}" />
+            </Grid>
 
             <Grid ColumnSpacing="16">
                 <Grid.ColumnDefinitions>
@@ -26,6 +38,7 @@
 
                 <StackPanel Spacing="8">
                     <ComboBox
+                        x:Name="BaselineCombo"
                         AutomationProperties.AutomationId="BaselineCombo"
                         Header="A: baseline"
                         HorizontalAlignment="Stretch"
@@ -38,6 +51,7 @@
 
                 <StackPanel Grid.Column="1" Spacing="8">
                     <ComboBox
+                        x:Name="LaterCombo"
                         AutomationProperties.AutomationId="LaterCombo"
                         Header="B: later run"
                         HorizontalAlignment="Stretch"

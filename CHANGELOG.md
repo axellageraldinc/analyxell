@@ -4,6 +4,18 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-31
+
+### Added
+
+- **Refresh button on Analyze and Compare.** It re-reads the loaded capture files from disk and re-runs the analysis; on Analyze it also refreshes the recent captures list.
+- **Every chart marker is now distinctive.** Freezes (red), stutters (magenta), dropped frames (violet), FPS drops (orange) and tearing (cyan) each have their own colour and shape, a line through the whole chart so a moment can be traced to the curve, and none uses a colour that a data line uses. The switches under the chart show the matching colour.
+
+### Fixed
+
+- **New captures now appear in Compare without restarting the app.** The lists are refreshed each time you open the page.
+- **The Findings tab count now matches the findings on the page**, including the "other notes".
+
 ## [1.2.0] - 2026-10-31
 
 ### Added

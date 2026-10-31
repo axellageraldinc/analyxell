@@ -86,6 +86,25 @@ public sealed partial class CompareViewModel : ObservableObject
 
     public bool HasChangesNote => ChangesNote.Length > 0;
 
+    /// <summary>Re-points A and B at the current entries of the loaded list (a re-analysis replaces the entry).</summary>
+    public void SyncWithLoaded()
+    {
+        A = Current(A);
+        B = Current(B);
+
+        static LoadedCapture? Current(LoadedCapture? c) =>
+            c is null || AppState.Loaded.Contains(c)
+                ? c
+                : AppState.Loaded.FirstOrDefault(l => c.Path.Length > 0 && string.Equals(l.Path, c.Path, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [RelayCommand]
+    private async Task RefreshAsync()
+    {
+        await AppState.RefreshLoadedAsync();
+        SyncWithLoaded();
+    }
+
     partial void OnAChanged(LoadedCapture? value) => Recompute();
 
     partial void OnBChanged(LoadedCapture? value) => Recompute();

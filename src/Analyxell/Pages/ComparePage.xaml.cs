@@ -22,6 +22,16 @@ public sealed partial class ComparePage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        // The page is cached, so re-bind the lists to pick up captures loaded since it was last shown.
+        ViewModel.SyncWithLoaded();
+        foreach (var combo in new[] { BaselineCombo, LaterCombo })
+        {
+            var selected = combo.SelectedItem;
+            combo.ItemsSource = null;
+            combo.ItemsSource = ViewModel.Loaded;
+            combo.SelectedItem = selected;
+        }
+
         ViewModel.Ai.RefreshPreview();
     }
 
