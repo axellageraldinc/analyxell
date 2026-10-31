@@ -4,6 +4,12 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-31
+
+### Fixed
+
+- The 1% low and 0.1% low cards no longer wrap and clip their caption ("fps, 100% of avg"); cards keep a minimum height.
+
 ## [0.3.0] - 2026-10-31
 
 ### Added

@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <line x1="32" y1="180" x2="224" y2="180" stroke="rgba(21, 41, 74, 0.2)" stroke-width="4" stroke-dasharray="4 8" stroke-linecap="round" />
-  <path d="M 32 156 Q 64 116, 96 156 Q 112 176, 128 156 M 128 156 L 152 70 L 176 156 M 176 156 Q 200 186, 224 146" fill="none" stroke="#15294A" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M 152 20 Q 152 45, 132 45 Q 152 45, 152 70 Q 152 45, 172 45 Q 152 45, 152 20 Z" fill="#15294A" />
-</svg>

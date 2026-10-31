@@ -17,7 +17,7 @@
   pwsh -File scripts\package.ps1 -Version 0.1.0
 #>
 param(
-    [string]$Version = '0.3.0',
+    [string]$Version = '0.3.1',
     [string]$CertPath = '',
     [string]$CertPassword = 'password',
     [ValidateSet('x64', 'arm64')]

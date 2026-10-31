@@ -15,7 +15,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Border x:Name="Edge" CornerRadius="7,0,0,7" />
-            <StackPanel Grid.Column="1" Padding="12,12,16,12" Spacing="2">
+            <StackPanel Grid.Column="1" Padding="12,12,12,12" Spacing="2" MinHeight="96">
                 <TextBlock
                     Text="{x:Bind Title, Mode=OneWay}"
                     Style="{StaticResource CaptionTextBlockStyle}"

@@ -823,7 +823,7 @@ public sealed partial class AnalyzeViewModel : ObservableObject
             : AppServices.CreateAnalyst().AnalyzeAsync(Current.Result, note, ct);
 
     private static string Share(double low, double average) =>
-        average > 0 ? $"{low / average * 100:0}% of average" : "slowest frames";
+        average > 0 ? $"{low / average * 100:0}% of avg" : "slowest frames";
 
     private static MetricLevel LowLevel(double low, double average, double badFps, double warnFps, double badRatio, double warnRatio)
     {
