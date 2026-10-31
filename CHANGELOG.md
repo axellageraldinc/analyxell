@@ -4,6 +4,18 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+### Added
+
+- **Ryzen and NVIDIA findings that work for any game and any model.** A hitch-rhythm check (`PERIODIC_HITCHES`, with the fTPM hint on Ryzen); two-chiplet X3D games running on the cores without the extra cache; CPUs that never reach their rated boost, or boost past it (PBO or an overclock); a missing AMD chipset or V-Cache driver; DDR5 above Ryzen's sweet spot; GPU clocks dropping at light load; a GPU overclock, lowered power limit or probable undervolt; frame generation with hardware GPU scheduling off; and games that ship DLSS on a GPU-limited RTX card.
+- **Unstable tuning shows up.** Windows' own count of hardware errors (WHEA) and graphics driver resets over the last 30 days becomes a finding, which is the honest sign of an unstable Curve Optimizer, PBO, overclock, undervolt or memory profile.
+- New read-only probes (listed in the privacy page): the NVIDIA driver's clock offsets and power limit, the Windows error log counts, AMD driver presence, and the DLL names in the game's folder.
+
+### Changed
+
+- **Tearing is no longer reported as a fault on the game's request alone.** Modern games send every frame with VSync off even with G-SYNC or driver VSync on, so a flat 100% never meant tearing. analyxell now checks whether frames land exactly on the display refresh (VSync applied by the driver), says "cannot judge" when there is no refresh-rate reading or answer in PC setup, and the chart bar is labelled "VSync off (game request)".
+- **Heat thresholds follow the hardware.** Ryzen 7000 and 9000 may reach about 95 °C by design; NVIDIA cards are flagged at 88 °C, not 85, and thermal throttling needs 91 °C without the driver's flag; GDDR6X memory is flagged at 104 °C. A desktop card at its power limit under full load is GPU-bound, not a power fault.
+- **Analyze page.** The verdict card carries **Ask AI**; "What you can do" comes before the chart; capture quality, a tracked change and a newer capture share one slim card; metric cards show good, warning or bad at a glance, with the 1% and 0.1% lows as a share of the average; stutters are on the chart by default; findings show how serious they are; the header keeps Open and Recent visible and moves the rest under a **...** menu.
+
 ## [0.2.0] - 2026-10-31
 
 ### Changed

@@ -173,7 +173,12 @@ public sealed partial class FrameTimeChart : UserControl
             AddText(Label(v), 4, Y(v) - 8, "TextFillColorSecondaryBrush");
         }
 
-        foreach (var reference in _spec!.References)
+        if (_spec!.Unit.Length > 0)
+        {
+            AddText(_spec.Unit, 4, _plot.Y - 20, "TextFillColorSecondaryBrush");
+        }
+
+        foreach (var reference in _spec.References)
         {
             if (reference.Value > _yMin && reference.Value < _yMax)
             {

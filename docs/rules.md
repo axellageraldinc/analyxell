@@ -25,11 +25,11 @@ Thresholds are conservative rules of thumb, not guarantees. Hardware limits vary
 | `CPU_BOUND` | busiest CPU thread 90%+ while GPU load is under 85%: "The CPU is holding the GPU back" | Medium under 60 fps, else Info |
 | `CPU_SINGLE_THREAD` | CPU-bound, busiest thread 85%+, whole CPU 60% or less | Medium under 60 fps, else Low |
 | `CPU_LIMITED_MOMENTS` | not CPU-bound overall, but 15%+ of samples had a maxed thread and a GPU under 85% | Low / Medium (30%+) |
-| `THERMAL` | GPU thermal limit flag in 5% or more of samples, or GPU at 87 °C or more | High |
-| `POWER_LIMIT` | GPU power limit flag in 25% or more of samples | Medium |
-| `GPU_HOT` | GPU 85 °C or more (90 is High), or hot spot 95 °C or more | Medium / High |
-| `CPU_HOT` | CPU package 90 °C or more (95 is High) | Medium / High |
-| `VRAM_HOT` | video memory junction 95 °C or more | Medium |
+| `THERMAL` | GPU thermal limit flag in 5% or more of samples, or GPU at 91 °C or more | High |
+| `POWER_LIMIT` | GPU power limit flag in 25% or more of samples while the GPU is not flat out (a card at full load that also hits its power limit is simply GPU-bound) | Low on a desktop card, Medium on a laptop |
+| `GPU_HOT` | GPU 88 °C or more on NVIDIA, 85 on others (92 / 90 is High), or hot spot 95 °C or more | Medium / High |
+| `CPU_HOT` | CPU package 90 °C or more (95 is High). Ryzen 7000 and 9000 are built to boost until about 95 °C, so for them it needs 97 °C (99 is High) | Medium / High |
+| `VRAM_HOT` | video memory junction 95 °C or more; 104 °C for GDDR6X cards (RTX 3070 Ti and up, 4070 and up), which are rated for it | Medium |
 | `VRAM_PRESSURE` | peak video memory 85% or more of the card's total (95 is High) | Medium / High |
 | `RAM_PRESSURE` | system memory peaked at 92% or more | Medium |
 | `COMMIT_PRESSURE` | Windows memory commit averaged 90% or more | Low |
@@ -52,10 +52,12 @@ Thresholds are conservative rules of thumb, not guarantees. Hardware limits vary
 
 | Rule | Fires when | Severity |
 |---|---|---|
-| `TEARING_POSSIBLE` | frames presented with tearing allowed and no sync (90%+), and no sign of variable refresh | Medium |
+| `TEARING_POSSIBLE` | frames presented with tearing allowed and no sync (90%+), a refresh-rate reading that stays fixed, frames not on the refresh grid, and no variable refresh entered | Medium |
 | `TEARING_ABOVE_RANGE` | variable refresh is active but 5% or more of frames exceed the display's maximum refresh | Medium |
 | `TEARING_UNLIKELY` | sync is off but variable refresh is active and the game stays in range | Info |
 | `TEARING_HANDLED_BY_DRIVER` | you entered VSync as on in the driver (or fast/adaptive). A driver override happens after the game, where a capture cannot see it, so your entry is believed and the tearing rules stay quiet | Info |
+| `VSYNC_DETECTED` | the game asked for no VSync, but 90%+ of frames reached the screen exactly on a refresh. That pattern means the driver applied VSync, so tearing is unlikely | Info |
+| `TEARING_UNKNOWN` | the game asked for no VSync, the capture has no refresh-rate reading, and you have not entered your display sync or VSync. Most modern games send every frame this way even with G-SYNC on, so it says what to check instead of guessing | Info |
 | `VSYNC_ENTERED_BUT_NOT_SEEN` | you entered in-game VSync as on, but the capture shows none | Info |
 | `COMPOSED_PRESENT` | the capture says the game was presented through the desktop compositor and it hitches | Low |
 | `HIGH_LATENCY` | estimated input-to-display latency averages 60 ms or more, or its 95th percentile reaches 100 ms | Medium / Low |
@@ -82,6 +84,31 @@ Tearing: a capture cannot show tearing itself, only the conditions for it, and t
 | `FRAME_GENERATION_ON` | frame generation is on and the game hitches, pacing is uneven (99th percentile animation error 8 ms+) or latency averages 50 ms+. A hypothesis to test | Low |
 | `REFLEX_OFF` | low latency mode is off, the GPU is the limit and latency averages 40 ms+ | Low |
 | `RAY_TRACING_WITH_HITCHES` | the game's settings show ray tracing on and the capture hitches | Medium (a hypothesis to test) |
+
+## Ryzen, NVIDIA and unstable tuning
+
+These read the CPU and GPU model names, so they work for any Ryzen and any GeForce, not for one PC. They do not depend on a game's settings file, which is what makes them useful for games analyxell has no reader for.
+
+| Rule | Fires when | Severity |
+|---|---|---|
+| `PERIODIC_HITCHES` | six or more freezes or stutters whose gaps are within 15% of each other (3 s to 15 min apart). A steady rhythm points at something on a timer, not at the game. Adds the fTPM hint on Ryzen when 20 s or more apart | Medium |
+| `VCACHE_WRONG_CHIPLET` | a two-chiplet X3D (7900X3D, 7950X3D, 9900X3D, 9950X3D) with hitches or a CPU limit, where the cores without the extra cache are 30%+ busier than the cache cores. A likely explanation from core load | Medium |
+| `CHIPLET_SPLIT` | a two-chiplet Ryzen 9 with both halves 20%+ busy and within 1.7x of each other, with hitches or a CPU limit. A possible cause to test | Low |
+| `CPU_BELOW_BOOST` | the game is CPU-limited yet the fastest core peaked under 93% of the model's rated boost | Medium |
+| `CPU_ABOVE_RATED` | the fastest core reached 150 MHz or more above the rated boost: PBO or an overclock. Information; a retest hint appears only if the game hitches | Info |
+| `AMD_CHIPSET_MISSING` | no "AMD Chipset" program is installed on a Ryzen PC | Low / Medium (hitches or CPU-limited) |
+| `RAM_ABOVE_SWEET_SPOT` | Ryzen 7000 or 9000 desktop with memory at DDR5-7200 or faster, where the memory controller drops to half speed | Low |
+| `GPU_CLOCK_DROPS` | NVIDIA, hitches, GPU only 35-85% loaded, and the slowest tenth of core clocks under 60% of the usual best | Low |
+| `GPU_OVERCLOCKED` | the driver reports a core offset of +50 MHz or more, a memory offset of +200 MHz or more, or the capture's peak core clock is 45 MHz past the card's stock maximum | Info (Low with hitches) |
+| `GPU_CLOCKS_LOWERED` | the driver reports a core offset of -50 MHz or lower | Low |
+| `GPU_POWER_LIMIT_LOWERED` | the power limit is under 97% of the card's default | Medium when GPU-limited, else Low |
+| `UNDERVOLT_LIKELY` | at 95%+ GPU load the card held its clock (slowest tenth within 5% of the best) while drawing under 80% of its power limit and rarely hitting it. An inference: voltage curves cannot be read | Info |
+| `HAGS_OFF_WITH_FRAMEGEN` | frame generation is on, the card supports DLSS frame generation (RTX 40 or newer) and hardware GPU scheduling is off | Low |
+| `UPSCALER_AVAILABLE` | the game's folder holds DLSS files, the card is an RTX, the GPU is the limit under 60 fps and the game's settings are unknown. Adds frame generation (and multi frame generation on RTX 50) when the card supports it and 40+ fps are rendered | Low |
+| `HARDWARE_ERRORS_LOGGED` | Windows logged WHEA hardware errors in the last 30 days (3 or more is Medium). The honest sign of an unstable Curve Optimizer, PBO, overclock or EXPO profile | Low / Medium |
+| `DISPLAY_DRIVER_RESETS` | Windows logged event 4101 (display driver stopped responding) in the last 30 days | Low / Medium |
+
+Not readable, and so not claimed: a custom GPU voltage curve, the CPU's Curve Optimizer or PBO settings, and whether DLSS or Ray Reconstruction is switched on (only whether the game ships them, from its files, or what you or a settings reader say).
 
 ## Programs competing with the game
 

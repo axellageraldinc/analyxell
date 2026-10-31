@@ -22,9 +22,11 @@ public sealed record ExtraSignals(
     double? RamUsageMaxPct,
     double? VirtualMemAvgPct,
     double? VirtualMemMaxPct,
-    double? MemJunctionMaxC)
+    double? MemJunctionMaxC,
+    double? SyncQuantizedPct = null)
 {
-    public static ExtraSignals Compute(CaptureRun run)
+    /// <param name="fallbackRefreshHz">The display mode Windows reports now, used when the capture has no refresh-rate sensor.</param>
+    public static ExtraSignals Compute(CaptureRun run, double? fallbackRefreshHz = null)
     {
         double? refMin = null, refMax = null;
         var vrr = false;
@@ -76,7 +78,36 @@ public sealed record ExtraSignals(
             latency.Length == 0 ? null : latency[^1],
             anim.Length == 0 ? null : anim.Average(),
             anim.Length == 0 ? null : Stats.Percentile(anim, 0.99),
-            ram?.Average, ram?.Max, virt?.Average, virt?.Max, junction?.Max);
+            ram?.Average, ram?.Max, virt?.Average, virt?.Max, junction?.Max,
+            vrr ? null : SyncQuantized(run, refMax ?? fallbackRefreshHz));
+    }
+
+    /// <summary>
+    /// With VSync on, the display only changes on a refresh, so nearly every gap between displayed frames is a whole
+    /// number of refresh periods. Without VSync, or with variable refresh, the gaps are continuous. This is what lets a
+    /// capture show that VSync is on even when the driver, not the game, applied it.
+    /// </summary>
+    private static double? SyncQuantized(CaptureRun run, double? hz)
+    {
+        if (hz is not > 20)
+        {
+            return null;
+        }
+
+        var gaps = (run.DisplayMs.Length >= 600 ? run.DisplayMs : run.FrameMs).Where(v => double.IsFinite(v) && v > 0).ToArray();
+        if (gaps.Length < 600)
+        {
+            return null;
+        }
+
+        var period = 1000.0 / hz.Value;
+        var onGrid = gaps.Count(g =>
+        {
+            var ratio = g / period;
+            var whole = Math.Round(ratio);
+            return whole >= 1 && Math.Abs(ratio - whole) <= 0.05;
+        });
+        return onGrid * 100.0 / gaps.Length;
     }
 
     private static IEnumerable<double> Finite(double[] values) => values.Where(double.IsFinite);

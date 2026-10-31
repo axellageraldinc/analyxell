@@ -17,9 +17,36 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace Analyxell.ViewModels;
 
-public sealed record MetricItem(string Title, string Value, string Caption);
+/// <summary>How a measurement reads at a glance; the card shows it as a coloured edge.</summary>
+public enum MetricLevel
+{
+    Neutral,
+    Good,
+    Warning,
+    Bad,
+    Focus,
+}
 
-public sealed record FindingItem(string Title, string Detail, string Evidence, InfoBarSeverity Severity, string Suggestions, bool HasSuggestions);
+public sealed record MetricItem(string Title, string Value, string Caption, MetricLevel Level = MetricLevel.Neutral);
+
+public sealed record FindingItem(string Title, string Detail, string Evidence, InfoBarSeverity Severity, string Suggestions, bool HasSuggestions)
+{
+    public MetricLevel Level => Severity switch
+    {
+        InfoBarSeverity.Error => MetricLevel.Bad,
+        InfoBarSeverity.Warning => MetricLevel.Warning,
+        InfoBarSeverity.Success => MetricLevel.Good,
+        _ => MetricLevel.Neutral,
+    };
+
+    public string Badge => Severity switch
+    {
+        InfoBarSeverity.Error => "Fix first",
+        InfoBarSeverity.Warning => "Worth fixing",
+        InfoBarSeverity.Success => "Good",
+        _ => "Note",
+    };
+}
 
 public sealed record SettingRow(string Label, string Value, string Source);
 
@@ -86,7 +113,7 @@ public sealed partial class AnalyzeViewModel : ObservableObject
 
     // The change the user said they would try, and what came of it.
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasExperiment))]
+    [NotifyPropertyChangedFor(nameof(HasExperiment), nameof(HasNotices))]
     public partial string ExperimentTitle { get; set; } = "";
 
     [ObservableProperty]
@@ -104,10 +131,13 @@ public sealed partial class AnalyzeViewModel : ObservableObject
 
     // A capture of the same game that is newer than the one on screen.
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasNewerCapture))]
+    [NotifyPropertyChangedFor(nameof(HasNewerCapture), nameof(HasNotices))]
     public partial string NewerCaptureName { get; set; } = "";
 
     public bool HasNewerCapture => NewerCaptureName.Length > 0;
+
+    /// <summary>Anything worth a slim line above the numbers: capture quality, a tracked change, a newer capture.</summary>
+    public bool HasNotices => HasQuality || HasExperiment || HasNewerCapture;
 
     private string _newerCapturePath = "";
     private string _dismissedNewerPath = "";
@@ -450,11 +480,12 @@ public sealed partial class AnalyzeViewModel : ObservableObject
             Cards.Add(new MetricItem("Rendered", renderedText!, "fps your PC draws"));
         }
 
-        Cards.Add(new MetricItem("1% low", F(m.Low1AverageFps), "fps, slowest 1%"));
-        Cards.Add(new MetricItem("0.1% low", F(m.Low01AverageFps), "fps, slowest 0.1%"));
-        Cards.Add(new MetricItem("Stutters", r.Stutters.Count.ToString(CultureInfo.InvariantCulture), "spikes over 2x median"));
-        Cards.Add(new MetricItem("Freezes", r.Freezes.Count.ToString(CultureInfo.InvariantCulture), "frames of 200 ms+"));
-        Cards.Add(new MetricItem("Limited by", Verdict(r.Bottleneck.Verdict), $"{r.Bottleneck.Confidence} confidence"));
+        var minutes = Math.Max(m.DurationSec / 60, 0.1);
+        Cards.Add(new MetricItem("1% low", F(m.Low1AverageFps), $"fps, {Share(m.Low1AverageFps, m.AverageFps)}", LowLevel(m.Low1AverageFps, m.AverageFps, 30, 45, 0.4, 0.6)));
+        Cards.Add(new MetricItem("0.1% low", F(m.Low01AverageFps), $"fps, {Share(m.Low01AverageFps, m.AverageFps)}", LowLevel(m.Low01AverageFps, m.AverageFps, 15, 25, 0.2, 0.4)));
+        Cards.Add(new MetricItem("Stutters", r.Stutters.Count.ToString(CultureInfo.InvariantCulture), "spikes over 2x", r.Stutters.Count == 0 ? MetricLevel.Good : r.Stutters.Count / minutes > 30 ? MetricLevel.Bad : MetricLevel.Warning));
+        Cards.Add(new MetricItem("Freezes", r.Freezes.Count.ToString(CultureInfo.InvariantCulture), "frames of 200 ms+", r.Freezes.Count == 0 ? MetricLevel.Good : r.Freezes.Count < 3 ? MetricLevel.Warning : MetricLevel.Bad));
+        Cards.Add(new MetricItem("Limited by", Verdict(r.Bottleneck.Verdict), $"{r.Bottleneck.Confidence} confidence", MetricLevel.Focus));
 
         AttentionFindings.Clear();
         NoteFindings.Clear();
@@ -530,8 +561,8 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         EventToggles.Clear();
         foreach (var layer in ChartEventBuilder.Build(r.Run).Where(l => l.Count > 0))
         {
-            // Freezes are on to begin with; after a re-analysis the user's choices are kept.
-            EventToggles.Add(new EventToggle(layer, firstShow ? layer.Kind == EventKind.Freezes : wasOn.Contains(layer.Kind), RaiseChart));
+            // Freezes and stutters are on to begin with; after a re-analysis the user's choices are kept.
+            EventToggles.Add(new EventToggle(layer, firstShow ? layer.Kind is EventKind.Freezes or EventKind.Stutters : wasOn.Contains(layer.Kind), RaiseChart));
         }
 
         OnPropertyChanged(nameof(HasEventToggles));
@@ -580,6 +611,7 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         }
 
         OnPropertyChanged(nameof(HasQuality));
+        OnPropertyChanged(nameof(HasNotices));
         OnPropertyChanged(nameof(QualityText));
     }
 
@@ -789,6 +821,15 @@ public sealed partial class AnalyzeViewModel : ObservableObject
         Current is null
             ? throw new AiException("Load a capture first.")
             : AppServices.CreateAnalyst().AnalyzeAsync(Current.Result, note, ct);
+
+    private static string Share(double low, double average) =>
+        average > 0 ? $"{low / average * 100:0}% of average" : "slowest frames";
+
+    private static MetricLevel LowLevel(double low, double average, double badFps, double warnFps, double badRatio, double warnRatio)
+    {
+        var ratio = average > 0 ? low / average : 1;
+        return low < badFps || ratio < badRatio ? MetricLevel.Bad : low < warnFps || ratio < warnRatio ? MetricLevel.Warning : MetricLevel.Good;
+    }
 
     private static InfoBarSeverity Map(Finding f) => f.Id == "SMOOTH" || f.Id == "BACKGROUND_QUIET" ? InfoBarSeverity.Success : f.Severity switch
     {

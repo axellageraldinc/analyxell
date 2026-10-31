@@ -65,4 +65,19 @@ public interface ISystemProbe
     IEnumerable<string> RegistrySubKeyNames(string hive, string subKey);
 
     bool IsProcessRunning(string processName);
+
+    /// <summary>Hardware errors and graphics driver resets Windows logged recently, or null when the log cannot be read.</summary>
+    HardwareEvents? RecentHardwareEvents(int days) => null;
+
+    /// <summary>The NVIDIA GPU's clock offsets and power limit as set right now, or null without an NVIDIA driver.</summary>
+    GpuTuning? NvidiaTuning() => null;
+
+    /// <summary>File names (not paths) found under a folder that match any pattern, searched for at most <paramref name="budget"/>.</summary>
+    IReadOnlyList<string> FindFileNames(string directory, IReadOnlyList<string> patterns, TimeSpan budget) => [];
 }
+
+/// <summary>How many hardware errors (WHEA) and graphics driver resets (Event 4101) Windows logged in the last <paramref name="Days"/> days.</summary>
+public sealed record HardwareEvents(int WheaErrors, int DisplayResets, int Days);
+
+/// <summary>What NVML reports about the GPU's tuning. Offsets are 0 and the power limit equals the default on a stock card.</summary>
+public sealed record GpuTuning(string Name, int? CoreOffsetMhz, int? MemoryOffsetMhz, int? PowerLimitW, int? DefaultPowerLimitW, int? MaxCoreClockMhz = null);

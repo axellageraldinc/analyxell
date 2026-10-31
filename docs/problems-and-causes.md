@@ -59,6 +59,25 @@ Sources: [PC stutter guides](https://techfuelhq.com/articles/pc-stuttering-in-ga
 | **Known troublemakers** (overlays, recorders, browsers, launchers, cloud sync, security scans, vendor software, VMs) | Process names, matched locally | `BACKGROUND_KNOWN_APPS` | Category-specific advice |
 | **Windows background recording** | Registry flag | `BACKGROUND_CAPTURE_ON` | Turn it off if unused |
 
+### AMD Ryzen and NVIDIA specifics
+
+These are read from the CPU and GPU model names plus read-only Windows probes, so they cover any game, not only those with a settings reader.
+
+| Cause | Evidence | Finding | Fixes |
+|---|---|---|---|
+| **Something on a timer** (monitoring or RGB software, Wi-Fi scans, fTPM on some AMD boards) | Freezes and stutters evenly spaced | `PERIODIC_HITCHES` | Close timer-driven software one at a time; wired network; BIOS update for fTPM |
+| **X3D game on the wrong chiplet** (7900X3D, 7950X3D, 9900X3D, 9950X3D) | Per-core load: the non-cache cores busier | `VCACHE_WRONG_CHIPLET` | AMD chipset and V-Cache driver, Game Mode and Game Bar on, affinity test |
+| **Game spread over two chiplets** (Ryzen 9) | Both halves of the cores busy | `CHIPLET_SPLIT` | Affinity test; chipset driver |
+| **CPU below its rated boost** | Fastest core's clock under 93% of the model's rating while CPU-limited | `CPU_BELOW_BOOST` | Power plan, chipset driver, Eco Mode and power limits in the BIOS, cooling |
+| **CPU tuned (PBO, overclock)** | Fastest core 150 MHz+ past the rating | `CPU_ABOVE_RATED` | Information; retest at stock only if it hitches or crashes |
+| **No AMD chipset driver** | No "AMD Chipset" program installed | `AMD_CHIPSET_MISSING` | Install it |
+| **Memory above Ryzen's sweet spot** | DDR5-7200 or faster on Ryzen 7000/9000 | `RAM_ABOVE_SWEET_SPOT` | DDR5-6000 EXPO |
+| **GPU clock sagging at light load** | Core clock's slowest tenth under 60% of its best, GPU only 35-85% busy | `GPU_CLOCK_DROPS` | Prefer maximum performance for the game, power plan |
+| **GPU overclocked, power-cut or undervolted** | Driver offsets and power limit (NVML); clock past the stock maximum; full clocks at low power | `GPU_OVERCLOCKED`, `GPU_CLOCKS_LOWERED`, `GPU_POWER_LIMIT_LOWERED`, `UNDERVOLT_LIKELY` | Retest at stock; the voltage curve itself cannot be read |
+| **Unstable tuning, memory profile or hardware** | WHEA errors and driver resets in the Windows log | `HARDWARE_ERRORS_LOGGED`, `DISPLAY_DRIVER_RESETS` | Stock settings for a test, BIOS and driver, clean driver install |
+| **Frame generation without hardware GPU scheduling** | Frame generation seen, HAGS off, RTX 40+ | `HAGS_OFF_WITH_FRAMEGEN` | Turn HAGS on |
+| **Upscaler not used** | Game folder holds DLSS files, GPU-limited under 60 fps, RTX card | `UPSCALER_AVAILABLE` | Turn DLSS on; frame generation when 40+ fps are rendered |
+
 ### Display, sync and latency
 
 | Cause | Finding |
@@ -67,6 +86,8 @@ Sources: [PC stutter guides](https://techfuelhq.com/articles/pc-stuttering-in-ga
 | Frame rate above the display's refresh range | `TEARING_ABOVE_RANGE` |
 | Sync off but variable refresh keeps up | `TEARING_UNLIKELY` |
 | VSync forced in the GPU driver (invisible in a capture, so your entered setup is believed) | `TEARING_HANDLED_BY_DRIVER` |
+| VSync applied by the driver, seen because frames land exactly on the refresh | `VSYNC_DETECTED` |
+| Game asked for no VSync but nothing says whether G-SYNC or driver VSync is on: a capture cannot tell, so it says so | `TEARING_UNKNOWN` |
 | You said VSync is on but the capture shows none | `VSYNC_ENTERED_BUT_NOT_SEEN` |
 | Display running below its maximum refresh rate | `DISPLAY_BELOW_MAX` |
 | Game drawn through the desktop compositor (windowed) | `COMPOSED_PRESENT` |

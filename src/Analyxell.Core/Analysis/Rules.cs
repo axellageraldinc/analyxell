@@ -29,7 +29,8 @@ internal static class Rules
         IReadOnlyDictionary<string, string> facts,
         CaptureInfo info,
         RunTrends trends,
-        FrameGenerationSignal frameGen)
+        FrameGenerationSignal frameGen,
+        CaptureRun run)
     {
         var list = new List<Finding>();
 
@@ -171,7 +172,11 @@ internal static class Rules
                 ]);
                 break;
             case BottleneckVerdict.PowerLimited:
-                Add("POWER_LIMIT", Severity.Medium, "GPU power limit reached", bottleneck.Reasoning, ["gpu.power_limit_hits_pct"],
+                // On a desktop card this is how a GPU-bound game normally looks, so it is only a problem when the limit was lowered or on a laptop.
+                var laptopGpu = GpuProfile.Parse(info.Gpu).Laptop;
+                Add("POWER_LIMIT", laptopGpu ? Severity.Medium : Severity.Low, "GPU power limit reached",
+                    bottleneck.Reasoning + (laptopGpu ? "" : " A desktop graphics card reaching its power limit under full load is normal; it matters only if the limit was lowered."),
+                    ["gpu.power_limit_hits_pct"],
                 [
                     "If you or your GPU software lowered the power limit, raise it back to default.",
                     "A frame cap or lower settings reduces power draw if the limit is intentional.",
@@ -201,9 +206,14 @@ internal static class Rules
         }
 
         const string CoolingNote = "Typical safe limits vary by model; check your hardware's specification.";
-        if (bottleneck.GpuTempMax is { } gt && gt >= 85)
+        // What counts as hot depends on the chip. NVIDIA cards routinely sit in the low 80s and only slow down near 90;
+        // Ryzen 7000 and 9000 are built to boost until about 95 C; GDDR6X memory is rated to run past 100 C.
+        var cpuModel = CpuProfile.Parse(info.Cpu);
+        var gpuModel = GpuProfile.Parse(info.Gpu);
+        var gpuHotAt = gpuModel.IsNvidia ? 88 : 85;
+        if (bottleneck.GpuTempMax is { } gt && gt >= gpuHotAt)
         {
-            Add("GPU_HOT", gt >= 90 ? Severity.High : Severity.Medium, $"The GPU gets hot (up to {F(gt)} °C)",
+            Add("GPU_HOT", gt >= 92 ? Severity.High : Severity.Medium, $"The GPU gets hot (up to {F(gt)} °C)",
                 $"{CoolingNote} High temperatures make the GPU slow itself down.", ["gpu.temp_max_c", "gpu.hotspot_max_c"],
                 CoolingSuggestions());
         }
@@ -212,14 +222,18 @@ internal static class Rules
             Add("GPU_HOT", Severity.Medium, $"The GPU hot spot is high (up to {F(hs)} °C)", CoolingNote, ["gpu.hotspot_max_c", "gpu.temp_max_c"], CoolingSuggestions());
         }
 
-        if (bottleneck.CpuTempMax is { } ct && ct >= 90)
+        if (bottleneck.CpuTempMax is { } ct && ct >= (cpuModel.RunsHotByDesign ? 97 : 90))
         {
-            Add("CPU_HOT", ct >= 95 ? Severity.High : Severity.Medium, $"The CPU gets hot (up to {F(ct)} °C)", CoolingNote, ["cpu.temp_max_c"], CoolingSuggestions());
+            Add("CPU_HOT", ct >= (cpuModel.RunsHotByDesign ? 99 : 95) ? Severity.High : Severity.Medium, $"The CPU gets hot (up to {F(ct)} °C)",
+                cpuModel.RunsHotByDesign ? "This Ryzen is built to boost until about 95 °C, but it should not go past it. A hotter reading means the cooler is not keeping up." : CoolingNote,
+                ["cpu.temp_max_c"], CoolingSuggestions());
         }
 
-        if (extra.MemJunctionMaxC is { } mj && mj >= 95)
+        if (extra.MemJunctionMaxC is { } mj && mj >= (gpuModel.Gddr6x ? 104 : 95))
         {
-            Add("VRAM_HOT", Severity.Medium, $"Video memory runs hot (up to {F(mj)} °C)", CoolingNote, ["gpu.mem_junction_max_c"], CoolingSuggestions());
+            Add("VRAM_HOT", Severity.Medium, $"Video memory runs hot (up to {F(mj)} °C)",
+                gpuModel.Gddr6x ? "GDDR6X memory is rated for high temperatures, but this is at the top of what it tolerates." : CoolingNote,
+                ["gpu.mem_junction_max_c"], CoolingSuggestions());
         }
 
         if (bottleneck.VramUsedMaxGb is { } used && bottleneck.VramTotalGb is { } total && total > 0 && used / total >= 0.85)
@@ -306,6 +320,9 @@ internal static class Rules
         // 5b. Causes that need several signals: CPU limits, change over time, memory setup, Windows options.
         DeepRules.Evaluate(Add, metrics, freezes, stutters, bottleneck, trends, info, system, settings, extra, frameGen);
 
+        // 5c. Findings tied to the exact hardware: Ryzen scheduling and boost, NVIDIA tuning, driver and hardware errors.
+        HardwareRules.Evaluate(Add, run, metrics, freezes, stutters, bottleneck, trends, info, system, settings, extra, frameGen, facts);
+
         // 6. Programs competing with the game.
         if (background is not null)
         {
@@ -355,6 +372,30 @@ internal static class Rules
                 "The capture shows frames presented without VSync. Either the setting was changed after this capture was recorded, or the game ignored it. Record a new run to check. I cannot see tearing itself, only the conditions for it.",
                 ["present.tearing_allowed_pct", "present.sync_interval_zero_pct", "setup.vsync"],
                 ["Record the same route again with the current settings."]);
+            return;
+        }
+
+        // The capture shows when frames reached the screen. On a refresh boundary almost every time means VSync is on,
+        // even though the game asked for none: the driver applied it, where the present flags cannot see it.
+        if (x.SyncQuantizedPct >= 90)
+        {
+            add("VSYNC_DETECTED", Severity.Info, "VSync appears to be on",
+                $"The game asked for no VSync, but {F(x.SyncQuantizedPct ?? 0)}% of frames reached the screen exactly on a display refresh. That pattern means VSync was applied outside the game, usually in the GPU driver, so tearing is unlikely. Without variable refresh, VSync can add some latency and drop the frame rate in steps when the game cannot keep up.",
+                ["present.tearing_allowed_pct", "present.sync_interval_zero_pct", "present.vsync_on_grid_pct"],
+                []);
+            return;
+        }
+
+        // Without a refresh-rate reading or an answer in PC setup, G-SYNC and driver VSync are both invisible: do not guess.
+        if (!vrr && x.RefreshMaxHz is null && system.Get("setup.display_sync") is null && system.Get("setup.vsync") is null)
+        {
+            add("TEARING_UNKNOWN", Severity.Info, "The game asked for no VSync, so tearing cannot be judged from this capture",
+                "Most modern games send every frame with VSync off. Whether you actually see tearing depends on G-SYNC or FreeSync and on VSync in the GPU driver, and a capture cannot see either. Nothing here is a fault until you see tearing.",
+                ["present.tearing_allowed_pct", "present.sync_interval_zero_pct"],
+                [
+                    "If you see tearing: turn on G-SYNC or FreeSync (NVIDIA Control Panel > Set up G-SYNC), turn VSync on in the driver, and cap the frame rate a few fps below the monitor's maximum.",
+                    "Tell analyxell what you use in PC setup (display sync and VSync) and it can give a firmer answer.",
+                ]);
             return;
         }
 

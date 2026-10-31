@@ -12,6 +12,10 @@ analyxell is local-first. This page lists everything it reads, stores and can se
 | Where CapFrameX is installed | Offer to open it, or to download it if missing | Checks the usual install folders and Windows' list of installed apps (read-only), whether a CapFrameX process is running, and a path you may choose. analyxell starts CapFrameX only when you press **Open CapFrameX**. |
 | The game's drive | Find out if it is on an SSD or HDD, NVMe or SATA, and how full it is | Two read-only storage queries on the volume, no file access. The game's folder comes from you, or from Steam's own library files if it is a Steam game. |
 | The GPU shader cache folders | An empty cache means shaders compile during play | Only their total size and file count are read, never the contents. |
+| Windows' hardware and driver error log | Spot an unstable overclock, undervolt or memory profile | Only the number of hardware errors (WHEA) and graphics driver resets (event 4101) in the last 30 days is counted. Event text is never read or stored. |
+| The NVIDIA GPU's tuning | Tell whether the card was overclocked or power-limited | Read-only questions to NVIDIA's own driver library (NVML): clock offsets, power limit and default, highest stock clock. Nothing is set. |
+| Installed programs and services (Ryzen PCs) | Check the AMD chipset and 3D V-Cache drivers | Read-only registry listing; only whether an "AMD Chipset" program and a V-Cache service exist is kept. |
+| The game's folder (file names only) | Know whether the game ships DLSS, FSR or XeSS | Looks for a few DLL names for up to two seconds; contents are never read. |
 | Running programs (only when you press the background check) | Find programs competing with the game | For 10 seconds: each process's name, CPU time, disk I/O counters, memory and GPU use. Query-only: nothing is closed or changed. |
 | CapFrameX MCP server (optional) | List captures | Only tools on a read-only allow-list can be called; writing tools are blocked in code and tests. |
 

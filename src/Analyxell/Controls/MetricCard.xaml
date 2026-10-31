@@ -5,27 +5,34 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Border
-        Padding="16,12"
         CornerRadius="8"
         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
         BorderThickness="1">
-        <StackPanel Spacing="2">
-            <TextBlock
-                Text="{x:Bind Title, Mode=OneWay}"
-                Style="{StaticResource CaptionTextBlockStyle}"
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-            <TextBlock
-                Text="{x:Bind Value, Mode=OneWay}"
-                Style="{StaticResource SubtitleTextBlockStyle}"
-                FontSize="26"
-                TextWrapping="NoWrap"
-                TextTrimming="CharacterEllipsis" />
-            <TextBlock
-                Text="{x:Bind Caption, Mode=OneWay}"
-                Style="{StaticResource CaptionTextBlockStyle}"
-                TextWrapping="Wrap"
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-        </StackPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="4" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border x:Name="Edge" CornerRadius="7,0,0,7" />
+            <StackPanel Grid.Column="1" Padding="12,12,16,12" Spacing="2">
+                <TextBlock
+                    Text="{x:Bind Title, Mode=OneWay}"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock
+                    x:Name="ValueText"
+                    Text="{x:Bind Value, Mode=OneWay}"
+                    Style="{StaticResource SubtitleTextBlockStyle}"
+                    FontSize="26"
+                    TextWrapping="NoWrap"
+                    TextTrimming="CharacterEllipsis" />
+                <TextBlock
+                    Text="{x:Bind Caption, Mode=OneWay}"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    TextWrapping="Wrap"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+        </Grid>
     </Border>
 </UserControl>

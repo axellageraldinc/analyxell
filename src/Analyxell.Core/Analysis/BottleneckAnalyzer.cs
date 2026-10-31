@@ -54,13 +54,13 @@ public static class BottleneckAnalyzer
         Confidence confidence;
         string reasoning;
 
-        if (thermalHits is >= 5 || gpuTemp is >= 87)
+        if (thermalHits is >= 5 || gpuTemp is >= 91)
         {
             verdict = BottleneckVerdict.ThermalThrottling;
             confidence = thermalHits is >= 5 ? Confidence.High : Confidence.Medium;
             reasoning = $"GPU thermal limit hit in {Fmt(thermalHits)}% of samples, peak {Fmt(gpuTemp)} C.";
         }
-        else if (powerHits is >= 25)
+        else if (powerHits is >= 25 && !(gpuBusy is >= 90 || gpuLoad is >= 95))
         {
             verdict = BottleneckVerdict.PowerLimited;
             confidence = powerHits >= 50 ? Confidence.High : Confidence.Medium;
@@ -70,7 +70,7 @@ public static class BottleneckAnalyzer
         {
             verdict = BottleneckVerdict.GpuBound;
             confidence = Confidence.High;
-            reasoning = $"GPU is the limit: busy {Fmt(gpuBusy)}% of frame time, load avg {Fmt(gpuLoad)}%.";
+            reasoning = $"GPU is the limit: busy {Fmt(gpuBusy)}% of frame time, load avg {Fmt(gpuLoad)}%." + (powerHits is >= 25 ? $" It also sat at its power limit {Fmt(powerHits)}% of the time, which is normal when a card is flat out." : "");
         }
         else if (gpuLoad is >= 85 && cpuMax is not null && cpuMax <= gpuLoad - 15)
         {

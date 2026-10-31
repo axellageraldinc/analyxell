@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Analyxell.Controls"
     xmlns:core="using:Analyxell.Core.Mcp"
+    xmlns:svc="using:Analyxell.Services"
     xmlns:vm="using:Analyxell.ViewModels"
     NavigationCacheMode="Required"
     AllowDrop="True"
@@ -28,9 +29,9 @@
                         TextWrapping="Wrap"
                         Style="{StaticResource CaptionTextBlockStyle}"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <HyperlinkButton
+                    <Button
                         Content="I'll try this and check if it helped"
-                        Padding="0"
+                        Margin="0,4,0,0"
                         Tag="{x:Bind Text, Mode=OneTime}"
                         Visibility="{x:Bind CanTry, Mode=OneTime}"
                         Click="TryStep_Click" />
@@ -39,25 +40,41 @@
         </DataTemplate>
 
         <DataTemplate x:Key="FindingTemplate" x:DataType="vm:FindingItem">
-            <InfoBar
+            <Border
                 Margin="0,0,0,8"
-                IsOpen="True"
-                IsClosable="False"
-                Severity="{x:Bind Severity, Mode=OneTime}"
-                Title="{x:Bind Title, Mode=OneTime}">
-                <StackPanel Spacing="6" Margin="0,0,0,8">
-                    <TextBlock Text="{x:Bind Detail, Mode=OneTime}" TextWrapping="Wrap" />
-                    <StackPanel Spacing="2" Visibility="{x:Bind HasSuggestions, Mode=OneTime}">
-                        <TextBlock Text="What you can try" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
-                        <TextBlock Text="{x:Bind Suggestions, Mode=OneTime}" TextWrapping="Wrap" />
+                CornerRadius="8"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="4" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Background="{x:Bind svc:LevelBrushes.Edge(Level), Mode=OneTime}" CornerRadius="7,0,0,7" />
+                    <StackPanel Grid.Column="1" Padding="16,12" Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="{x:Bind Title, Mode=OneTime}" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" />
+                            <TextBlock
+                                Text="{x:Bind Badge, Mode=OneTime}"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                FontWeight="SemiBold"
+                                VerticalAlignment="Center"
+                                Foreground="{x:Bind svc:LevelBrushes.Label(Level), Mode=OneTime}" />
+                        </StackPanel>
+                        <TextBlock Text="{x:Bind Detail, Mode=OneTime}" TextWrapping="Wrap" />
+                        <StackPanel Spacing="2" Visibility="{x:Bind HasSuggestions, Mode=OneTime}">
+                            <TextBlock Text="What you can try" Style="{StaticResource CaptionTextBlockStyle}" FontWeight="SemiBold" />
+                            <TextBlock Text="{x:Bind Suggestions, Mode=OneTime}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock
+                            Text="{x:Bind Evidence, Mode=OneTime}"
+                            TextWrapping="Wrap"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     </StackPanel>
-                    <TextBlock
-                        Text="{x:Bind Evidence, Mode=OneTime}"
-                        TextWrapping="Wrap"
-                        Style="{StaticResource CaptionTextBlockStyle}"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                </StackPanel>
-            </InfoBar>
+                </Grid>
+            </Border>
         </DataTemplate>
     </Page.Resources>
 
@@ -110,20 +127,28 @@
                             </Flyout>
                         </DropDownButton.Flyout>
                     </DropDownButton>
-                    <Button
-                        AutomationProperties.AutomationId="PcSetupHeaderButton"
-                        Content="PC setup..."
-                        Click="Setup_Click"
-                        IsEnabled="{x:Bind ViewModel.HasCapture, Mode=OneWay}" />
-                    <Button
-                        AutomationProperties.AutomationId="CapFrameXHeaderButton"
-                        Content="{x:Bind ViewModel.CapFrameX.HeaderButtonText, Mode=OneWay}"
-                        Command="{x:Bind ViewModel.CapFrameX.OpenOrGetCommand, Mode=OneTime}" />
-                    <Button
-                        AutomationProperties.AutomationId="ExportReportButton"
-                        Content="Export report..."
-                        Command="{x:Bind ViewModel.ExportCommand, Mode=OneTime}"
-                        IsEnabled="{x:Bind ViewModel.HasCapture, Mode=OneWay}" />
+                    <Button AutomationProperties.AutomationId="MoreActionsButton" AutomationProperties.Name="More actions" ToolTipService.ToolTip="More actions" Padding="10,6">
+                        <FontIcon Glyph="&#xE712;" FontSize="16" />
+                        <Button.Flyout>
+                            <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                <MenuFlyoutItem
+                                    AutomationProperties.AutomationId="PcSetupHeaderButton"
+                                    Text="PC setup..."
+                                    Click="Setup_Click"
+                                    IsEnabled="{x:Bind ViewModel.HasCapture, Mode=OneWay}" />
+                                <MenuFlyoutItem
+                                    AutomationProperties.AutomationId="ExportReportButton"
+                                    Text="Export report..."
+                                    Command="{x:Bind ViewModel.ExportCommand, Mode=OneTime}"
+                                    IsEnabled="{x:Bind ViewModel.HasCapture, Mode=OneWay}" />
+                                <MenuFlyoutSeparator />
+                                <MenuFlyoutItem
+                                    AutomationProperties.AutomationId="CapFrameXHeaderButton"
+                                    Text="{x:Bind ViewModel.CapFrameX.HeaderButtonText, Mode=OneWay}"
+                                    Command="{x:Bind ViewModel.CapFrameX.OpenOrGetCommand, Mode=OneTime}" />
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
                 </StackPanel>
             </Grid>
 
@@ -172,52 +197,87 @@
                     Severity="{x:Bind ViewModel.VerdictSeverity, Mode=OneWay}"
                     Title="{x:Bind ViewModel.VerdictHeadline, Mode=OneWay}"
                     Message="{x:Bind ViewModel.VerdictDetail, Mode=OneWay}">
-                    <InfoBar.ActionButton>
-                        <Button
-                            AutomationProperties.AutomationId="CopySummaryButton"
-                            Content="Copy summary to share"
-                            Command="{x:Bind ViewModel.CopySummaryCommand, Mode=OneTime}" />
-                    </InfoBar.ActionButton>
+                    <InfoBar.Content>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                            <Button
+                                AutomationProperties.AutomationId="AskAiBarButton"
+                                Content="Ask AI"
+                                Click="AskAi_Click" />
+                            <Button
+                                AutomationProperties.AutomationId="CopySummaryButton"
+                                Content="Copy summary to share"
+                                Command="{x:Bind ViewModel.CopySummaryCommand, Mode=OneTime}" />
+                        </StackPanel>
+                    </InfoBar.Content>
                 </InfoBar>
 
-                <InfoBar
-                    AutomationProperties.AutomationId="QualityBar"
-                    Visibility="{x:Bind ViewModel.HasQuality, Mode=OneWay}"
-                    Severity="Warning"
-                    Title="This capture may not show the whole picture"
-                    Message="{x:Bind ViewModel.QualityText, Mode=OneWay}"
-                    IsOpen="{x:Bind ViewModel.HasQuality, Mode=OneWay}"
-                    IsClosable="False" />
-
-                <InfoBar
-                    AutomationProperties.AutomationId="ExperimentBar"
-                    Visibility="{x:Bind ViewModel.HasExperiment, Mode=OneWay}"
-                    Severity="{x:Bind ViewModel.ExperimentSeverity, Mode=OneWay}"
-                    Title="{x:Bind ViewModel.ExperimentTitle, Mode=OneWay}"
-                    Message="{x:Bind ViewModel.ExperimentText, Mode=OneWay}"
-                    IsOpen="{x:Bind ViewModel.HasExperiment, Mode=OneWay}"
-                    IsClosable="True">
-                    <InfoBar.ActionButton>
-                        <Button
-                            AutomationProperties.AutomationId="CancelExperimentButton"
-                            Content="Stop tracking this"
-                            Visibility="{x:Bind ViewModel.ExperimentCanCancel, Mode=OneWay}"
-                            Command="{x:Bind ViewModel.CancelExperimentCommand, Mode=OneTime}" />
-                    </InfoBar.ActionButton>
-                </InfoBar>
-
-                <InfoBar
-                    AutomationProperties.AutomationId="NewerCaptureBar"
-                    Visibility="{x:Bind ViewModel.HasNewerCapture, Mode=OneWay}"
-                    Severity="Informational"
-                    Title="A newer capture was recorded"
-                    Message="{x:Bind ViewModel.NewerCaptureName, Mode=OneWay}"
-                    IsOpen="{x:Bind ViewModel.HasNewerCapture, Mode=OneWay}"
-                    CloseButtonCommand="{x:Bind ViewModel.DismissNewerCommand, Mode=OneTime}">
-                    <InfoBar.ActionButton>
-                        <Button AutomationProperties.AutomationId="OpenNewerButton" Content="Open it" Command="{x:Bind ViewModel.OpenNewerCommand, Mode=OneTime}" />
-                    </InfoBar.ActionButton>
-                </InfoBar>
+                <!-- Capture quality, a tracked change and a newer capture share one slim card instead of three banners. -->
+                <Border
+                    AutomationProperties.AutomationId="Notices"
+                    Visibility="{x:Bind ViewModel.HasNotices, Mode=OneWay}"
+                    CornerRadius="8"
+                    Padding="16,4"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1">
+                    <StackPanel>
+                        <Grid
+                            AutomationProperties.AutomationId="QualityBar"
+                            Visibility="{x:Bind ViewModel.HasQuality, Mode=OneWay}"
+                            ColumnSpacing="12" Padding="0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE7BA;" FontSize="16" VerticalAlignment="Top" Margin="0,2,0,0" Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="This capture may not show the whole picture" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock Text="{x:Bind ViewModel.QualityText, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                        </Grid>
+                        <Grid
+                            AutomationProperties.AutomationId="ExperimentBar"
+                            Visibility="{x:Bind ViewModel.HasExperiment, Mode=OneWay}"
+                            ColumnSpacing="12" Padding="0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE9D9;" FontSize="16" VerticalAlignment="Top" Margin="0,2,0,0" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="{x:Bind ViewModel.ExperimentTitle, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" />
+                                <TextBlock Text="{x:Bind ViewModel.ExperimentText, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <Button
+                                Grid.Column="2"
+                                AutomationProperties.AutomationId="CancelExperimentButton"
+                                Content="Stop tracking this"
+                                VerticalAlignment="Center"
+                                Visibility="{x:Bind ViewModel.ExperimentCanCancel, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.CancelExperimentCommand, Mode=OneTime}" />
+                        </Grid>
+                        <Grid
+                            AutomationProperties.AutomationId="NewerCaptureBar"
+                            Visibility="{x:Bind ViewModel.HasNewerCapture, Mode=OneWay}"
+                            ColumnSpacing="12" Padding="0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE946;" FontSize="16" VerticalAlignment="Top" Margin="0,2,0,0" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                            <StackPanel Grid.Column="1" Spacing="2">
+                                <TextBlock Text="A newer capture was recorded" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock Text="{x:Bind ViewModel.NewerCaptureName, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <Button AutomationProperties.AutomationId="OpenNewerButton" Content="Open it" Command="{x:Bind ViewModel.OpenNewerCommand, Mode=OneTime}" />
+                                <Button AutomationProperties.AutomationId="DismissNewerButton" Content="Dismiss" Command="{x:Bind ViewModel.DismissNewerCommand, Mode=OneTime}" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
 
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Cards, Mode=OneTime}">
                     <ItemsRepeater.Layout>
@@ -225,55 +285,47 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:MetricItem">
-                            <controls:MetricCard Title="{x:Bind Title, Mode=OneTime}" Value="{x:Bind Value, Mode=OneTime}" Caption="{x:Bind Caption, Mode=OneTime}" />
+                            <controls:MetricCard Title="{x:Bind Title, Mode=OneTime}" Value="{x:Bind Value, Mode=OneTime}" Caption="{x:Bind Caption, Mode=OneTime}" Level="{x:Bind Level, Mode=OneTime}" />
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
 
                 <SelectorBar x:Name="Tabs" AutomationProperties.AutomationId="AnalyzeTabs" SelectionChanged="Tabs_SelectionChanged">
                     <SelectorBarItem x:Name="TabOverview" AutomationProperties.AutomationId="TabOverview" Text="Overview" Tag="Overview" IsSelected="True" />
-                    <SelectorBarItem x:Name="TabAi" AutomationProperties.AutomationId="TabAi" Text="Ask AI" Tag="Ai" />
                     <SelectorBarItem x:Name="TabFindings" AutomationProperties.AutomationId="TabFindings" Text="Findings" Tag="Findings" />
                     <SelectorBarItem x:Name="TabPc" AutomationProperties.AutomationId="TabPc" Text="PC and setup" Tag="Pc" />
                     <SelectorBarItem x:Name="TabBackground" AutomationProperties.AutomationId="TabBackground" Text="Background programs" Tag="Background" />
+                    <SelectorBarItem x:Name="TabAi" AutomationProperties.AutomationId="TabAi" Text="Ask AI" Tag="Ai" />
                 </SelectorBar>
 
                 <!-- Overview: chart and the first steps -->
                 <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.IsOverviewTab, Mode=OneWay}">
 
-                    <!-- Compact AI bar -->
+                    <!-- What to do: first, so the verdict's "start with step 1" is on screen -->
                     <Border
-                        Padding="20,14"
+                        Visibility="{x:Bind ViewModel.HasTopSteps, Mode=OneWay}"
+                        Padding="20,16"
                         CornerRadius="8"
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1">
-                        <Grid ColumnSpacing="16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="What you can do" Style="{StaticResource SubtitleTextBlockStyle}" />
                             <TextBlock
-                                AutomationProperties.AutomationId="AiBarStatus"
-                                Text="{x:Bind ViewModel.Ai.BarStatus, Mode=OneWay}"
                                 TextWrapping="Wrap"
-                                VerticalAlignment="Center"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <Button
-                                    AutomationProperties.AutomationId="AskAiBarButton"
-                                    Content="Ask AI"
-                                    Style="{StaticResource AccentButtonStyle}"
-                                    Padding="20,6"
-                                    Visibility="{x:Bind ViewModel.Ai.IsConfigured, Mode=OneWay}"
-                                    IsEnabled="{x:Bind ViewModel.Ai.NotBusy, Mode=OneWay}"
-                                    Command="{x:Bind ViewModel.AskAiAndShowCommand, Mode=OneTime}" />
-                                <Button
-                                    AutomationProperties.AutomationId="OpenAiTabButton"
-                                    Content="Open Ask AI tab"
-                                    Click="OpenAiTab_Click" />
-                            </StackPanel>
-                        </Grid>
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Most important first. Try one at a time, record the same route again, then use Compare." />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.TopSteps, Mode=OneWay}" ItemTemplate="{StaticResource NextStepTemplate}" />
+                            <Expander
+                                AutomationProperties.AutomationId="MoreStepsExpander"
+                                Header="{x:Bind ViewModel.MoreStepsHeader, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.HasMoreSteps, Mode=OneWay}"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch">
+                                <ItemsControl ItemsSource="{x:Bind ViewModel.MoreSteps, Mode=OneWay}" ItemTemplate="{StaticResource NextStepTemplate}" />
+                            </Expander>
+                        </StackPanel>
                     </Border>
 
                     <!-- Chart -->
@@ -306,7 +358,7 @@
                                     MinWidth="200"
                                     VerticalAlignment="Top" />
                             </Grid>
-                            <controls:FrameTimeChart x:Name="Chart" Height="280" />
+                            <controls:FrameTimeChart x:Name="Chart" Height="320" />
                             <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.HasEventToggles, Mode=OneWay}">
                                 <ItemsControl ItemsSource="{x:Bind ViewModel.EventToggles, Mode=OneWay}" AutomationProperties.AutomationId="EventToggles">
                                     <ItemsControl.ItemsPanel>
@@ -334,31 +386,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- What to do -->
-                    <Border
-                        Visibility="{x:Bind ViewModel.HasTopSteps, Mode=OneWay}"
-                        Padding="20,16"
-                        CornerRadius="8"
-                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1">
-                        <StackPanel Spacing="10">
-                            <TextBlock Text="What you can do" Style="{StaticResource SubtitleTextBlockStyle}" />
-                            <TextBlock
-                                TextWrapping="Wrap"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="In order of importance. Try one at a time, record the same route again, and use Compare to see whether it helped." />
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.TopSteps, Mode=OneWay}" ItemTemplate="{StaticResource NextStepTemplate}" />
-                            <Expander
-                                AutomationProperties.AutomationId="MoreStepsExpander"
-                                Header="{x:Bind ViewModel.MoreStepsHeader, Mode=OneWay}"
-                                Visibility="{x:Bind ViewModel.HasMoreSteps, Mode=OneWay}"
-                                HorizontalAlignment="Stretch"
-                                HorizontalContentAlignment="Stretch">
-                                <ItemsControl ItemsSource="{x:Bind ViewModel.MoreSteps, Mode=OneWay}" ItemTemplate="{StaticResource NextStepTemplate}" />
-                            </Expander>
-                        </StackPanel>
-                    </Border>
                 </StackPanel>
 
                 <!-- Ask AI: the full panel -->
@@ -436,7 +463,7 @@
                                 TextWrapping="Wrap"
                                 Style="{StaticResource CaptionTextBlockStyle}"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="Read from the game's config file at its last save, or entered by you. It may differ from what was active during this capture. Values marked (raw id) are the game's own numbers, not preset names." />
+                                Text="From the game's config file at its last save, or entered by you. May differ from this capture. (raw id) means the game's own number, not a preset name." />
                             <ItemsControl ItemsSource="{x:Bind ViewModel.SettingRows, Mode=OneWay}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:SettingRow">
@@ -467,12 +494,12 @@
                             <TextBlock
                                 TextWrapping="Wrap"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="Some things a capture cannot show: the game's graphics settings, whether G-SYNC or FreeSync is on, driver options, and where the game is installed. Add what you know to make the findings more accurate. It is all optional and stays on this PC." />
+                                Text="A capture cannot show graphics settings, G-SYNC or FreeSync, or where the game is installed. Add what you know for more accurate findings. Optional, and it stays on this PC." />
                             <TextBlock
                                 Visibility="{x:Bind ViewModel.HasNoReader, Mode=OneWay}"
                                 TextWrapping="Wrap"
                                 FontWeight="SemiBold"
-                                Text="analyxell has no built-in reader for this game's settings. Type them in, or let your own AI pull them out of the game's config file." />
+                                Text="No built-in reader for this game's settings: type them in, or let your own AI read the config file." />
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <Button AutomationProperties.AutomationId="GameSetupButton" Content="Set up this game..." Click="GameSetup_Click" />
                                 <Button AutomationProperties.AutomationId="PcSetupButton" Content="Edit PC setup..." Click="Setup_Click" />
@@ -516,7 +543,7 @@
                         <TextBlock
                             TextWrapping="Wrap"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="A capture cannot show which other programs were running. This check looks at your PC right now for 10 seconds: which programs use CPU, disk and GPU, and which well-known troublemakers (overlays, recorders, browsers, updaters) are open. For the best result, start the game, play or idle in a menu, then switch back here and run it. It only reads; it never closes or changes anything." />
+                            Text="Start the game, then run this to see which programs are using CPU, disk and GPU right now. It only reads; it never closes anything." />
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <Button
                                 AutomationProperties.AutomationId="CheckBackgroundButton"

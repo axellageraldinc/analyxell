@@ -89,15 +89,15 @@ try {
     Check 'device name is not displayed' (-not (HasText 'SAMPLE-DEVICE-NAME'))
     Check 'a one-line verdict leads the page' ((Ui @('search', 'VerdictBar')) -match 'Found [1-9]' -and (HasText 'This run looks healthy'))
     Check 'the page is split into tabs' (((Ui @('search', 'TabOverview')) -match 'Found [1-9]') -and ((Ui @('search', 'TabAi')) -match 'Found [1-9]') -and ((Ui @('search', 'TabFindings')) -match 'Found [1-9]') -and ((Ui @('search', 'TabPc')) -match 'Found [1-9]') -and ((Ui @('search', 'TabBackground')) -match 'Found [1-9]'))
-    Check 'the overview has a compact AI bar, not the whole AI panel' (((Ui @('search', 'AiBarStatus')) -match 'Found [1-9]') -and -not (HasText 'Anything the AI should know'))
-    Check 'the CapFrameX header button is labelled' ((HasText 'Open CapFrameX') -or (HasText 'Get CapFrameX'))
-    Check 'PC setup is easy to find in the header' ((Ui @('search', 'PcSetupHeaderButton')) -match 'Found [1-9]')
+    Check 'the verdict offers Ask AI, and the overview does not hold the whole AI panel' (((Ui @('search', 'AskAiBarButton')) -match 'Found [1-9]') -and -not (HasText 'Anything the AI should know'))
+    Check 'the header keeps Open and Recent visible and tucks the rest into More actions' (((Ui @('search', 'MoreActionsButton')) -match 'Found [1-9]') -and ((Ui @('search', 'RecentCapturesButton')) -match 'Found [1-9]'))
     Check 'a chart view picker is offered' ((Ui @('search', 'ChartViewCombo')) -match 'Found [1-9]')
     Shot '1-analyze'
 
     Write-Host 'Findings, PC and AI tabs'
     Ui @('invoke', 'TabFindings') | Out-Null; Start-Sleep 1
     Check 'findings tab shows the findings' (HasText 'Frame delivery looks smooth')
+    Check 'the finding cards show how serious they are' ((HasText 'Good') -or (HasText 'Note') -or (HasText 'Worth fixing') -or (HasText 'Fix first'))
     Shot '1b-findings'
     Ui @('invoke', 'TabPc') | Out-Null; Start-Sleep 1
     Check 'PC tab shows the specs' (HasText 'Sample GPU 12GB')

@@ -43,7 +43,8 @@ public static class SystemSettingsReader
         ISystemProbe probe,
         IReadOnlyDictionary<string, string> userValues,
         string? gameInstallPath,
-        string gpuName)
+        string gpuName,
+        string cpuName = "")
     {
         var items = new List<SystemSetting>();
         void Auto(string key, string label, string? value)
@@ -135,6 +136,10 @@ public static class SystemSettingsReader
             Auto("shader_cache_files", "Driver shader cache files", files.ToString(CultureInfo.InvariantCulture));
         }
 
+        ReadAmdDrivers(probe, cpuName, Auto);
+        ReadHardwareHealth(probe, Auto);
+        ReadUpscalers(probe, gameInstallPath, Auto);
+
         // What the user told us (never verified).
         foreach (var field in SetupFields.All)
         {
@@ -145,6 +150,132 @@ public static class SystemSettingsReader
         }
 
         return new SystemContext(items);
+    }
+
+    /// <summary>The AMD chipset driver sets up Ryzen power plans and core handling; X3D chips with two chiplets also need the V-Cache driver.</summary>
+    private static void ReadAmdDrivers(ISystemProbe probe, string cpuName, Action<string, string, string?> auto)
+    {
+        if (!cpuName.Contains("Ryzen", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        // 64-bit and 32-bit installers register under different keys.
+        string[] uninstallRoots =
+        [
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+            @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+        ];
+        var scanned = false;
+        var found = false;
+        foreach (var root in uninstallRoots)
+        {
+            foreach (var program in probe.RegistrySubKeyNames("HKLM", root))
+            {
+                scanned = true;
+                if (probe.RegistryString("HKLM", root + "\\" + program, "DisplayName") is { } name
+                    && name.Contains("AMD Chipset", StringComparison.OrdinalIgnoreCase))
+                {
+                    found = true;
+                }
+            }
+        }
+
+        if (scanned)
+        {
+            auto("amd_chipset_driver", "AMD chipset driver", found ? "Installed" : "Not found");
+        }
+
+        var services = probe.RegistrySubKeyNames("HKLM", @"SYSTEM\CurrentControlSet\Services").ToList();
+        if (services.Count > 0 && cpuName.Contains("X3D", StringComparison.OrdinalIgnoreCase))
+        {
+            auto("amd_vcache_driver", "AMD 3D V-Cache driver", services.Any(s => s.StartsWith("amd3dvcache", StringComparison.OrdinalIgnoreCase)) ? "Installed" : "Not found");
+        }
+    }
+
+    /// <summary>
+    /// Things Windows and the GPU driver record that no capture holds: hardware errors and driver resets (the honest sign
+    /// of an unstable overclock or undervolt) and whether the GPU's clock offsets or power limit were changed.
+    /// </summary>
+    private static void ReadHardwareHealth(ISystemProbe probe, Action<string, string, string?> auto)
+    {
+        if (probe.RecentHardwareEvents(30) is { } events)
+        {
+            auto("events.whea_errors", $"Hardware errors Windows logged (last {events.Days} days)", events.WheaErrors.ToString(CultureInfo.InvariantCulture));
+            auto("events.display_resets", $"Graphics driver resets Windows logged (last {events.Days} days)", events.DisplayResets.ToString(CultureInfo.InvariantCulture));
+        }
+
+        if (probe.NvidiaTuning() is { } tuning)
+        {
+            if (tuning.CoreOffsetMhz is { } core)
+            {
+                auto("gpu_tuning.core_offset_mhz", "GPU core clock offset (MHz)", core.ToString(CultureInfo.InvariantCulture));
+            }
+
+            if (tuning.MemoryOffsetMhz is { } memory)
+            {
+                auto("gpu_tuning.memory_offset_mhz", "GPU memory clock offset (MHz)", memory.ToString(CultureInfo.InvariantCulture));
+            }
+
+            if (tuning.PowerLimitW is { } limit)
+            {
+                auto("gpu_tuning.power_limit_w", "GPU power limit (W)", limit.ToString(CultureInfo.InvariantCulture));
+            }
+
+            if (tuning.DefaultPowerLimitW is { } stock)
+            {
+                auto("gpu_tuning.power_default_w", "GPU default power limit (W)", stock.ToString(CultureInfo.InvariantCulture));
+            }
+
+            if (tuning.MaxCoreClockMhz is { } maxClock)
+            {
+                auto("gpu_tuning.max_clock_mhz", "GPU highest stock core clock (MHz)", maxClock.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+    }
+
+    /// <summary>Which upscalers the game ships, from the DLL files in its folder. This says what the game offers, not what is switched on.</summary>
+    private static void ReadUpscalers(ISystemProbe probe, string? gameInstallPath, Action<string, string, string?> auto)
+    {
+        if (string.IsNullOrWhiteSpace(gameInstallPath))
+        {
+            return;
+        }
+
+        var files = probe.FindFileNames(gameInstallPath, ["nvngx_dlss*.dll", "amd_fidelityfx*.dll", "ffx_fsr*.dll", "libxess*.dll"], TimeSpan.FromSeconds(2));
+        if (files.Count == 0)
+        {
+            return;
+        }
+
+        bool Has(string prefix) => files.Any(f => f.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        var offered = new List<string>();
+        if (Has("nvngx_dlss.") || Has("nvngx_dlss_"))
+        {
+            offered.Add("DLSS");
+        }
+
+        if (Has("nvngx_dlssg"))
+        {
+            offered.Add("DLSS Frame Generation");
+        }
+
+        if (Has("nvngx_dlssd"))
+        {
+            offered.Add("DLSS Ray Reconstruction");
+        }
+
+        if (Has("amd_fidelityfx") || Has("ffx_fsr"))
+        {
+            offered.Add("FSR");
+        }
+
+        if (Has("libxess"))
+        {
+            offered.Add("XeSS");
+        }
+
+        auto("game_upscalers", "Upscalers the game ships", string.Join(", ", offered));
     }
 
     internal static IEnumerable<string> ShaderCacheDirectories(string gpuName)

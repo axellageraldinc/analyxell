@@ -53,11 +53,11 @@ public static class ChartEventBuilder
         {
             var total = run.TimeSec.Length > 0 ? run.TimeSec[^1] : 0;
             var covered = total > 0 ? Math.Min(100, tearing.Sum(t => t.EndSec - t.StartSec) / total * 100) : 0;
-            layers.Add(new EventLayer(EventKind.TearingPossible, "Tearing possible",
+            layers.Add(new EventLayer(EventKind.TearingPossible, "VSync off (game request)",
                 (covered >= 90
-                    ? "Tearing was allowed for almost the whole run (VSync off or unsynchronised), shown as a bar along the bottom."
-                    : "Stretches where frames were sent to the screen with tearing allowed (VSync off), shown as a bar along the bottom.")
-                + " A capture cannot see tearing itself, only whether it could happen.",
+                    ? "The game sent frames with VSync off for almost the whole run, shown as a bar along the bottom. Most modern games do this even with G-SYNC or driver VSync on."
+                    : "Stretches where the game sent frames with VSync off, shown as a bar along the bottom.")
+                + " A capture cannot see tearing itself; G-SYNC or VSync in the driver can still prevent it.",
                 tearing, $"{covered:0}% of the run"));
         }
 

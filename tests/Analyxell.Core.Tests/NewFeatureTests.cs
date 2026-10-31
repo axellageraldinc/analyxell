@@ -175,7 +175,7 @@ public class NewRuleTests
         var grid = TestData.SensorGrid(30);
         var run = Frames(8, null, more:
         [
-            TestData.Sensor("g", "GPU Core", "Temperature", TestData.Const(grid, 91)),
+            TestData.Sensor("g", "GPU Core", "Temperature", TestData.Const(grid, 93)),
             TestData.Sensor("c", "CPU Package (Tctl/Tdie)", "Temperature", TestData.Const(grid, 96)),
         ]);
         var r = Analyze(run);

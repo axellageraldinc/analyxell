@@ -145,6 +145,68 @@ public sealed partial class WindowsSystemProbe : ISystemProbe
         }
     }
 
+    public HardwareEvents? RecentHardwareEvents(int days)
+    {
+        try
+        {
+            var windowMs = (long)TimeSpan.FromDays(days).TotalMilliseconds;
+            int Count(string xpath)
+            {
+                var n = 0;
+                using var reader = new System.Diagnostics.Eventing.Reader.EventLogReader(new System.Diagnostics.Eventing.Reader.EventLogQuery("System", System.Diagnostics.Eventing.Reader.PathType.LogName, xpath));
+                while (reader.ReadEvent() is { } e)
+                {
+                    e.Dispose();
+                    n++;
+                }
+
+                return n;
+            }
+
+            var whea = Count($"*[System[Provider[@Name='Microsoft-Windows-WHEA-Logger'] and TimeCreated[timediff(@SystemTime) <= {windowMs}]]]");
+            var resets = Count($"*[System[Provider[@Name='Display'] and (EventID=4101) and TimeCreated[timediff(@SystemTime) <= {windowMs}]]]");
+            return new HardwareEvents(whea, resets, days);
+        }
+        catch (Exception ex) when (ex is System.Diagnostics.Eventing.Reader.EventLogException or UnauthorizedAccessException or InvalidOperationException or IOException)
+        {
+            return null;
+        }
+    }
+
+    public GpuTuning? NvidiaTuning() => Nvml.Read();
+
+    public IReadOnlyList<string> FindFileNames(string directory, IReadOnlyList<string> patterns, TimeSpan budget)
+    {
+        var found = new List<string>();
+        if (!Directory.Exists(directory))
+        {
+            return found;
+        }
+
+        var clock = Stopwatch.StartNew();
+        var options = new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
+        try
+        {
+            foreach (var pattern in patterns)
+            {
+                foreach (var file in Directory.EnumerateFiles(directory, pattern, options))
+                {
+                    found.Add(Path.GetFileName(file));
+                    if (clock.Elapsed > budget)
+                    {
+                        return found;
+                    }
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return found;
+        }
+
+        return found;
+    }
+
     public bool DirectoryExists(string path) => Directory.Exists(path);
 
     public bool FileExists(string path) => File.Exists(path);

@@ -1,3 +1,5 @@
+using Analyxell.Services;
+using Analyxell.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -15,7 +17,14 @@ public sealed partial class MetricCard : UserControl
     public static readonly DependencyProperty CaptionProperty =
         DependencyProperty.Register(nameof(Caption), typeof(string), typeof(MetricCard), new PropertyMetadata("", OnChanged));
 
-    public MetricCard() => InitializeComponent();
+    public static readonly DependencyProperty LevelProperty =
+        DependencyProperty.Register(nameof(Level), typeof(MetricLevel), typeof(MetricCard), new PropertyMetadata(MetricLevel.Neutral, OnChanged));
+
+    public MetricCard()
+    {
+        InitializeComponent();
+        Edge.Background = LevelBrushes.Edge(Level);
+    }
 
     public string Title
     {
@@ -35,9 +44,24 @@ public sealed partial class MetricCard : UserControl
         set => SetValue(CaptionProperty, value);
     }
 
+    /// <summary>How the number reads at a glance; shown as the colour of the card's left edge.</summary>
+    public MetricLevel Level
+    {
+        get => (MetricLevel)GetValue(LevelProperty);
+        set => SetValue(LevelProperty, value);
+    }
+
     private static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var card = (MetricCard)d;
-        AutomationProperties.SetName(card, $"{card.Title}: {card.Value} {card.Caption}");
+        card.Edge.Background = LevelBrushes.Edge(card.Level);
+        var state = card.Level switch
+        {
+            MetricLevel.Good => "good",
+            MetricLevel.Warning => "needs a look",
+            MetricLevel.Bad => "a problem",
+            _ => "",
+        };
+        AutomationProperties.SetName(card, $"{card.Title}: {card.Value} {card.Caption}{(state.Length > 0 ? ", " + state : "")}");
     }
 }

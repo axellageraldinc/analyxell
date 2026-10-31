@@ -79,11 +79,11 @@ public static class CaptureAnalyzer
         var freezes = Detectors.FindFreezes(series.Times, series.Ms, FreezeThresholdMs);
         var bottleneck = BottleneckAnalyzer.Analyze(run);
         var context = FreezeContextBuilder.Build(run, freezes);
-        var extra = ExtraSignals.Compute(run);
+        var extra = ExtraSignals.Compute(run, double.TryParse(system.Get("display_current_hz"), NumberStyles.Float, CultureInfo.InvariantCulture, out var nowHz) ? nowHz : null);
         var trends = RunTrends.Compute(run, stutters, freezes);
 
-        var facts = BuildFacts(capture.Info, metrics, stutters, freezes, bottleneck, context, extra, settings, system, background, shareBackgroundNames, trends, frameGen, CaptureQuality.Assess(capture.Info, run, metrics, bottleneck), gameFacts);
-        var findings = Rules.Evaluate(metrics, freezes, stutters, bottleneck, context, extra, settings, system, background, facts, capture.Info, trends, frameGen);
+        var facts = BuildFacts(run, capture.Info, metrics, stutters, freezes, bottleneck, context, extra, settings, system, background, shareBackgroundNames, trends, frameGen, CaptureQuality.Assess(capture.Info, run, metrics, bottleneck), gameFacts);
+        var findings = Rules.Evaluate(metrics, freezes, stutters, bottleneck, context, extra, settings, system, background, facts, capture.Info, trends, frameGen, run);
         var specs = PcSpecs.Build(capture.Info, run, extra, bottleneck, system);
 
         return new AnalysisResult(
@@ -92,6 +92,7 @@ public static class CaptureAnalyzer
     }
 
     private static Dictionary<string, string> BuildFacts(
+        CaptureRun run,
         CaptureInfo info,
         FrameMetrics m,
         IReadOnlyList<Stutter> stutters,
@@ -194,6 +195,35 @@ public static class CaptureAnalyzer
             Put("freeze.times_sec", string.Join(", ", freezes.Take(12).Select(fr => fr.TimeSec.ToString("0", CultureInfo.InvariantCulture))));
         }
 
+        if (HitchPattern.Find(freezes, stutters) is { } pattern)
+        {
+            PutNum("hitch.period_sec", pattern.PeriodSec, "0.#");
+            PutNum("hitch.periodic_events", pattern.Events, "0");
+        }
+
+        var cpuModel = CpuProfile.Parse(info.Cpu);
+        if (CcdLoad.Compute(run, cpuModel) is { } ccd)
+        {
+            PutNum("cpu.ccd0_load_avg", ccd.FirstPct, "0");
+            PutNum("cpu.ccd1_load_avg", ccd.SecondPct, "0");
+        }
+
+        if (run.FindSensor("CPU Max", "Clock") is { } cpuClock && Stats.Summarize(cpuClock.Values) is { Count: > 0 } cpuClockStats)
+        {
+            PutNum("cpu.clock_peak_mhz", cpuClockStats.Max, "0");
+            PutNum("cpu.rated_boost_mhz", cpuModel.RatedBoostMhz, "0");
+        }
+
+        if (run.FindSensor("GPU Core", "Clock") is { } gpuClock)
+        {
+            var clocks = gpuClock.Values.Where(v => double.IsFinite(v) && v > 0).Order().ToArray();
+            if (clocks.Length >= 20)
+            {
+                PutNum("gpu.clock_p10_mhz", Stats.Percentile(clocks, 0.10), "0");
+                PutNum("gpu.clock_p95_mhz", Stats.Percentile(clocks, 0.95), "0");
+            }
+        }
+
         Put("bottleneck.verdict", b.Verdict.ToString());
         Put("bottleneck.confidence", b.Confidence.ToString());
         PutNum("gpu.busy_pct", b.GpuBusyPct);
@@ -218,6 +248,7 @@ public static class CaptureAnalyzer
         PutNum("display.frames_above_refresh_pct", x.FramesAboveRefreshPct);
         PutNum("present.tearing_allowed_pct", x.TearingAllowedPct, "0");
         PutNum("present.sync_interval_zero_pct", x.SyncZeroPct, "0");
+        PutNum("present.vsync_on_grid_pct", x.SyncQuantizedPct, "0");
         PutNum("latency.avg_ms", x.LatencyAvgMs);
         PutNum("latency.p95_ms", x.LatencyP95Ms);
         PutNum("latency.max_ms", x.LatencyMaxMs, "0");

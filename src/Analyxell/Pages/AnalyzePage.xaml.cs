@@ -97,7 +97,18 @@ public sealed partial class AnalyzePage : Page
         }
     }
 
-    private void OpenAiTab_Click(object sender, RoutedEventArgs e) => ViewModel.SelectedTab = AnalyzeTab.Ai;
+    /// <summary>Asks straight away when AI is set up; otherwise opens the tab that explains how to turn it on.</summary>
+    private void AskAi_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.Ai.IsConfigured && ViewModel.Ai.NotBusy)
+        {
+            ViewModel.AskAiAndShowCommand.Execute(null);
+        }
+        else
+        {
+            ViewModel.SelectedTab = AnalyzeTab.Ai;
+        }
+    }
 
     private async void RecentButton_Click(object sender, RoutedEventArgs e) =>
         await ViewModel.RefreshCatalogCommand.ExecuteAsync(null);

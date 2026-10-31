@@ -57,7 +57,7 @@ public static class ChartDataBuilder
                 var series = FrameGenerationSignal.SeriesFor(run);
                 var (t, v) = Smoothing.BinAverage(series.Times, series.Ms);
                 return Spec(view, "Frame time", "ms", "Lower is smoother. White line: 1 s average." + (series.FromDisplay ? " Shows the frames the screen displays (generated ones included)." : ""),
-                    [new("Frame time", series.Times, series.Ms, 0, 1.2, 0.6), new("1 s average", t, v, 5, 2.0)],
+                    [new("Frame time", series.Times, series.Ms, 0, 1.2, 0.8), new("1 s average", t, v, 5, 2.8)],
                     [new(1000.0 / 60, "60 fps"), new(1000.0 / 30, "30 fps")], null, zeroBased: true, clip: true);
             }
 
@@ -67,7 +67,7 @@ public static class ChartDataBuilder
                 var fps = series.Ms.Select(ms => ms > 0 && double.IsFinite(ms) ? 1000.0 / ms : double.NaN).ToArray();
                 var (t, v) = Smoothing.BinAverage(series.Times, fps);
                 return Spec(view, "FPS", "fps", "Higher is better. Dips are slow frames. White line: 1 s average." + (series.FromDisplay ? " Shows the frames the screen displays (generated ones included)." : ""),
-                    [new("FPS", series.Times, fps, 0, 1.2, 0.6), new("1 s average", t, v, 5, 2.0)],
+                    [new("FPS", series.Times, fps, 0, 1.2, 0.8), new("1 s average", t, v, 5, 2.8)],
                     [new(60, "60"), new(30, "30")], null, zeroBased: true, clip: true);
             }
 
