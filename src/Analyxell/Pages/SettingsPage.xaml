@@ -220,6 +220,24 @@
                     IsClosable="False" />
             </StackPanel>
 
+            <StackPanel Spacing="12">
+                <TextBlock Text="Updates" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock AutomationProperties.AutomationId="CurrentVersionText" Text="{x:Bind ViewModel.CurrentVersionText, Mode=OneTime}" />
+                <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="analyxell never checks by itself. Pressing the button asks GitHub for the newest release; nothing else is sent. The download is the installer or the portable zip, matching how you installed." />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button AutomationProperties.AutomationId="CheckUpdateButton" Content="Check for updates" Command="{x:Bind ViewModel.CheckUpdateCommand, Mode=OneTime}" IsEnabled="{x:Bind ViewModel.CanCheckUpdate, Mode=OneWay}" />
+                    <Button AutomationProperties.AutomationId="DownloadUpdateButton" Content="Download update" Style="{StaticResource AccentButtonStyle}" Visibility="{x:Bind ViewModel.UpdateAvailable, Mode=OneWay}" Command="{x:Bind ViewModel.DownloadUpdateCommand, Mode=OneTime}" />
+                    <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.IsCheckingUpdate, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsCheckingUpdate, Mode=OneWay}" />
+                </StackPanel>
+                <InfoBar
+                    AutomationProperties.AutomationId="UpdateMessage"
+                    Severity="{x:Bind ViewModel.UpdateMsg.Severity, Mode=OneWay}"
+                    Message="{x:Bind ViewModel.UpdateMsg.Text, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.UpdateMsg.IsOpen, Mode=OneWay}"
+                    IsClosable="False" />
+            </StackPanel>
+
             <StackPanel Spacing="8">
                 <TextBlock Text="Read-only by design" Style="{StaticResource SubtitleTextBlockStyle}" />
                 <TextBlock

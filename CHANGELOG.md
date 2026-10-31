@@ -4,6 +4,13 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-31
+
+### Added
+
+- **Check for updates (Settings > Updates).** One button asks GitHub for the newest release; if there is one, **Download update** opens the right file for how you installed (the installer or the portable zip). It never runs on its own.
+- **Demo video on the README's first page.**
+
 ## [1.3.0] - 2026-10-31
 
 ### Added

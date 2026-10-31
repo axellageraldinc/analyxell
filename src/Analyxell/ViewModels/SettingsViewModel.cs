@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Analyxell.Core.Ai;
 using Analyxell.Core.Mcp;
 using Analyxell.Core.Settings;
+using Analyxell.Core.Updates;
 using Analyxell.Services;
 using Microsoft.UI.Xaml.Controls;
 
@@ -52,6 +53,39 @@ public sealed partial class SettingsViewModel : ObservableObject
     public FieldMessage AiTestMsg { get; } = new();
 
     public FieldMessage SaveMsg { get; } = new();
+
+    public FieldMessage UpdateMsg { get; } = new();
+
+    public string CurrentVersionText { get; } = "You have version " + CurrentVersion.ToString(3) + (IsInstalled ? " (installer)." : " (portable).");
+
+    private static Version CurrentVersion => typeof(SettingsViewModel).Assembly.GetName().Version ?? new Version(0, 0, 0);
+
+    private static bool IsInstalled
+    {
+        get
+        {
+            try
+            {
+                _ = Windows.ApplicationModel.Package.Current.Id;
+                return true;
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
+            {
+                return false;
+            }
+        }
+    }
+
+    private string? updateUrl;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanCheckUpdate))]
+    public partial bool IsCheckingUpdate { get; set; }
+
+    public bool CanCheckUpdate => !IsCheckingUpdate;
+
+    [ObservableProperty]
+    public partial bool UpdateAvailable { get; set; }
 
     [ObservableProperty]
     public partial string CapturesFolder { get; set; }
@@ -222,6 +256,53 @@ public sealed partial class SettingsViewModel : ObservableObject
         HasSavedKey = false;
         KeyStoredInfo = "";
         KeyMsg.Success("The API key was deleted from this PC.");
+    }
+
+    /// <summary>Runs only when the user presses the button. Never automatic (see docs/privacy.md).</summary>
+    [RelayCommand]
+    private async Task CheckUpdateAsync()
+    {
+        IsCheckingUpdate = true;
+        UpdateAvailable = false;
+        UpdateMsg.Info("Checking GitHub for the newest release...");
+        try
+        {
+            var kind = IsInstalled ? InstallKind.Installer : InstallKind.Portable;
+            var latest = await new UpdateChecker(AppServices.Http).GetLatestAsync(kind, CancellationToken.None);
+            if (latest is null)
+            {
+                UpdateMsg.Warning("GitHub's answer did not contain a version number, so analyxell cannot tell whether there is an update.");
+            }
+            else if (UpdateChecker.IsNewer(latest.Version, CurrentVersion))
+            {
+                updateUrl = latest.DownloadUrl;
+                UpdateAvailable = true;
+                UpdateMsg.Success(IsInstalled
+                    ? $"Version {latest.Version.ToString(3)} is available. Download it, then open the file to install over this version."
+                    : $"Version {latest.Version.ToString(3)} is available. Download the zip, close analyxell, and unzip it over this folder (or into a new one).");
+            }
+            else
+            {
+                UpdateMsg.Success("You are on the latest version.");
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            UpdateMsg.Error("Could not reach GitHub: " + ex.Message + " You can download releases yourself from https://github.com/axellageraldinc/analyxell/releases");
+        }
+        finally
+        {
+            IsCheckingUpdate = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task DownloadUpdateAsync()
+    {
+        if (updateUrl is null || !await Windows.System.Launcher.LaunchUriAsync(new Uri(updateUrl)))
+        {
+            UpdateMsg.Error("Your browser could not be opened. Releases are at https://github.com/axellageraldinc/analyxell/releases");
+        }
     }
 
     /// <summary>Lets the user see for themselves that the stored key is encrypted, not readable text.</summary>

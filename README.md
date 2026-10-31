@@ -9,7 +9,12 @@
   Open a <a href="https://github.com/CXWorld/CapFrameX">CapFrameX</a> capture, see what happened, and get a plain-language explanation you can trust.
 </p>
 
-> **Status: 1.3.0.** The app works and is tested, but it has not been tried on many PCs yet, so please report what breaks.
+> **Status: 1.4.0.** The app works and is tested, but it has not been tried on many PCs yet, so please report what breaks.
+
+<p align="center">
+  <a href="docs/images/demo.mp4"><img src="docs/images/demo-poster.jpg" alt="Watch the 45-second demo" width="720"></a><br>
+  <a href="docs/images/demo.mp4"><b>&#9654; Watch the 45-second demo</b></a>
+</p>
 
 ## What it does
 
@@ -43,10 +48,12 @@ Pre-built downloads are on the [Releases](../../releases) page:
 
 | Download | Use it when |
 |---|---|
-| `analyxell-<version>-win-x64.msix` | You want a normal install and updates. Needs the signing certificate trusted once; see [docs/releasing.md](docs/releasing.md). |
+| `analyxell-<version>-win-x64.msix` | You want a normal install. Needs the signing certificate trusted once; see [docs/releasing.md](docs/releasing.md). |
 | `analyxell-<version>-portable-win-x64.zip` | You want no installation. Unzip anywhere and run `Analyxell.exe`. |
 
 Requires Windows 10 (1809) or newer, x64. Nothing else needs to be installed.
+
+**Updating:** in **Settings > Updates**, press **Check for updates**. If a newer version exists, **Download update** gets the right file for how you installed it (the installer or the portable zip). Nothing is checked until you press the button.
 
 ## Quick start
 

@@ -1,6 +1,6 @@
 ﻿# Privacy
 
-analyxell is local-first. This page lists everything it reads, stores and can send. It has no server, no account, no telemetry and no auto-update ping.
+analyxell is local-first. This page lists everything it reads, stores and can send. It has no server, no account, no telemetry and no automatic update check.
 
 ## What it reads
 
@@ -77,3 +77,7 @@ Whatever you send is handled under that provider's terms. Prefer a local or self
 ## Looking a game up
 
 The only thing analyxell sends to the internet by itself is a lookup you start: "Look this game up online" sends the game's name to pcgamingwiki.com (a community-written wiki) through its public API, with a User-Agent that names analyxell. Nothing else is sent: no capture, path, device name or key. The answer is shown to you before anything is saved, and what is saved stays on this PC.
+
+## Checking for updates
+
+Only when you press **Check for updates** in Settings, analyxell asks `api.github.com` for the newest release of its own repository. The request carries no version, identifier or file; GitHub sees your IP address and the User-Agent `analyxell-update-check`, like any web request. analyxell does not download or install anything: **Download update** opens the release file in your browser.
