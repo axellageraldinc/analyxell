@@ -4,6 +4,12 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-01
+### Added
+
+- **Texture pop-in (a likely explanation).** Pop-in is visual, so a capture cannot see it; analyxell now spots its usual cause, video memory staying nearly full (90% of the card or more) for a fifth of the run or longer. The `TEXTURE_POP_IN_LIKELY` finding says it is a likely explanation, not a proven one, names a game on a hard disk or a CPU limit when they add to it, and suggests lowering texture quality, upscaling and moving the game to an SSD. It stays quiet when video memory has room.
+- **"Video memory nearly full" on the chart** (a bar along the bottom, off by default), a "time video memory was nearly full" row in Compare, and the finding in the share summary, report, next steps and AI answers. The AI is told to keep it a hypothesis.
+
 ## [1.4.0] - 2026-10-31
 
 ### Added

@@ -277,6 +277,14 @@ public sealed partial class FrameTimeChart : UserControl
                     Plot.Children.Add(new Rectangle { Width = 3, Height = 14, Fill = brush }.At(x1, _plot.Y + _plot.Height - 14));
                     Plot.Children.Add(new Rectangle { Width = 3, Height = 14, Fill = brush }.At(Math.Max(x1, x2 - 3), _plot.Y + _plot.Height - 14));
                 }
+                else if (layer.Kind == EventKind.VramFull)
+                {
+                    // A thinner bar along the bottom, lifted above the tearing bar, with short end caps.
+                    var y = _plot.Y + _plot.Height - 16;
+                    Plot.Children.Add(new Rectangle { Width = x2 - x1, Height = 4, Fill = brush }.At(x1, y));
+                    Plot.Children.Add(new Rectangle { Width = 2, Height = 10, Fill = brush }.At(x1, y - 3));
+                    Plot.Children.Add(new Rectangle { Width = 2, Height = 10, Fill = brush }.At(Math.Max(x1, x2 - 2), y - 3));
+                }
                 else
                 {
                     // A shaded stretch with a solid strip along the top and a line at each edge.

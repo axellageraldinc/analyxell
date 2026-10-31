@@ -237,6 +237,10 @@ public static class CaptureAnalyzer
         PutNum("gpu.power_limit_hits_pct", b.PowerLimitHitsPct);
         PutNum("vram.used_max_gb", b.VramUsedMaxGb);
         PutNum("vram.total_gb", b.VramTotalGb);
+        if (VramFull.Compute(run) is { } vramFull)
+        {
+            PutNum("vram.near_full_pct", vramFull.SharePct, "0");
+        }
 
         PutNum("display.refresh_max_hz", x.RefreshMaxHz);
         PutNum("display.refresh_min_hz", x.RefreshMinHz);

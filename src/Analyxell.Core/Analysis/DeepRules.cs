@@ -23,7 +23,8 @@ internal static class DeepRules
         SystemContext system,
         GameSettings? settings,
         ExtraSignals extra,
-        FrameGenerationSignal frameGen)
+        FrameGenerationSignal frameGen,
+        VramFullSignal? vramFull)
     {
         var hitches = freezes.Count > 0 || stutters.Count > 20 || metrics.Low1AverageFps < metrics.AverageFps * 0.6;
         var cpuBound = bottleneck.Verdict == BottleneckVerdict.CpuBound;
@@ -31,6 +32,7 @@ internal static class DeepRules
         CpuLimits(add, bottleneck, trends, metrics, cpuBound);
         OverTime(add, trends, hitches);
         Memory(add, info, cpuBound, hitches);
+        TexturePopIn(add, vramFull, system, cpuBound);
         WindowsAndDriver(add, info, system, hitches, cpuBound);
         GameOptions(add, settings, metrics, bottleneck, extra, hitches);
         FrameGeneration(add, frameGen, settings);
@@ -148,6 +150,50 @@ internal static class DeepRules
                     "If the PC will not start after that, load the default BIOS settings and try a lower profile.",
                 ]);
         }
+    }
+
+    /// <summary>
+    /// Textures that look blurry and then sharpen, or appear late. A capture cannot see that, so this is inferred from its
+    /// usual cause: video memory staying nearly full for a good part of the run. A likely explanation, never a proven one.
+    /// </summary>
+    private static void TexturePopIn(Rules.AddFinding add, VramFullSignal? vram, SystemContext system, bool cpuBound)
+    {
+        if (vram is null || vram.SharePct < VramFull.MinSharePct)
+        {
+            return;
+        }
+
+        var onHdd = system.Is("game_drive.media", "HDD");
+        var extra = new List<string>();
+        if (onHdd)
+        {
+            extra.Add("The game is on a hard disk, which brings in the sharp textures even later.");
+        }
+
+        if (cpuBound)
+        {
+            extra.Add("The CPU is also the limit, and it has to feed the texture loading.");
+        }
+
+        var suggestions = new List<string>
+        {
+            "Lower texture quality one step, which is the biggest VRAM saver.",
+            "Lower the render resolution scale or use upscaling.",
+            "Close programs that use video memory (browsers, other games, recorders).",
+        };
+        if (onHdd)
+        {
+            suggestions.Add("Move the game to an SSD (an NVMe drive if you can). Most launchers have a 'move install' option.");
+        }
+
+        suggestions.Add("Pop-in is visual, so after a change look at the same spot in the game again rather than only at the numbers.");
+
+        add("TEXTURE_POP_IN_LIKELY", Severity.Low,
+            "Textures may look blurry or pop in: video memory is nearly full",
+            $"Video memory was at {VramFull.FullFraction * 100:0}% of the card or more for {vram.SharePct:0}% of the run (peak {vram.PeakPct:0}%). When it is full, the game shows lower-detail textures and swaps the sharp ones in late, which looks like blurry textures that pop in. Pop-in itself cannot be seen in a capture, so this is a likely explanation, not a proven one. Some games also reserve most of the video memory whatever the settings, so a full reading is not always a shortage."
+            + (extra.Count > 0 ? " " + string.Join(" ", extra) : ""),
+            ["vram.near_full_pct", "vram.used_max_gb", "vram.total_gb", "system.game_drive.media"],
+            [.. suggestions]);
     }
 
     private static void WindowsAndDriver(Rules.AddFinding add, CaptureInfo info, SystemContext system, bool hitches, bool cpuBound)

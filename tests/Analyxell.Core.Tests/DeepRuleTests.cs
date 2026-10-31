@@ -66,6 +66,59 @@ public class DeepRuleTests
         Assert.Contains("video memory use grew", finding.Detail);
     }
 
+    private static CaptureRun VramRun(double usedFraction, double fullShare)
+    {
+        // Three minutes at 100 fps; video memory (8 GB card) is at usedFraction for the last fullShare of the run.
+        return WithSensors(TestData.Steady(18000, 10), g =>
+        [
+            TestData.Sensor("v", "GPU Memory Dedicated", "Data", g.Select((_, i) => i >= g.Length * (1 - fullShare) ? 8.0 * usedFraction : 4.0).ToArray()),
+            TestData.Sensor("t", "GPU Memory Total", "Data", TestData.Const(g, 8)),
+        ]);
+    }
+
+    [Fact]
+    public void Video_memory_that_stays_nearly_full_is_called_a_likely_cause_of_texture_pop_in()
+    {
+        var r = Analyze(VramRun(0.97, 0.6));
+
+        var finding = Assert.Single(r.Findings, f => f.Id == "TEXTURE_POP_IN_LIKELY");
+        Assert.Equal(Severity.Low, finding.Severity);
+        Assert.Contains("likely explanation, not a proven one", finding.Detail);
+        Assert.Contains("vram.near_full_pct", finding.Evidence);
+        Assert.InRange(double.Parse(r.Facts["vram.near_full_pct"], System.Globalization.CultureInfo.InvariantCulture), 55, 65);
+        Assert.Contains(r.NextSteps, s => s.FindingId == "VRAM_PRESSURE" || s.FindingId == "TEXTURE_POP_IN_LIKELY");
+    }
+
+    [Fact]
+    public void A_short_spike_or_spare_video_memory_does_not_report_pop_in()
+    {
+        Assert.DoesNotContain(Analyze(VramRun(0.97, 0.05)).Findings, f => f.Id == "TEXTURE_POP_IN_LIKELY");
+        Assert.DoesNotContain(Analyze(VramRun(0.80, 0.9)).Findings, f => f.Id == "TEXTURE_POP_IN_LIKELY");
+        Assert.DoesNotContain(Analyze(TestData.Run(TestData.Steady(18000, 10))).Findings, f => f.Id == "TEXTURE_POP_IN_LIKELY");
+    }
+
+    [Fact]
+    public void Pop_in_on_a_hard_disk_also_suggests_an_ssd()
+    {
+        var ctx = new SystemContext([new SystemSetting("game_drive.media", "Drive type", "HDD", SettingSource.Auto)]);
+
+        var finding = Assert.Single(Analyze(VramRun(0.97, 0.6), system: ctx).Findings, f => f.Id == "TEXTURE_POP_IN_LIKELY");
+
+        Assert.Contains("hard disk", finding.Detail);
+        Assert.Contains(finding.Suggestions, s => s.Contains("SSD"));
+        Assert.Contains("system.game_drive.media", finding.Evidence);
+    }
+
+    [Fact]
+    public void The_AI_may_cite_the_pop_in_finding_and_is_told_to_keep_it_a_hypothesis()
+    {
+        var r = Analyze(VramRun(0.97, 0.6));
+
+        Assert.Contains("finding:TEXTURE_POP_IN_LIKELY", AiPrompts.ValidKeys(r));
+        Assert.Contains("TEXTURE_POP_IN_LIKELY", AiPrompts.BuildSingle(r, null));
+        Assert.Contains("TEXTURE_POP_IN_LIKELY", AiPrompts.System);
+    }
+
     [Fact]
     public void A_steady_run_does_not_decline()
     {

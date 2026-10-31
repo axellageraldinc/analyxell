@@ -4,7 +4,7 @@ This is the knowledge behind analyxell's findings: what players usually complain
 
 Thresholds are rules of thumb. Several of the sources below are vendor blogs and forum threads, so no number here is a guarantee; the advice that several independent sources agree on is the advice used.
 
-Sources: [PC stutter guides](https://techfuelhq.com/articles/pc-stuttering-in-games-2026/), [ASUS ROG on 1% lows](https://rog.asus.com/articles/guides/what-are-1-lows-how-to-monitor-and-fix-stutters-in-your-pc-games/), [telling CPU from GPU limits](https://www.digitalcitizen.life/how-to-tell-whether-your-cpu-or-gpu-is-limiting-gaming-performance/), [Intel GPA trace analysis](https://www.intel.com/content/www/us/en/docs/gpa/get-started-guide/2023-3/trace-analysis.html), [common gaming PC issues](https://www.cyberpowerpc.com/blog/common-gaming-pc-issues-and-how-to-fix-them/).
+Sources: [PC stutter guides](https://techfuelhq.com/articles/pc-stuttering-in-games-2026/), [ASUS ROG on 1% lows](https://rog.asus.com/articles/guides/what-are-1-lows-how-to-monitor-and-fix-stutters-in-your-pc-games/), [telling CPU from GPU limits](https://www.digitalcitizen.life/how-to-tell-whether-your-cpu-or-gpu-is-limiting-gaming-performance/), [Intel GPA trace analysis](https://www.intel.com/content/www/us/en/docs/gpa/get-started-guide/2023-3/trace-analysis.html), [common gaming PC issues](https://www.cyberpowerpc.com/blog/common-gaming-pc-issues-and-how-to-fix-them/), [texture streaming pool over budget (Unreal forum)](https://forums.unrealengine.com/t/texture-streaming-pool-over-budget-and-still-rendering-no-problem-how-is-it-possible/2204027), [BeamNG texture streaming](https://documentation.beamng.com/modding/materials/texture_streaming/).
 
 ## 1. The problems players actually describe
 
@@ -15,6 +15,7 @@ Sources: [PC stutter guides](https://techfuelhq.com/articles/pc-stuttering-in-ga
 | "It freezes for a moment" | Frames of 200 ms or more |
 | "It gets worse the longer I play" | Frame rate or lows fall over the run |
 | "It hitches when I enter a new area" | Spikes clustered at the start or at loading points |
+| "Textures look blurry, then sharpen or pop in" | Not visible in frame times. The usual cause is video memory staying nearly full, which a capture does show |
 | "It feels laggy / delayed" | High input-to-display latency |
 | "The picture tears" | Frames shown mid-refresh (sync off, outside the display's range) |
 | "Motion is not smooth at a high FPS" | Uneven pacing, frames dropped or shown at uneven intervals |
@@ -35,6 +36,7 @@ Sources: [PC stutter guides](https://techfuelhq.com/articles/pc-stuttering-in-ga
 | **GPU power-limited** | Power-limit flag in 25%+ of samples | `POWER_LIMIT` | Restore the power limit, cap the frame rate |
 | **CPU or video memory too hot** | 90-95 °C+ | `CPU_HOT`, `VRAM_HOT` | Cooling |
 | **Not enough video memory** | Video memory at 85-95%+ of the card | `VRAM_PRESSURE` | Lower texture quality / resolution scale |
+| **Texture pop-in** (blurry textures that sharpen late) | Video memory at 90%+ of the card for 20%+ of the run. Other causes it cannot see: a slow drive, a CPU that cannot feed the loading, and games that pop in on any hardware. A likely explanation, not proven | `TEXTURE_POP_IN_LIKELY` | Lower texture quality one step, upscaling or a lower resolution scale, close VRAM users, SSD. No finding and spare video memory means VRAM is unlikely to be the cause |
 | **Not enough system memory** | RAM above 92%, commit above 90% | `RAM_PRESSURE`, `COMMIT_PRESSURE` | Close programs, more RAM, bigger page file |
 | **Memory in single-channel mode** | The capture lists one memory stick | `RAM_SINGLE_MODULE` | Add a matching second stick |
 | **Memory at default speed (XMP/EXPO off)** | Memory at 2667 MT/s or less (4800 when CPU-bound) | `RAM_SLOW_SPEED` | Enable XMP / EXPO / DOCP in the BIOS (only if the kit is rated higher) |

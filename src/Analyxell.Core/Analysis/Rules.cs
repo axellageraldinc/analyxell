@@ -318,7 +318,7 @@ internal static class Rules
         }
 
         // 5b. Causes that need several signals: CPU limits, change over time, memory setup, Windows options.
-        DeepRules.Evaluate(Add, metrics, freezes, stutters, bottleneck, trends, info, system, settings, extra, frameGen);
+        DeepRules.Evaluate(Add, metrics, freezes, stutters, bottleneck, trends, info, system, settings, extra, frameGen, VramFull.Compute(run));
 
         // 5c. Findings tied to the exact hardware: Ryzen scheduling and boost, NVIDIA tuning, driver and hardware errors.
         HardwareRules.Evaluate(Add, run, metrics, freezes, stutters, bottleneck, trends, info, system, settings, extra, frameGen, facts);

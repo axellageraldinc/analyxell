@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/platform-Windows%2010%2B-0078D6" alt="Windows 10 or newer">
 </p>
 
-> **Status: 1.4.0.** The app works and is tested, but it has not been tried on many PCs yet, so please report what breaks.
+> **Status: 1.5.0.** The app works and is tested, but it has not been tried on many PCs yet, so please report what breaks.
 
 https://github.com/user-attachments/assets/385479e1-dacd-4d12-bb48-9569cb61646c
 
@@ -26,7 +26,7 @@ https://github.com/user-attachments/assets/385479e1-dacd-4d12-bb48-9569cb61646c
 You played a game and it stuttered. A capture tells you *that* it did; analyxell helps you work out *why*.
 
 - **Analyze a capture.** Average FPS, 1% and 0.1% lows, stutters, freezes, and whether the GPU or CPU is the limit. Charts for frame time, FPS, load, temperatures, clocks, memory, power and latency, with every freeze marked.
-- **Tell you what to do.** Findings cite the exact measurements behind them and come with concrete things to try, starting with a single "Start here" step. It covers freezes, low FPS, heat, memory and VRAM pressure, tearing conditions, latency, pacing, and more ([the rules](docs/rules.md)). No AI needed.
+- **Tell you what to do.** Findings cite the exact measurements behind them and come with concrete things to try, starting with a single "Start here" step. It covers freezes, low FPS, heat, memory and VRAM pressure (including a likely cause of texture pop-in), tearing conditions, latency, pacing, and more ([the rules](docs/rules.md)). No AI needed.
 - **Look beyond the capture.** The PC's specs, which drive the game is on (SSD or HDD, NVMe or SATA, how full), Windows gaming settings, the GPU shader cache, and which other programs are competing for CPU, disk and GPU.
 - **Open or get CapFrameX.** It detects whether CapFrameX is installed, opens it for you, or sends you to the official download page.
 - **Compare two runs.** Changed a setting? See, measure by measure, whether it helped.
@@ -70,7 +70,7 @@ Get-FileHash .\analyxell-<version>-portable-win-x64.zip -Algorithm SHA256
 
 The hash must match the line for that file in `SHA256SUMS.txt`. You can also scan the file with Windows Security (right-click > **Scan with Microsoft Defender**) or paste its hash on [virustotal.com](https://www.virustotal.com) to see what other scanners say. The source is fully open, so you can also build it yourself.
 
-VirusTotal scan reports for the latest release (1.4.0), both with 0 detections:
+VirusTotal scan reports for release 1.4.0 (the scan of 1.5.0 is not published yet), both with 0 detections:
 
 - [analyxell-1.4.0-portable-win-x64.zip](https://www.virustotal.com/gui/file/0cc3d154ef1ede6293a1ad39a67d83073a4a024660dd2e38112254d3b578d776)
 - [analyxell-1.4.0-win-x64.msix](https://www.virustotal.com/gui/file/167e59ebeb38e1c4cc169375f623c8cd0c7f96dabc271ade647008a25725ef33)

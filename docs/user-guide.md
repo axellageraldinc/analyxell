@@ -37,7 +37,7 @@ The page leads with a one-line **verdict** (healthy, worth fixing, serious probl
 **Overview tab**
 
 - **Ask AI bar.** One line and a button. Pressing **Ask AI** jumps to the Ask AI tab so you can watch it work.
-- **The chart.** Pick a view: frame time, FPS, GPU and CPU load, temperatures, clock speeds, memory, power or latency (only the views your capture has data for). Under the chart, switch markers on or off (freezes, stutters, FPS drops, dropped frames, tearing possible). Press a line's name in the legend to hide or show it. Hover to read exact values. For frame time and FPS the white line is a one-second average, and extreme spikes are clipped so one huge freeze does not flatten everything else.
+- **The chart.** Pick a view: frame time, FPS, GPU and CPU load, temperatures, clock speeds, memory, power or latency (only the views your capture has data for). Under the chart, switch markers on or off (freezes, stutters, FPS drops, dropped frames, VSync off, and video memory nearly full when it applies). Press a line's name in the legend to hide or show it. Hover to read exact values. For frame time and FPS the white line is a one-second average, and extreme spikes are clipped so one huge freeze does not flatten everything else.
 - **Start here.** The single most valuable thing to try; **Show more steps** has the rest, most important first. Try one at a time, record the same route again, and use **Compare**.
 
 **Ask AI tab.** The full AI panel; see below.

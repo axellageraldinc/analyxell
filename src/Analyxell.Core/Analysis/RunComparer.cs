@@ -81,6 +81,7 @@ public static class RunComparer
 
         Optional("gpu.load_avg", "GPU load average", a.Bottleneck.GpuLoadAvg, b.Bottleneck.GpuLoadAvg, null, "%");
         Optional("vram.used_max_gb", "Peak VRAM use", a.Bottleneck.VramUsedMaxGb, b.Bottleneck.VramUsedMaxGb, null, "GB");
+        Optional("vram.near_full_pct", "Time video memory nearly full", VramFull.Compute(a.Run)?.SharePct, VramFull.Compute(b.Run)?.SharePct, null, "%");
         Optional("gpu.temp_max_c", "Peak GPU temperature", a.Bottleneck.GpuTempMax, b.Bottleneck.GpuTempMax, null, "\u00B0C");
 
         // Drive activity: the busiest moment of each drive in both runs, and what it did around the freezes.

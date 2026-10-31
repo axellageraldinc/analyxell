@@ -10,6 +10,7 @@ public enum EventKind
     FpsDrops,
     DroppedFrames,
     TearingPossible,
+    VramFull,
 }
 
 /// <summary>A moment (start equals end) or a stretch of the run, in seconds.</summary>
@@ -23,7 +24,7 @@ public sealed record EventLayer(EventKind Kind, string Label, string Meaning, IR
     /// <summary>What follows the label on its switch: how many moments, or how much of the run for whole-run conditions.</summary>
     public string CountText => Detail ?? Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-    public bool IsSpan => Kind is EventKind.FpsDrops or EventKind.TearingPossible;
+    public bool IsSpan => Kind is EventKind.FpsDrops or EventKind.TearingPossible or EventKind.VramFull;
 }
 
 /// <summary>Finds the moments worth marking on the chart. Everything comes from the capture; nothing is guessed.</summary>
@@ -59,6 +60,13 @@ public static class ChartEventBuilder
                     : "Stretches where the game sent frames with VSync off, shown as a bar along the bottom.")
                 + " A capture cannot see tearing itself; G-SYNC or VSync in the driver can still prevent it.",
                 tearing, $"{covered:0}% of the run"));
+        }
+
+        if (VramFull.Compute(run) is { Spans.Count: > 0 } vram)
+        {
+            layers.Add(new EventLayer(EventKind.VramFull, "Video memory nearly full",
+                $"Stretches where video memory was at {VramFull.FullFraction * 100:0}% of the card or more, shown as a bar along the bottom. When it is full the game shows lower-detail textures and swaps the sharp ones in late (texture pop-in). Pop-in itself is not in a capture; this is the usual cause.",
+                vram.Spans, $"{vram.SharePct:0}% of the run"));
         }
 
         return layers;

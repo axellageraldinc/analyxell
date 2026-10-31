@@ -31,6 +31,7 @@ public static class FactLabels
         ["cpu.limited_pct"] = "time the CPU was the limit",
         ["vram.used_max_gb"] = "peak video memory used",
         ["vram.total_gb"] = "video memory size",
+        ["vram.near_full_pct"] = "time video memory was nearly full",
         ["memory.ram_usage_avg_pct"] = "average memory use",
         ["memory.ram_usage_max_pct"] = "peak memory use",
         ["memory.virtual_usage_avg_pct"] = "average Windows memory commit",

@@ -35,4 +35,27 @@ public class ChartEventTests
         Assert.InRange(span.EndSec - span.StartSec, 4, 7);
         Assert.True(drops.IsSpan);
     }
+
+    [Fact]
+    public void Video_memory_that_stays_full_is_one_span_on_the_chart()
+    {
+        var frames = TestData.Steady(12000, 10);
+        var grid = TestData.SensorGrid(TestData.Times(frames)[^1] + 1);
+        // Full from 40 s on, with a short dip that must not split the stretch.
+        var used = grid.Select(t => t >= 40 && Math.Abs(t - 60) > 0.1 ? 7.8 : 3.0).ToArray();
+        var run = TestData.Run(frames, [TestData.Sensor("v", "GPU Memory Dedicated", "Data", used), TestData.Sensor("t", "GPU Memory Total", "Data", TestData.Const(grid, 8))], grid);
+
+        var layer = ChartEventBuilder.Build(run).First(l => l.Kind == EventKind.VramFull);
+
+        var span = Assert.Single(layer.Events);
+        Assert.InRange(span.StartSec, 39.5, 40.5);
+        Assert.True(layer.IsSpan);
+        Assert.EndsWith("% of the run", layer.CountText);
+    }
+
+    [Fact]
+    public void Without_video_memory_readings_there_is_no_video_memory_layer()
+    {
+        Assert.DoesNotContain(ChartEventBuilder.Build(TestData.Run(TestData.Steady(6000, 10))), l => l.Kind == EventKind.VramFull);
+    }
 }

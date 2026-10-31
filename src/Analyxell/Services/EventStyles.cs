@@ -15,6 +15,7 @@ internal static class EventStyles
         EventKind.Stutters => Windows.UI.Color.FromArgb(255, 255, 70, 200),
         EventKind.DroppedFrames => Windows.UI.Color.FromArgb(255, 165, 107, 255),
         EventKind.FpsDrops => Windows.UI.Color.FromArgb(255, 255, 138, 31),
+        EventKind.VramFull => Windows.UI.Color.FromArgb(255, 214, 170, 120),
         _ => Windows.UI.Color.FromArgb(255, 25, 211, 230),
     };
 

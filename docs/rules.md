@@ -31,6 +31,7 @@ Thresholds are conservative rules of thumb, not guarantees. Hardware limits vary
 | `CPU_HOT` | CPU package 90 °C or more (95 is High). Ryzen 7000 and 9000 are built to boost until about 95 °C, so for them it needs 97 °C (99 is High) | Medium / High |
 | `VRAM_HOT` | video memory junction 95 °C or more; 104 °C for GDDR6X cards (RTX 3070 Ti and up, 4070 and up), which are rated for it | Medium |
 | `VRAM_PRESSURE` | peak video memory 85% or more of the card's total (95 is High) | Medium / High |
+| `TEXTURE_POP_IN_LIKELY` | video memory at 90% or more of the card for 20% or more of the run (not just a peak). Pop-in is visual and not in a capture, so this is a likely explanation, not proven; it adds a game on a hard disk or a CPU limit when present. Quiet when video memory has room | Low |
 | `RAM_PRESSURE` | system memory peaked at 92% or more | Medium |
 | `COMMIT_PRESSURE` | Windows memory commit averaged 90% or more | Low |
 
