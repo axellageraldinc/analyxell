@@ -11,10 +11,7 @@
 
 > **Status: 1.4.0.** The app works and is tested, but it has not been tried on many PCs yet, so please report what breaks.
 
-<p align="center">
-  <a href="docs/images/demo.mp4"><img src="docs/images/demo-poster.jpg" alt="Watch the 45-second demo" width="720"></a><br>
-  <a href="docs/images/demo.mp4"><b>&#9654; Watch the 45-second demo</b></a>
-</p>
+https://github.com/user-attachments/assets/385479e1-dacd-4d12-bb48-9569cb61646c
 
 ## What it does
 
