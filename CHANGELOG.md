@@ -4,6 +4,8 @@ All notable changes are recorded here. The format follows [Keep a Changelog](htt
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-31
+
 ### Fixed
 
 - **Pages no longer spill off the right edge.** After the window was resized, the Compare page (and potentially Analyze and Game library) could be laid out wider than the window, pushing the B column out of view. Page content now follows the window width, up to a comfortable maximum, and stays centred on very wide windows.
